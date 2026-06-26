@@ -1,0 +1,17 @@
+{
+  "Env": "test",
+  "Db": {
+    "Host": "postgres",
+    "User": "app",
+    "Password": "secret",
+    "Name": "app"
+  },
+  "RedisDsn": "redis://redis:6379/0",
+  "Grpc": {
+    "Port": 50051
+  },
+  "Auth": {
+    "JwtSigningKey": "de164c1af6413b108d7bfedc68e17896",
+    "PasswordSalt": "f4e2555b1d17139e6843520c962e9d57"
+  }
+}

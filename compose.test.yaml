@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      target: build-test
+
+  postgres:
+    volumes:
+      - postgres_test:/var/lib/postgresql/data
+
+volumes:
+  postgres_test:

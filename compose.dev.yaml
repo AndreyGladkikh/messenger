@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      target: build-dev
+    security_opt:
+      - "seccomp:unconfined"
+    cap_add:
+      - SYS_PTRACE
+    ports:
+      - 40000:40000
+      - 40040:40040
