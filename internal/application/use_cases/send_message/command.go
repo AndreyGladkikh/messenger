@@ -1,4 +1,4 @@
-package send_private_message
+package send_message
 
 import "bytes"
 
@@ -6,12 +6,12 @@ type Command struct {
 	RecipientID string
 	ChatID string
 	MessageBody string
-	ResponseToMessageID string
+	ReplyToMessageID string
 	Attachments []*bytes.Buffer
 }
 
-func (c *Command) isCommand() {}
+func (c *Command) IsCommand() {}
 
 func (c *Command) Name() string {
-	return "SendPrivateMessage"
+	return "SendMessage"
 }

@@ -3,7 +3,7 @@ package command
 import "context"
 
 type Command interface {
-	isCommand()
+	IsCommand()
 	Name() string
 }
 

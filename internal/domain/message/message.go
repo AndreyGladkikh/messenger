@@ -9,27 +9,35 @@ type Message struct {
 	id string
 	body string
 	senderID string
+	chatID string
 	recipientID string
+	replyToMessageID string
 	attachments []*file.File
 }
 
 func NewMessage(
 	id string,
 	body string,
+	chatID string,
 	senderID string,
 	recipientID string,
-) *Message {
+	replyToMessageID string,
+) (*Message, MessageCreated, error) {
 	m := new(Message)
 	m.id = id
 	m.SetBody(body)
 	m.SetSenderID(senderID)
+	m.SetChatID(chatID)
 	m.SetRecipientID(recipientID)
+	m.SetReplyToMessageID(replyToMessageID)
 
 	event.Publisher().Publish(MessageCreated{
 		MessageID: id,
 	})
 
-	return m
+	return m, MessageCreated{
+		MessageID: id,
+	}, nil
 }
 
 func (m *Message) SetBody(body string) error {
@@ -44,8 +52,20 @@ func (m *Message) SetSenderID(senderID string) error {
 	return nil
 }
 
+func (m *Message) SetChatID(chatID string) error {
+	m.chatID = chatID
+	
+	return nil
+}
+
 func (m *Message) SetRecipientID(recipientID string) error {
 	m.recipientID = recipientID
+	
+	return nil
+}
+
+func (m *Message) SetReplyToMessageID(messageID string) error {
+	m.replyToMessageID = messageID
 	
 	return nil
 }

@@ -10,12 +10,12 @@ import (
 // 	Dispatch(command C) (R, error)
 // }
 
-type CommandBus struct {
-	handlers map[string]Handler
+type Bus struct {
+	handlers    map[string]Handler
 	middlewares []HandlerMiddleware
 }
 
-func (b *CommandBus) Register(command Command, handler Handler) error {
+func (b *Bus) Register(command Command, handler Handler) error {
 	for _, m := range b.middlewares {
 		handler = m(handler)
 	}
@@ -26,7 +26,7 @@ func (b *CommandBus) Register(command Command, handler Handler) error {
 	return nil
 }
 
-func (b *CommandBus) Dispatch(ctx context.Context, command Command) (any, error) {
+func (b *Bus) Dispatch(ctx context.Context, command Command) (any, error) {
 	handler, ok := b.handlers[command.Name()]
 	if !ok {
 		var zero any
@@ -36,6 +36,6 @@ func (b *CommandBus) Dispatch(ctx context.Context, command Command) (any, error)
 	return handler.Handle(ctx, command)
 }
 
-func (b *CommandBus) Use(middleware HandlerMiddleware) {
+func (b *Bus) Use(middleware HandlerMiddleware) {
 	b.middlewares = append(b.middlewares, middleware)
 }

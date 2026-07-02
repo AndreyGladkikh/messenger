@@ -13,6 +13,12 @@ type TransactionMiddlewareContainer struct {
 	txManager txManager
 }
 
+func NewTransactionMiddlewareContainer(txManager txManager) *TransactionMiddlewareContainer {
+	return &TransactionMiddlewareContainer{
+		txManager: txManager,
+	}
+}
+
 func (c *TransactionMiddlewareContainer) Middleware(next command.Handler) command.Handler {
 	return command.HandlerFunc(func(ctx context.Context, command command.Command) (any, error) {
 		var response any
