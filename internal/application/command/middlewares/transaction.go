@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"messenger/messenger/internal/application/command"
+	"messenger/messenger/internal/platform/uow"
 )
 
 type txManager interface {
@@ -21,13 +22,19 @@ func NewTransactionMiddlewareContainer(txManager txManager) *TransactionMiddlewa
 
 func (c *TransactionMiddlewareContainer) Middleware(next command.Handler) command.Handler {
 	return command.HandlerFunc(func(ctx context.Context, command command.Command) (response any, err error) {
-		// var response any
+		uowo := uow.New()
+		ctx = uow.NewContext(ctx, uowo)
+
 		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
 			// var err error
 			response, err = next.Handle(ctx, command)
 			return err
 		})
+
+		for _, aggregate := range uowo.Aggregates() {
+			_ = aggregate.PullEvents()
+		}
+
 		return
-		// return response, err
 	})
 }

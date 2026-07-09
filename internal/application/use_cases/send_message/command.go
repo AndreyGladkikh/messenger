@@ -3,6 +3,7 @@ package send_message
 import "bytes"
 
 type Command struct {
+	SenderID string
 	RecipientID string
 	ChatID string
 	MessageBody string
