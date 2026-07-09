@@ -2,9 +2,9 @@ package send_message
 
 import (
 	"context"
+	"messenger/messenger/internal/application/user_id"
 	"messenger/messenger/internal/domain/event"
 	"messenger/messenger/internal/domain/message"
-	"messenger/messenger/internal/platform/user_id"
 )
 
 type Handler struct {
@@ -19,7 +19,7 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 
 	userID, _ := user_id.FromContext(ctx)
 
-	message, messageCreated, _ := message.NewMessage(
+	message, messageCreated := message.NewMessage(
 		h.messageRepository.NextID(),
 		command.MessageBody,
 		command.ChatID,

@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
-	"messenger/messenger/internal/application/command"
-	"messenger/messenger/internal/platform/http_server"
-	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/jackc/pgx/v5"
+
+	"messenger/messenger/internal/platform/commandbus"
+	"messenger/messenger/internal/platform/config"
+	"messenger/messenger/internal/platform/di"
+	"messenger/messenger/internal/platform/http_server"
+	// "net/http"
+	// "github.com/go-chi/chi/v5"
+	// "github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -17,14 +21,24 @@ func main() {
 }
 
 func run() error {
-	commandBus := new(command.Bus)
-	commandBus.Register()
+	// commandBus := new(command.Bus)
+	// commandBus.Register()
 
-	httpServer := http_server.NewServer()
+	cfg := config.Init()
+	container := di.InitContainer(cfg)
+
+	commandBus := commandbus.BuildCommandBus(
+		container.TxManager,
+		container.SendMessageHandler,
+	)
+
+	httpServer := http_server.NewServer(commandBus)
 
 	if err := httpServer.Run(); err != nil {
 		return err
 	}
+
+	return nil
 
 	// r := chi.NewRouter()
 	// r.Use(middleware.Logger)

@@ -6,7 +6,7 @@ import (
 )
 
 type txManager interface {
-	WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+	WithTransaction(ctx context.Context, fn func(context.Context) error) error
 }
 
 type TransactionMiddlewareContainer struct {
@@ -20,13 +20,14 @@ func NewTransactionMiddlewareContainer(txManager txManager) *TransactionMiddlewa
 }
 
 func (c *TransactionMiddlewareContainer) Middleware(next command.Handler) command.Handler {
-	return command.HandlerFunc(func(ctx context.Context, command command.Command) (any, error) {
-		var response any
-		err := c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
-			var err error
+	return command.HandlerFunc(func(ctx context.Context, command command.Command) (response any, err error) {
+		// var response any
+		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
+			// var err error
 			response, err = next.Handle(ctx, command)
 			return err
 		})
-		return response, err
+		return
+		// return response, err
 	})
 }

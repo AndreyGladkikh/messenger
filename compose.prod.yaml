@@ -1,4 +1,15 @@
 services:
   app:
+    depends_on:
+      - postgres
     build:
+      context: ./
+      dockerfile: ./docker/app/Dockerfile
       target: build-release-prod
+    networks:
+      - mynet
+    ports:
+      - 50051:50051
+    deploy:
+      restart_policy:
+        condition: on-failure

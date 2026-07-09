@@ -8,7 +8,7 @@ type Command interface {
 }
 
 type Handler interface {
-	Handle(ctx context.Context, command Command) (any, error)
+	Handle(context.Context, Command) (any, error)
 }
 
 type HandlerMiddleware func(next Handler) Handler
@@ -19,4 +19,13 @@ func (f HandlerFunc) Handle(ctx context.Context, command Command) (any, error) {
 	return f(ctx, command)
 }
 
-// type HandlerFuncMiddleware func(next HandlerFunc) HandlerFunc
+
+
+
+
+
+// 
+
+type CommandHandler[T Command] interface {
+	Handle(context.Context, T) (any, error)
+}

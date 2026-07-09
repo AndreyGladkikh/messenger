@@ -22,7 +22,7 @@ func NewMessage(
 	senderID string,
 	recipientID string,
 	replyToMessageID string,
-) (*Message, MessageCreated, error) {
+) (*Message, MessageCreated) {
 	m := new(Message)
 	m.id = id
 	m.SetBody(body)
@@ -37,7 +37,7 @@ func NewMessage(
 
 	return m, MessageCreated{
 		MessageID: id,
-	}, nil
+	}
 }
 
 func (m *Message) SetBody(body string) error {

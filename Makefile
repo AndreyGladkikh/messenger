@@ -6,17 +6,11 @@ all: up_prod
 help:
 	@echo "help"
 
-up_local:
-	docker compose -f compose.yaml -f compose.dev.yaml up -d --build postgres
+up:
+	docker compose -f compose.yaml up -d --build
 
-down_local:
-	docker compose -f compose.yaml -f compose.dev.yaml down --remove-orphans
-
-up_dev:
-	docker compose -f compose.yaml -f compose.dev.yaml up -d --build
-
-down_dev:
-	docker compose -f compose.yaml -f compose.dev.yaml down --remove-orphans
+down:
+	docker compose -f compose.yaml down --remove-orphans
 
 up_prod:
 	docker compose -f compose.yaml -f compose.prod.yaml up -d --build

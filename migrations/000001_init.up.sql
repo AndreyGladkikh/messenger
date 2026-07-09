@@ -3,16 +3,15 @@ CREATE TABLE chats(
     type TEXT NOT NULL,
     name TEXT,
     created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now(),
     deleted_at TIMESTAMP
 );
 
 CREATE TABLE chat_participants(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     chat_id UUID REFERENCES chats ON DELETE CASCADE,
     participant_id UUID NOT NULL,
     role TEXT NOT NULL,
-    joined_at timestamp NOT NULL,
-    PRIMARY KEY (chat_id, participant_id)
+    joined_at timestamp NOT NULL
 );
 
 CREATE TABLE messages(
@@ -20,7 +19,7 @@ CREATE TABLE messages(
     sender_id UUID NOT NULL,
     chat_id UUID NOT NULL REFERENCES chats ON DELETE CASCADE,
     body TEXT NOT NULL,
-    response_to_message_id UUID REFERENCES messages,
+    reply_to_message_id UUID REFERENCES messages,
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now(),
     deleted_at TIMESTAMP
@@ -35,8 +34,8 @@ CREATE TABLE files(
 );
 
 CREATE TABLE messages_files(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     message_id UUID REFERENCES messages ON DELETE CASCADE,
     file_id UUID REFERENCES files ON DELETE CASCADE,
-    name TEXT,
-    PRIMARY KEY (message_id, file_id)
+    name TEXT
 );
