@@ -2,11 +2,13 @@ package send_message
 
 import (
 	"context"
+	"messenger/messenger/internal/application/id"
 	"messenger/messenger/internal/domain/message"
 )
 
 type Handler struct {
 	messageRepository message.Repository
+	idProvider id.Provider
 }
 
 func (h *Handler) Handle(ctx context.Context, command *Command) (response any, err error) {
@@ -16,10 +18,9 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 	}
 
 	message := message.Send(
-		h.messageRepository.NextID(),
+		h.idProvider.ID(),
 		command.ChatID,
 		command.SenderID,
-		command.RecipientID,
 		command.MessageBody,
 		command.ReplyToMessageID,
 	)

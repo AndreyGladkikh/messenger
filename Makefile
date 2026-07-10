@@ -45,3 +45,6 @@ migration_up:
 
 migration_down:
 	docker run -v $(shell pwd)/migrations:/migrations --network host migrate/migrate -path=/migrations/ -database postgres://app:secret@localhost:5432/app?sslmode=disable down -all
+
+queries:
+	sqlc generate

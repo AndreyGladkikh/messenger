@@ -1,10 +1,31 @@
 package chat
 
-import "messenger/messenger/internal/domain/chat_participant"
-
 type Chat struct {
-	id string
-	typ ChatType
-	name string
-	participants []chat_participant.ChatParticipant
+	id           string
+	typ          ChatType
+	name         string
+}
+
+func (c *Chat) ID() string {
+	return c.id
+}
+
+func (c *Chat) SetID(id string) {
+	c.id = id
+}
+
+func (c *Chat) Type() ChatType {
+	return c.typ
+}
+
+func (c *Chat) SetType(typ ChatType) {
+	c.typ = typ
+}
+
+func (c *Chat) Name() string {
+	return c.name
+}
+
+func (c *Chat) SetName(name string) {
+	c.name = name
 }

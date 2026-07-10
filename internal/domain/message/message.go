@@ -12,7 +12,6 @@ type Message struct {
 	body             string
 	senderID         string
 	chatID           string
-	recipientID      string
 	replyToMessageID string
 	attachments      []*file.File
 }
@@ -21,7 +20,6 @@ func Send(
 	messageID string,
 	chatID string,
 	senderID string,
-	recipientID string,
 	body string,
 	replyToMessageID string,
 ) *Message {
@@ -30,13 +28,29 @@ func Send(
 	m.SetBody(body)
 	m.SetSenderID(senderID)
 	m.SetChatID(chatID)
-	m.SetRecipientID(recipientID)
 	m.SetReplyToMessageID(replyToMessageID)
 
 	m.AddEvent(MessageSent{
 		MessageID: messageID,
 		ChatID:    chatID,
 	})
+
+	return m
+}
+
+func Rehydrate(
+	id string,
+	chatID string,
+	senderID string,
+	body string,
+	replyToMessageID string,
+) *Message {
+	m := new(Message)
+	m.id = id
+	m.body = body
+	m.senderID = senderID
+	m.chatID = chatID
+	m.replyToMessageID = replyToMessageID
 
 	return m
 }
@@ -59,12 +73,6 @@ func (m *Message) SetChatID(chatID string) error {
 	return nil
 }
 
-func (m *Message) SetRecipientID(recipientID string) error {
-	m.recipientID = recipientID
-
-	return nil
-}
-
 func (m *Message) SetReplyToMessageID(messageID string) error {
 	m.replyToMessageID = messageID
 
@@ -79,4 +87,24 @@ func (m *Message) AddAttachment(file *file.File) error {
 
 func (m *Message) ID() string {
 	return m.id
+}
+
+func (m *Message) Body() string {
+	return m.body
+}
+
+func (m *Message) SenderID() string {
+	return m.senderID
+}
+
+func (m *Message) ChatID() string {
+	return m.chatID
+}
+
+func (m *Message) ReplyToMessageID() string {
+	return m.replyToMessageID
+}
+
+func (m *Message) Attachments() []*file.File {
+	return m.attachments
 }
