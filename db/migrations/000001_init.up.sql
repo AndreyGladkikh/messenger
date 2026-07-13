@@ -43,16 +43,17 @@ CREATE TABLE messages_files(
 CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type TEXT NOT NULL,
-    event_payload JSONB DEFAULT NULL,
-    published_at TIMESTAMP WITH TIME ZONE,
-    handled_at TIMESTAMP WITH TIME ZONE
+    event_payload JSONB,
+    published_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    processed_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE event_handler_executions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type TEXT NOT NULL,
-    event_payload JSONB DEFAULT NULL,
+    event_payload JSONB,
     handler_type TEXT NOT NULL,
-    error TEXT DEFAULT NULL,
-    retry_count INT DEFAULT 0
+    error TEXT,
+    attempts INT,
+    next_retry_at TIMESTAMP WITH TIME ZONE
 );

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	_ "github.com/jackc/pgx/v5"
@@ -24,8 +25,10 @@ func run() error {
 	// commandBus := new(command.Bus)
 	// commandBus.Register()
 
+	ctx := context.Background()
+
 	cfg := config.Init()
-	container := di.InitContainer(cfg)
+	container := di.InitContainer(ctx, cfg)
 
 	commandBus := commandbus.BuildCommandBus(
 		container.TxManager,
