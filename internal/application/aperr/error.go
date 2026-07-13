@@ -1,4 +1,4 @@
-package apperr
+package aperr
 
 import (
 	"errors"
