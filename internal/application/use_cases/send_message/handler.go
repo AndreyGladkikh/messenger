@@ -11,6 +11,16 @@ type Handler struct {
 	idProvider id.Provider
 }
 
+func NewHandler(
+	messageRepository message.Repository,
+	idProvider id.Provider,
+) *Handler {
+	return &Handler{
+		messageRepository: messageRepository,
+		idProvider: idProvider,
+	}
+}
+
 func (h *Handler) Handle(ctx context.Context, command *Command) (response any, err error) {
 	chatID := command.ChatID
 	if chatID == "" {

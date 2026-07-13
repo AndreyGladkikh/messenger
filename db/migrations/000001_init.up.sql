@@ -39,3 +39,20 @@ CREATE TABLE messages_files(
     file_id UUID REFERENCES files ON DELETE CASCADE,
     name TEXT
 );
+
+CREATE TABLE outbox(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type TEXT NOT NULL,
+    event_payload JSONB DEFAULT NULL,
+    published_at TIMESTAMP WITH TIME ZONE,
+    handled_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE event_handler_executions(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type TEXT NOT NULL,
+    event_payload JSONB DEFAULT NULL,
+    handler_type TEXT NOT NULL,
+    error TEXT DEFAULT NULL,
+    retry_count INT DEFAULT 0
+);

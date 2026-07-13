@@ -5,6 +5,7 @@ import (
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
+	"messenger/messenger/internal/adapters/out/uuid"
 	"messenger/messenger/internal/application/use_cases/send_message"
 	"messenger/messenger/internal/domain/message"
 	"messenger/messenger/internal/platform/config"
@@ -33,12 +34,14 @@ func InitContainer(ctx context.Context, cfg *config.Config) *Container {
 
 	txManager := transaction.NewManager(db)
 
+	idProvider := new(uuid.Provider)
+
 	messageRepository := repositories.NewMessageRepository(db, qs)
 
 	return &Container{
 		TxManager: txManager,
 
-		SendMessageHandler: send_message.NewHandler(qs, txManager),
+		SendMessageHandler: send_message.NewHandler(messageRepository, idProvider),
 
 		MessageRepository: messageRepository,
 	}

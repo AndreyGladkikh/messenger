@@ -15,8 +15,16 @@ type ChatRepository struct {
 }
 
 func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
-	id, err := uuid.Parse(chat.ID)
-	
+	id, err := uuid.Parse(chat.ID())
+	if err != nil {
+		return err
+	}
+	name := sql.NullString{String: chat.Name(), Valid: chat.Name() != ""}	
 
-	r.qs.CreateChat(ctx, queries.CreateChatParams{})
+	err = r.qs.CreateChat(ctx, queries.CreateChatParams{
+		ID: id,
+		Type: string(chat.Type()),
+		Name: name,
+	})
+	return err
 }
