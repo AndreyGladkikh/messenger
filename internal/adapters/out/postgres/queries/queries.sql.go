@@ -97,6 +97,44 @@ func (q *Queries) ListChatsForUser(ctx context.Context, arg ListChatsForUserPara
 	return items, nil
 }
 
+const listEventHandlerExecutions = `-- name: ListEventHandlerExecutions :many
+SELECT id, event_type, event_payload, handler_type, attempts, error, next_retry_at FROM event_handler_executions
+WHERE error IS NOT NULL
+AND next_retry_at >= now()
+LIMIT 100
+`
+
+func (q *Queries) ListEventHandlerExecutions(ctx context.Context) ([]EventHandlerExecution, error) {
+	rows, err := q.db.QueryContext(ctx, listEventHandlerExecutions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []EventHandlerExecution
+	for rows.Next() {
+		var i EventHandlerExecution
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventType,
+			&i.EventPayload,
+			&i.HandlerType,
+			&i.Attempts,
+			&i.Error,
+			&i.NextRetryAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMessagesForChat = `-- name: ListMessagesForChat :many
 SELECT id, sender_id, chat_id, body, reply_to_message_id, created_at, updated_at, deleted_at FROM messages
 WHERE chat_id = $1
@@ -129,6 +167,42 @@ func (q *Queries) ListMessagesForChat(ctx context.Context, arg ListMessagesForCh
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUnprocessedEvents = `-- name: ListUnprocessedEvents :many
+SELECT id, event_type, event_payload, published_at, processed_at FROM outbox
+WHERE processed_at IS NULL
+ORDER BY published_at
+LIMIT 100
+`
+
+func (q *Queries) ListUnprocessedEvents(ctx context.Context) ([]Outbox, error) {
+	rows, err := q.db.QueryContext(ctx, listUnprocessedEvents)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Outbox
+	for rows.Next() {
+		var i Outbox
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventType,
+			&i.EventPayload,
+			&i.PublishedAt,
+			&i.ProcessedAt,
 		); err != nil {
 			return nil, err
 		}

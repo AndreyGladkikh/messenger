@@ -2,11 +2,11 @@ package apperr
 
 import (
 	"errors"
-	"messenger/messenger/internal/domain/domainerr"
+	"messenger/messenger/internal/domain/derr"
 )
 
 type Error struct {
-	Code string
+	Code    string
 	Message string
 	Details []any
 	Wrapped error
@@ -25,7 +25,7 @@ func Translate(err error) *Error {
 		Wrapped: err,
 	}
 
-	if errors.Is(err, domainerr.ErrNotFound) {
+	if errors.Is(err, derr.ErrNotFound) {
 		e.Code = "NOT_FOUND"
 		e.Message = "Ресурс не найден"
 	}

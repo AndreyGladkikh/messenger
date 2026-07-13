@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 type Chat struct {
@@ -25,6 +26,16 @@ type ChatParticipant struct {
 	ParticipantID uuid.UUID
 	Role          string
 	JoinedAt      time.Time
+}
+
+type EventHandlerExecution struct {
+	ID           uuid.UUID
+	EventType    string
+	EventPayload pqtype.NullRawMessage
+	HandlerType  string
+	Attempts     sql.NullInt32
+	Error        sql.NullString
+	NextRetryAt  sql.NullTime
 }
 
 type File struct {
@@ -51,4 +62,12 @@ type MessagesFile struct {
 	MessageID uuid.NullUUID
 	FileID    uuid.NullUUID
 	Name      sql.NullString
+}
+
+type Outbox struct {
+	ID           uuid.UUID
+	EventType    string
+	EventPayload pqtype.NullRawMessage
+	PublishedAt  sql.NullTime
+	ProcessedAt  sql.NullTime
 }

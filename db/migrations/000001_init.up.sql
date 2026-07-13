@@ -53,7 +53,7 @@ CREATE TABLE event_handler_executions(
     event_type TEXT NOT NULL,
     event_payload JSONB,
     handler_type TEXT NOT NULL,
-    error TEXT,
     attempts INT,
+    error TEXT,
     next_retry_at TIMESTAMP WITH TIME ZONE
 );
