@@ -1,9 +1,20 @@
 package config
 
 type Config struct {
-
+	Env   string
+	DB    DatabaseConfig
+	Cache DatabaseConfig
 }
 
-func Init() *Config {
+type DatabaseConfig struct {
+	Driver string
+	DSN string
+}
+
+type CacheConfig struct {
+	DSN string
+}
+
+func Load() *Config {
 	return &Config{}
 }

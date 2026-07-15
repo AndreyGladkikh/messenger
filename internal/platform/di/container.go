@@ -50,7 +50,7 @@ func NewContainer(
 // var instance *Container
 
 func InitContainer(ctx context.Context, cfg *config.Config) *Container {
-	db, cleanup, err := postgres.NewPool(ctx)
+	db, cleanup, err := postgres.NewPool(ctx, cfg)
 	if err != nil {
 		panic(err)
 	}

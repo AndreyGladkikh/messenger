@@ -17,7 +17,7 @@ func main() {
 func run() error {
 	ctx := context.Background()
 
-	cfg := config.Init()
+	cfg := config.Load()
 	container := di.InitContainer(ctx, cfg)
 
 	eventBus := container.EventBus

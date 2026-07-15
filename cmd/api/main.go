@@ -27,8 +27,9 @@ func run() error {
 
 	ctx := context.Background()
 
-	cfg := config.Init()
-	container := di.InitContainer(ctx, cfg)
+	cfg := config.Load()
+	// cfg := config.Init()
+	container, cleanup, err := di.InitializeContainer(ctx)
 
 	commandBus := command_bus.BuildCommandBus(
 		container.TxManager,

@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"messenger/messenger/internal/platform/config"
 	"time"
 )
 
-func NewPool(ctx context.Context) (*sql.DB, func(), error) {
-	pool, err := sql.Open("pgx", "postgres://app:secret@postgres:5432/app")
+func NewPool(ctx context.Context, cfg *config.Config) (*sql.DB, func(), error) {
+	pool, err := sql.Open(cfg.DB.Driver, cfg.DB.DSN)
+	// pool, err := sql.Open("pgx", "postgres://app:secret@postgres:5432/app")
 	if err != nil {
 		return nil, nil, err
 	}
