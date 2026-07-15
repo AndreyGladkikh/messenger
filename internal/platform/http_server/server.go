@@ -2,8 +2,8 @@ package http_server
 
 import (
 	"encoding/json"
-	"messenger/messenger/internal/application/command"
 	"messenger/messenger/internal/application/command/send_message"
+	"messenger/messenger/internal/platform/command"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"

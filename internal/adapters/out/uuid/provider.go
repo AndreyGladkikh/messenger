@@ -6,6 +6,10 @@ type Provider struct {
 
 }
 
+func NewProvider() *Provider {
+	return new(Provider)
+}
+
 func (p *Provider) ID() string {
 	return uuid.NewString()
 }

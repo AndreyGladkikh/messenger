@@ -11,7 +11,9 @@ type Bus struct {
 }
 
 func NewBus() *Bus {
-	return &Bus{}
+	return &Bus{
+		handlers: make(map[string]map[string]Handler),
+	}
 }
 
 func (b *Bus) Register(ctx context.Context, e Event, h Handler) {
@@ -24,13 +26,6 @@ func (b *Bus) Register(ctx context.Context, e Event, h Handler) {
 		b.handlers[e.Name()] = make(map[string]Handler, 0)
 	}
 	b.handlers[e.Name()][h.Name()] = h
-
-	// eHandlers, ok := b.handlers[e.Name()]
-	// if !ok {
-	// 	eHandlers = make(map[string]Handler, 0)
-	// }
-	// eHandlers = append(eHandlers, h)
-	// b.handlers[e.Name()] = eHandlers
 }
 
 func (b *Bus) Dispatch(ctx context.Context, e Event) error {
@@ -77,8 +72,4 @@ type Event interface {
 type Handler interface {
 	Handle(context.Context, Event) error
 	Name() string
-}
-
-func handleEvent(ctx context.Context) {
-	
 }

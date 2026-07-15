@@ -2,19 +2,20 @@ package middlewares
 
 import (
 	"context"
-	"messenger/messenger/internal/application/command"
+	"messenger/messenger/internal/adapters/out/postgres/transaction"
+	"messenger/messenger/internal/platform/command"
 	"messenger/messenger/internal/platform/uow"
 )
 
-type txManager interface {
-	WithTransaction(ctx context.Context, fn func(context.Context) error) error
-}
+// type txManager interface {
+// 	WithTransaction(ctx context.Context, fn func(context.Context) error) error
+// }
 
 type TransactionMiddlewareContainer struct {
-	txManager txManager
+	txManager *transaction.Manager
 }
 
-func NewTransactionMiddlewareContainer(txManager txManager) *TransactionMiddlewareContainer {
+func NewTransactionMiddlewareContainer(txManager *transaction.Manager) *TransactionMiddlewareContainer {
 	return &TransactionMiddlewareContainer{
 		txManager: txManager,
 	}

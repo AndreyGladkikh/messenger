@@ -5,14 +5,15 @@ import (
 	"fmt"
 )
 
-// type CommandBus[C use_cases.Command, R any] interface {
-// 	Register(command use_cases.Command, handler use_cases.Handler[C, R]) error
-// 	Dispatch(command C) (R, error)
-// }
-
 type Bus struct {
 	handlers    map[string]Handler
 	middlewares []HandlerMiddleware
+}
+
+func NewBus() *Bus {
+	return &Bus{
+		handlers: make(map[string]Handler),
+	}
 }
 
 func (b *Bus) Register(command Command, handler Handler) error {
