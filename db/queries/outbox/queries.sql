@@ -1,5 +1,5 @@
--- name: ListUnprocessedEvents :many
-SELECT * FROM outbox
-WHERE processed_at IS NULL
-ORDER BY published_at
-LIMIT 100;
+-- -- name: ListUnprocessedEvents :many
+-- SELECT * FROM outbox
+-- WHERE processed_at IS NULL
+-- ORDER BY published_at
+-- LIMIT 100;

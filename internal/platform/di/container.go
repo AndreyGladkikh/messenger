@@ -8,10 +8,10 @@ import (
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/adapters/out/uuid"
 	"messenger/messenger/internal/application/command"
+	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/event"
-	"messenger/messenger/internal/application/use_cases/send_message"
 	"messenger/messenger/internal/domain/message"
-	"messenger/messenger/internal/platform/commandbus"
+	"messenger/messenger/internal/platform/command_bus"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/postgres"
 )
@@ -48,7 +48,7 @@ func InitContainer(ctx context.Context, cfg *config.Config) *Container {
 
 	sendMessageHandler := send_message.NewHandler(messageRepository, idProvider)
 
-	commandBus := commandbus.BuildCommandBus(txManager, sendMessageHandler)
+	commandBus := command_bus.BuildCommandBus(txManager, sendMessageHandler)
 	eventBus := event.NewBus()
 
 	return &Container{

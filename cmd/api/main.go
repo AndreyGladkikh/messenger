@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5"
 
-	"messenger/messenger/internal/platform/commandbus"
+	"messenger/messenger/internal/platform/command_bus"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/di"
 	"messenger/messenger/internal/platform/http_server"
@@ -30,7 +30,7 @@ func run() error {
 	cfg := config.Init()
 	container := di.InitContainer(ctx, cfg)
 
-	commandBus := commandbus.BuildCommandBus(
+	commandBus := command_bus.BuildCommandBus(
 		container.TxManager,
 		container.SendMessageHandler,
 	)

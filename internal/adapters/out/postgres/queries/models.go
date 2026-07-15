@@ -28,14 +28,21 @@ type ChatParticipant struct {
 	JoinedAt      time.Time
 }
 
-type EventHandlerExecution struct {
+type Event struct {
 	ID           uuid.UUID
 	EventType    string
 	EventPayload pqtype.NullRawMessage
-	HandlerType  string
-	Attempts     sql.NullInt32
-	Error        sql.NullString
-	NextRetryAt  sql.NullTime
+	OccurredAt   sql.NullTime
+	ProcessedAt  sql.NullTime
+}
+
+type EventHandlerExecution struct {
+	ID          uuid.UUID
+	EventID     uuid.UUID
+	HandlerType string
+	Attempts    int32
+	Error       sql.NullString
+	NextRetryAt sql.NullTime
 }
 
 type File struct {
@@ -66,6 +73,7 @@ type MessagesFile struct {
 
 type Outbox struct {
 	ID           uuid.UUID
+	EventID      uuid.NullUUID
 	EventType    string
 	EventPayload pqtype.NullRawMessage
 	PublishedAt  sql.NullTime

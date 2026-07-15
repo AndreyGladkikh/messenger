@@ -29,6 +29,67 @@ func (q *Queries) GetChat(ctx context.Context, id uuid.UUID) (Chat, error) {
 	return i, err
 }
 
+const getEventHandlerExecutionByEventId = `-- name: GetEventHandlerExecutionByEventId :one
+SELECT id, event_id, handler_type, attempts, error, next_retry_at FROM event_handler_executions
+WHERE event_id = $1
+AND handler_type = $2
+LIMIT 1
+`
+
+type GetEventHandlerExecutionByEventIdParams struct {
+	EventID     uuid.UUID
+	HandlerType string
+}
+
+func (q *Queries) GetEventHandlerExecutionByEventId(ctx context.Context, arg GetEventHandlerExecutionByEventIdParams) (EventHandlerExecution, error) {
+	row := q.db.QueryRowContext(ctx, getEventHandlerExecutionByEventId, arg.EventID, arg.HandlerType)
+	var i EventHandlerExecution
+	err := row.Scan(
+		&i.ID,
+		&i.EventID,
+		&i.HandlerType,
+		&i.Attempts,
+		&i.Error,
+		&i.NextRetryAt,
+	)
+	return i, err
+}
+
+const getEventHandlerExecutionsByEventId = `-- name: GetEventHandlerExecutionsByEventId :many
+SELECT id, event_id, handler_type, attempts, error, next_retry_at FROM event_handler_executions
+WHERE event_id = $1
+`
+
+func (q *Queries) GetEventHandlerExecutionsByEventId(ctx context.Context, eventID uuid.UUID) ([]EventHandlerExecution, error) {
+	rows, err := q.db.QueryContext(ctx, getEventHandlerExecutionsByEventId, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []EventHandlerExecution
+	for rows.Next() {
+		var i EventHandlerExecution
+		if err := rows.Scan(
+			&i.ID,
+			&i.EventID,
+			&i.HandlerType,
+			&i.Attempts,
+			&i.Error,
+			&i.NextRetryAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMessage = `-- name: GetMessage :one
 SELECT id, sender_id, chat_id, body, reply_to_message_id, created_at, updated_at, deleted_at FROM messages
 WHERE id = $1 LIMIT 1
@@ -98,7 +159,7 @@ func (q *Queries) ListChatsForUser(ctx context.Context, arg ListChatsForUserPara
 }
 
 const listEventHandlerExecutions = `-- name: ListEventHandlerExecutions :many
-SELECT id, event_type, event_payload, handler_type, attempts, error, next_retry_at FROM event_handler_executions
+SELECT id, event_id, handler_type, attempts, error, next_retry_at FROM event_handler_executions
 WHERE error IS NOT NULL
 AND next_retry_at >= now()
 LIMIT 100
@@ -115,8 +176,7 @@ func (q *Queries) ListEventHandlerExecutions(ctx context.Context) ([]EventHandle
 		var i EventHandlerExecution
 		if err := rows.Scan(
 			&i.ID,
-			&i.EventType,
-			&i.EventPayload,
+			&i.EventID,
 			&i.HandlerType,
 			&i.Attempts,
 			&i.Error,
@@ -182,26 +242,26 @@ func (q *Queries) ListMessagesForChat(ctx context.Context, arg ListMessagesForCh
 }
 
 const listUnprocessedEvents = `-- name: ListUnprocessedEvents :many
-SELECT id, event_type, event_payload, published_at, processed_at FROM outbox
+SELECT id, event_type, event_payload, occurred_at, processed_at FROM events
 WHERE processed_at IS NULL
-ORDER BY published_at
+ORDER BY occurred_at
 LIMIT 100
 `
 
-func (q *Queries) ListUnprocessedEvents(ctx context.Context) ([]Outbox, error) {
+func (q *Queries) ListUnprocessedEvents(ctx context.Context) ([]Event, error) {
 	rows, err := q.db.QueryContext(ctx, listUnprocessedEvents)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Outbox
+	var items []Event
 	for rows.Next() {
-		var i Outbox
+		var i Event
 		if err := rows.Scan(
 			&i.ID,
 			&i.EventType,
 			&i.EventPayload,
-			&i.PublishedAt,
+			&i.OccurredAt,
 			&i.ProcessedAt,
 		); err != nil {
 			return nil, err

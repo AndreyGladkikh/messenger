@@ -40,6 +40,37 @@ func (q *Queries) CreateChat(ctx context.Context, arg CreateChatParams) error {
 	return err
 }
 
+const createEventHandlerExecution = `-- name: CreateEventHandlerExecution :one
+INSERT INTO event_handler_executions (
+  id,
+  event_id,
+  handler_type
+) VALUES (
+  $1, $2, $3
+)
+RETURNING id, event_id, handler_type, attempts, error, next_retry_at
+`
+
+type CreateEventHandlerExecutionParams struct {
+	ID          uuid.UUID
+	EventID     uuid.UUID
+	HandlerType string
+}
+
+func (q *Queries) CreateEventHandlerExecution(ctx context.Context, arg CreateEventHandlerExecutionParams) (EventHandlerExecution, error) {
+	row := q.db.QueryRowContext(ctx, createEventHandlerExecution, arg.ID, arg.EventID, arg.HandlerType)
+	var i EventHandlerExecution
+	err := row.Scan(
+		&i.ID,
+		&i.EventID,
+		&i.HandlerType,
+		&i.Attempts,
+		&i.Error,
+		&i.NextRetryAt,
+	)
+	return i, err
+}
+
 const createMessage = `-- name: CreateMessage :exec
 INSERT INTO messages (
     id,
@@ -103,6 +134,47 @@ type DeleteMessageParams struct {
 
 func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) error {
 	_, err := q.db.ExecContext(ctx, deleteMessage, arg.ID, arg.DeletedAt)
+	return err
+}
+
+const processEvent = `-- name: ProcessEvent :exec
+UPDATE events
+  set processed_at = $2
+WHERE id = $1
+`
+
+type ProcessEventParams struct {
+	ID          uuid.UUID
+	ProcessedAt sql.NullTime
+}
+
+func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) error {
+	_, err := q.db.ExecContext(ctx, processEvent, arg.ID, arg.ProcessedAt)
+	return err
+}
+
+const updateEventHandlerExecution = `-- name: UpdateEventHandlerExecution :exec
+UPDATE event_handler_executions
+  set attempts = $2,
+    error = $3,
+    next_retry_at = $4
+WHERE id = $1
+`
+
+type UpdateEventHandlerExecutionParams struct {
+	ID          uuid.UUID
+	Attempts    int32
+	Error       sql.NullString
+	NextRetryAt sql.NullTime
+}
+
+func (q *Queries) UpdateEventHandlerExecution(ctx context.Context, arg UpdateEventHandlerExecutionParams) error {
+	_, err := q.db.ExecContext(ctx, updateEventHandlerExecution,
+		arg.ID,
+		arg.Attempts,
+		arg.Error,
+		arg.NextRetryAt,
+	)
 	return err
 }
 

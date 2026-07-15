@@ -40,20 +40,19 @@ CREATE TABLE messages_files(
     name TEXT
 );
 
-CREATE TABLE outbox(
+CREATE TABLE events(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type TEXT NOT NULL,
     event_payload JSONB,
-    published_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    occurred_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     processed_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE event_handler_executions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_type TEXT NOT NULL,
-    event_payload JSONB,
+    event_id UUID NOT NULL REFERENCES events ON DELETE CASCADE,
     handler_type TEXT NOT NULL,
-    attempts INT,
+    attempts INT NOT NULL DEFAULT 0,
     error TEXT,
     next_retry_at TIMESTAMP WITH TIME ZONE
 );

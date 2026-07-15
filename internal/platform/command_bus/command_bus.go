@@ -1,11 +1,11 @@
-package commandbus
+package command_bus
 
 import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/application/command"
 	"messenger/messenger/internal/application/command/middlewares"
-	"messenger/messenger/internal/application/use_cases/send_message"
+	"messenger/messenger/internal/application/command/send_message"
 )
 
 func BuildCommandBus(

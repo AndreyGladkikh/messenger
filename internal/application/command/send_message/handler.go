@@ -8,7 +8,7 @@ import (
 
 type Handler struct {
 	messageRepository message.Repository
-	idProvider id.Provider
+	idProvider        id.Provider
 }
 
 func NewHandler(
@@ -17,7 +17,7 @@ func NewHandler(
 ) *Handler {
 	return &Handler{
 		messageRepository: messageRepository,
-		idProvider: idProvider,
+		idProvider:        idProvider,
 	}
 }
 
