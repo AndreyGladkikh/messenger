@@ -8,5 +8,5 @@ type Logger interface {
 
 type Log struct {
 	Message string
-	Code string
+	Code    string
 }

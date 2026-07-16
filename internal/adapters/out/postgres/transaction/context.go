@@ -9,7 +9,7 @@ type key int
 
 const txKey key = 0
 
-func NewContext(ctx context.Context, tx *sql.Tx) context.Context{
+func NewContext(ctx context.Context, tx *sql.Tx) context.Context {
 	return context.WithValue(ctx, txKey, tx)
 }
 

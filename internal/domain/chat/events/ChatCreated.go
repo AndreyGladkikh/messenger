@@ -3,8 +3,8 @@ package events
 import "time"
 
 type ChatCreated struct {
-	chatID string
-	userID string
+	chatID    string
+	userID    string
 	occuredAt *time.Time
 }
 
@@ -14,8 +14,8 @@ func NewChatCreated(
 	occuredAt *time.Time,
 ) ChatCreated {
 	return ChatCreated{
-		chatID: chatID,
-		userID: userID,
+		chatID:    chatID,
+		userID:    userID,
 		occuredAt: occuredAt,
 	}
 }

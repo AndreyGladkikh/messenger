@@ -6,10 +6,10 @@ import (
 )
 
 type Message struct {
-	Body string
-	ChatID string
+	Body             string
+	ChatID           string
 	ReplyToMessageID string
-	Attachments []*bytes.Buffer
+	Attachments      []*bytes.Buffer
 }
 
 func (m *Message) Bind(r *http.Request) error {

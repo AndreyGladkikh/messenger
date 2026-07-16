@@ -8,22 +8,31 @@ import (
 	"time"
 )
 
-func NewPool(ctx context.Context, cfg *config.Config) (*sql.DB, func(), error) {
-	pool, err := sql.Open(cfg.DB.Driver, cfg.DB.DSN)
+func NewPool(cfg *config.Config) (*sql.DB, func(), error) {
+	dsn := fmt.Sprintf(
+		"%s://%s:%s@%s:%s/%s",
+		cfg.Database.Schema,
+		cfg.Database.User,
+		cfg.Database.Pass,
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.Name,
+	)
+	pool, err := sql.Open(cfg.Database.Driver, dsn)
 	// pool, err := sql.Open("pgx", "postgres://app:secret@postgres:5432/app")
 	if err != nil {
 		return nil, nil, err
 	}
 
-	cleanup := func () {
+	cleanup := func() {
 		pool.Close()
 	}
 	pool.SetMaxOpenConns(50)
 	pool.SetMaxIdleConns(10)
-	pool.SetConnMaxLifetime(1*time.Hour)
-	pool.SetConnMaxIdleTime(5*time.Minute)
+	pool.SetConnMaxLifetime(1 * time.Hour)
+	pool.SetConnMaxIdleTime(5 * time.Minute)
 
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	if err := pool.PingContext(ctx); err != nil {

@@ -10,7 +10,7 @@ func (m MessageCreated) Name() string {
 
 type MessageSent struct {
 	MessageID string
-	ChatID string
+	ChatID    string
 }
 
 func (m MessageSent) Name() string {

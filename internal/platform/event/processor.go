@@ -13,15 +13,14 @@ import (
 )
 
 type ProcessorConfig struct {
-
 }
 
 type Processor struct {
-	logger logger.Logger
+	logger    logger.Logger
 	txManager *transaction.Manager
-	qs *queries.Queries
-	eventBus *Bus
-	cfg *ProcessorConfig
+	qs        *queries.Queries
+	eventBus  *Bus
+	cfg       *ProcessorConfig
 }
 
 func NewProcessor(
@@ -32,10 +31,10 @@ func NewProcessor(
 	cfg *ProcessorConfig,
 ) *Processor {
 	return &Processor{
-		logger: logger,
+		logger:    logger,
 		txManager: txManager,
-		qs: qs,
-		eventBus: eventBus,
+		qs:        qs,
+		eventBus:  eventBus,
 	}
 }
 
@@ -61,7 +60,7 @@ func (p *Processor) Run(ctx context.Context) error {
 			err := p.qs.ProcessEvent(ctx, queries.ProcessEventParams{
 				ID: e.ID,
 				ProcessedAt: sql.NullTime{
-					Time: time.Now(),
+					Time:  time.Now(),
 					Valid: true,
 				},
 			})
@@ -113,12 +112,12 @@ func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Even
 	}
 
 	updateParams := queries.UpdateEventHandlerExecutionParams{
-		ID: execution.ID,
+		ID:       execution.ID,
 		Attempts: execution.Attempts + 1,
 	}
 	if err != nil {
 		updateParams.Error = sql.NullString{String: err.Error(), Valid: true}
-		updateParams.NextRetryAt = sql.NullTime{Time: time.Now().Add(5*time.Minute), Valid: true}
+		updateParams.NextRetryAt = sql.NullTime{Time: time.Now().Add(5 * time.Minute), Valid: true}
 	} else {
 		updateParams.Error = sql.NullString{}
 		updateParams.NextRetryAt = sql.NullTime{}
@@ -131,7 +130,7 @@ func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Even
 
 func shouldExecuteHandler(handler Handler, handlerExecutions map[string]queries.EventHandlerExecution) bool {
 	var execution queries.EventHandlerExecution
-	
+
 	execution, ok := handlerExecutions[handler.Name()]
 	if !ok {
 		return true
@@ -163,8 +162,8 @@ func (p *Processor) getExecution(ctx context.Context, storedEvent queries.Event,
 	}
 
 	handlerExecution, err = p.qs.CreateEventHandlerExecution(ctx, queries.CreateEventHandlerExecutionParams{
-		ID: id,
-		EventID: storedEvent.ID,
+		ID:          id,
+		EventID:     storedEvent.ID,
 		HandlerType: handler.Name(),
 	})
 	if err != nil {

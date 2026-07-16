@@ -19,10 +19,10 @@ func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
 	if err != nil {
 		return err
 	}
-	name := sql.NullString{String: chat.Name(), Valid: chat.Name() != ""}	
+	name := sql.NullString{String: chat.Name(), Valid: chat.Name() != ""}
 
 	err = r.qs.CreateChat(ctx, queries.CreateChatParams{
-		ID: id,
+		ID:   id,
 		Type: string(chat.Type()),
 		Name: name,
 	})

@@ -1,0 +1,11 @@
+Database:
+  Driver: pgx
+  Schema: postgres
+  Host: localhost
+  Port: 5432
+  User: app
+  Pass: secret
+  Name: app
+
+HttpServer:
+  Addr: :3000

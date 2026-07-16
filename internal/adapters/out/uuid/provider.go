@@ -3,7 +3,6 @@ package uuid
 import "github.com/google/uuid"
 
 type Provider struct {
-
 }
 
 func NewProvider() *Provider {

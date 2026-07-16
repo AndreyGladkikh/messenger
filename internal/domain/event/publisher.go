@@ -29,9 +29,9 @@ type EventHandler func(event DomainEvent) error
 // }
 
 type EventPublisher struct {
-	mu sync.Mutex
+	mu          sync.Mutex
 	subscribers []EventSubscriber
-	handlers map[string][]EventHandler
+	handlers    map[string][]EventHandler
 }
 
 func newEventPublisher() *EventPublisher {

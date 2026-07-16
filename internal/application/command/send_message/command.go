@@ -3,11 +3,11 @@ package send_message
 import "bytes"
 
 type Command struct {
-	SenderID string
-	ChatID string
-	MessageBody string
+	SenderID         string
+	ChatID           string
+	MessageBody      string
 	ReplyToMessageID string
-	Attachments []*bytes.Buffer
+	Attachments      []*bytes.Buffer
 }
 
 func (c *Command) IsCommand() {}

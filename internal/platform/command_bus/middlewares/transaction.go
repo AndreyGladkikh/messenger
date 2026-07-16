@@ -3,7 +3,7 @@ package middlewares
 import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
-	"messenger/messenger/internal/platform/command"
+	"messenger/messenger/internal/platform/command_bus"
 	"messenger/messenger/internal/platform/uow"
 )
 
@@ -21,8 +21,8 @@ func NewTransactionMiddlewareContainer(txManager *transaction.Manager) *Transact
 	}
 }
 
-func (c *TransactionMiddlewareContainer) Middleware(next command.Handler) command.Handler {
-	return command.HandlerFunc(func(ctx context.Context, command command.Command) (response any, err error) {
+func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) command_bus.Handler {
+	return command_bus.HandlerFunc(func(ctx context.Context, command command_bus.Command) (response any, err error) {
 		uowo := uow.New()
 		ctx = uow.NewContext(ctx, uowo)
 

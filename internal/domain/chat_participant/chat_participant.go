@@ -1,7 +1,7 @@
 package chat_participant
 
 type ChatParticipant struct {
-	id string
+	id    string
 	login string
-	name string
+	name  string
 }

@@ -3,7 +3,7 @@ package event
 import "context"
 
 type Bus struct {
-	handlers map[string][]Handler
+	handlers    map[string][]Handler
 	middlewares []Middleware
 }
 

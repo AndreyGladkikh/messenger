@@ -1,9 +1,8 @@
-// +build wireinject
+//+build wireinject
 
 package di
 
 import (
-	"context"
 	"database/sql"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
@@ -12,44 +11,47 @@ import (
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/id"
 	"messenger/messenger/internal/domain/message"
-	"messenger/messenger/internal/platform/command"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
+	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/postgres"
 
 	"github.com/google/wire"
 )
 
-func InitializeContainer(ctx context.Context) (*Container, func(), error) {
+func InitializeApi() (*Container, func(), error) {
 	wire.Build(
-		// bindings
-        wire.Bind(new(id.Provider), new(*uuid.Provider)),
-
-        wire.Bind(new(queries.DBTX), new(*sql.DB)),
-
-        wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
-
 		NewContainer,
 
+		// bindings
+		wire.Bind(new(id.Provider), new(*uuid.Provider)),
+
+		wire.Bind(new(queries.DBTX), new(*sql.DB)),
+
+		wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
+
 		config.Load,
+
+		http_server.NewServer,
+		http_server.NewController,
 
 		// persistence
 		postgres.NewPool,
 		transaction.NewManager,
-        queries.New,
+		queries.New,
 
 		// buses
-		command.NewBus,
+		BuildCommandBusForApi,
 		event.NewBus,
 
 		// repositories
-        repositories.NewMessageRepository,
-        
+		repositories.NewMessageRepository,
+
 		// command handlers
 		send_message.NewHandler,
 
 		// other
-        uuid.NewProvider,
+		uuid.NewProvider,
 	)
 	return new(Container), func() {}, nil
 }

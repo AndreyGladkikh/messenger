@@ -6,7 +6,6 @@ import (
 )
 
 type NotifyChatParticipantsHandler struct {
-
 }
 
 func (h *NotifyChatParticipantsHandler) Handle(ctx context.Context, event message.MessageSent) error {

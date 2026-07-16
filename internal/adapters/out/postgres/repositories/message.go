@@ -40,10 +40,10 @@ func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
 	}
 
 	err = r.qs.CreateMessage(ctx, queries.CreateMessageParams{
-		ID: messageID,
+		ID:       messageID,
 		SenderID: senderID,
-		ChatID: chatID,
-		Body: m.Body(),
+		ChatID:   chatID,
+		Body:     m.Body(),
 		ReplyToMessageID: uuid.NullUUID{
 			UUID:  uuid.MustParse(m.ReplyToMessageID()),
 			Valid: m.ReplyToMessageID() != "",
@@ -63,12 +63,12 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 
 	chatUUID, err := uuid.Parse(chatID)
 	if err != nil {
-		return nil ,err
+		return nil, err
 	}
 
 	messageRows, err := r.qs.ListMessagesForChat(ctx, queries.ListMessagesForChatParams{
 		ChatID: chatUUID,
-		Limit: int32(limit),
+		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
 	if err != nil {

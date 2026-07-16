@@ -1,39 +1,40 @@
 package main
 
-import (
-	"context"
-	"fmt"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
-	"messenger/messenger/internal/platform/config"
-	"messenger/messenger/internal/platform/di"
-)
+// import (
+// 	"context"
+// 	"fmt"
+// 	"messenger/messenger/internal/adapters/out/postgres/queries"
+// 	"messenger/messenger/internal/platform/config"
+// 	"messenger/messenger/internal/platform/di"
+// )
 
-func main() {
-	if err := run(); err != nil {
-		fmt.Println(err)
-	}
-}
+// func main() {
+// 	if err := run(); err != nil {
+// 		fmt.Println(err)
+// 	}
+// }
 
-func run() error {
-	ctx := context.Background()
+// func run() error {
+// 	ctx := context.Background()
 
-	cfg := config.Load()
-	container := di.InitContainer(ctx, cfg)
+// 	cfg := config.Load()
+// 	container := di.InitContainer(ctx, cfg)
 
-	eventBus := container.EventBus
+// 	eventBus := container.EventBus
 
-	for {
-		q := queries.New(container.DB)
+// 	for {
+// 		q := queries.New(container.DB)
 
-		events, err := q.ListUnprocessedEvents(ctx)
-		if err != nil {
-			return err
-		}
+// 		events, err := q.ListUnprocessedEvents(ctx)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		for _, e := range events {
-			go eventBus.Dispatch(e)
-		}
-	}
+// 		for _, e := range events {
+// 			go eventBus.Dispatch(e)
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
+// 

@@ -1,26 +1,25 @@
 package di
 
 import (
-	"context"
 	"database/sql"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
-	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
-	"messenger/messenger/internal/adapters/out/uuid"
 	"messenger/messenger/internal/application/command/send_message"
+	"messenger/messenger/internal/application/logger"
 	"messenger/messenger/internal/domain/message"
-	"messenger/messenger/internal/platform/command"
 	"messenger/messenger/internal/platform/command_bus"
-	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
-	"messenger/messenger/internal/platform/postgres"
+	"messenger/messenger/internal/platform/http_server"
 )
 
 type Container struct {
 	DB        *sql.DB
 	TxManager *transaction.Manager
 
-	CommandBus *command.Bus
+	Logger logger.Logger
+
+	HttpServer *http_server.Server
+
+	CommandBus *command_bus.Bus
 	EventBus   *event.Bus
 
 	SendMessageHandler *send_message.Handler
@@ -31,10 +30,11 @@ type Container struct {
 func NewContainer(
 	db *sql.DB,
 	txManager *transaction.Manager,
-	commandBus *command.Bus,
+	commandBus *command_bus.Bus,
 	eventBus *event.Bus,
 	sendMessageHandler *send_message.Handler,
 	messageRepository message.Repository,
+	httpServer *http_server.Server,
 ) *Container {
 	return &Container{
 		DB:                 db,
@@ -43,46 +43,39 @@ func NewContainer(
 		EventBus:           eventBus,
 		SendMessageHandler: sendMessageHandler,
 		MessageRepository:  messageRepository,
+		HttpServer:  httpServer,
 	}
 }
 
-// var once sync.Once
-// var instance *Container
+// func InitContainer(ctx context.Context, cfg *config.Config) *Container {
+// 	db, cleanup, err := postgres.NewPool(ctx, cfg)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	defer cleanup()
 
-func InitContainer(ctx context.Context, cfg *config.Config) *Container {
-	db, cleanup, err := postgres.NewPool(ctx, cfg)
-	if err != nil {
-		panic(err)
-	}
-	defer cleanup()
+// 	qs := queries.New(db)
 
-	qs := queries.New(db)
+// 	txManager := transaction.NewManager(db)
 
-	txManager := transaction.NewManager(db)
+// 	idProvider := new(uuid.Provider)
 
-	idProvider := new(uuid.Provider)
+// 	messageRepository := repositories.NewMessageRepository(db, qs)
 
-	messageRepository := repositories.NewMessageRepository(db, qs)
+// 	sendMessageHandler := send_message.NewHandler(messageRepository, idProvider)
 
-	sendMessageHandler := send_message.NewHandler(messageRepository, idProvider)
+// 	commandBus := command_bus.BuildCommandBus(txManager, sendMessageHandler)
+// 	eventBus := event.NewBus()
 
-	commandBus := command_bus.BuildCommandBus(txManager, sendMessageHandler)
-	eventBus := event.NewBus()
+// 	return &Container{
+// 		DB:        db,
+// 		TxManager: txManager,
 
-	return &Container{
-		DB:        db,
-		TxManager: txManager,
+// 		CommandBus: commandBus,
+// 		EventBus:   eventBus,
 
-		CommandBus: commandBus,
-		EventBus:   eventBus,
+// 		SendMessageHandler: sendMessageHandler,
 
-		SendMessageHandler: sendMessageHandler,
-
-		MessageRepository: messageRepository,
-	}
-
-	// once.Do(func() {
-	// 	instance = &Container{}
-	// })
-	// return instance
-}
+// 		MessageRepository: messageRepository,
+// 	}
+// }

@@ -6,7 +6,7 @@ import (
 )
 
 type Bus struct {
-	handlers map[string]map[string]Handler
+	handlers    map[string]map[string]Handler
 	middlewares []Middleware
 }
 

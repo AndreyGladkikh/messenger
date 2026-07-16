@@ -1,9 +1,9 @@
 package chat
 
 type Chat struct {
-	id           string
-	typ          ChatType
-	name         string
+	id   string
+	typ  ChatType
+	name string
 }
 
 func (c *Chat) ID() string {

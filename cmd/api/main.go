@@ -3,16 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
+	"time"
 
 	_ "github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"messenger/messenger/internal/platform/command_bus"
-	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/di"
-	"messenger/messenger/internal/platform/http_server"
-	// "net/http"
-	// "github.com/go-chi/chi/v5"
-	// "github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -22,32 +20,40 @@ func main() {
 }
 
 func run() error {
-	// commandBus := new(command.Bus)
-	// commandBus.Register()
+	interruptCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	ctx := context.Background()
-
-	cfg := config.Load()
-	// cfg := config.Init()
-	container, cleanup, err := di.InitializeContainer(ctx)
-
-	commandBus := command_bus.BuildCommandBus(
-		container.TxManager,
-		container.SendMessageHandler,
-	)
-
-	httpServer := http_server.NewServer(commandBus)
-
-	if err := httpServer.Run(); err != nil {
+	api, cleanup, err := di.InitializeApi()
+	if err != nil {
 		return err
 	}
+	defer cleanup()
+
+	logger := api.Logger
+	httpServer := api.HttpServer
+
+	errCh := make(chan error)
+
+	go func() {
+		if err := httpServer.Run(); err != nil {
+			errCh <-err
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		fmt.Printf("errCh: %s", err.Error())
+		logger.Error("api error: %v", err)
+	case <-interruptCtx.Done():
+		fmt.Println("interruptCtx")
+	}
+	
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	httpServer.Shutdown(shutdownCtx)
+	fmt.Printf("shutdown")
 
 	return nil
-
-	// r := chi.NewRouter()
-	// r.Use(middleware.Logger)
-	// r.Get("/", func (w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("Hello World!"))
-	// })
-	// return http.ListenAndServe(":3000", r)
 }
