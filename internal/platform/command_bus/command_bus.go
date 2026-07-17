@@ -38,6 +38,10 @@ func (b *Bus) Dispatch(ctx context.Context, command Command) (any, error) {
 }
 
 func (b *Bus) Use(middleware Middleware) {
+	for c, h := range b.handlers {
+		b.handlers[c] = middleware(h)
+	}
+
 	b.middlewares = append(b.middlewares, middleware)
 }
 

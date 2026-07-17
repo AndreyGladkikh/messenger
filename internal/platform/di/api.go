@@ -16,6 +16,7 @@ func BuildCommandBusForApi(
 
 	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager)
 	bus.Use(txMiddlewareContainer.Middleware)
+	bus.Use(middlewares.ErrorTranslator)
 
 	bus.Register(&send_message.Command{}, command_bus.HandlerFunc(func(ctx context.Context, cmd command_bus.Command) (any, error) {
 		return sendMessageHandler.Handle(ctx, cmd.(*send_message.Command))

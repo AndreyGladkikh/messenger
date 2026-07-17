@@ -29,7 +29,6 @@ type EventHandler func(event DomainEvent) error
 // }
 
 type EventPublisher struct {
-	mu          sync.Mutex
 	subscribers []EventSubscriber
 	handlers    map[string][]EventHandler
 }
@@ -41,18 +40,12 @@ func newEventPublisher() *EventPublisher {
 }
 
 func (p *EventPublisher) Publish(e DomainEvent) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	for _, h := range p.handlers[e.Name()] {
 		h(e)
 	}
 }
 
 func (p *EventPublisher) Subscribe(h EventHandler, events ...DomainEvent) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	for _, e := range events {
 		handlers := p.handlers[e.Name()]
 		handlers = append(handlers, h)
