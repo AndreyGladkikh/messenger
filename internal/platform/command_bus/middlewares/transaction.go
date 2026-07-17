@@ -27,7 +27,6 @@ func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) co
 		ctx = uow.NewContext(ctx, uowo)
 
 		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
-			// var err error
 			response, err = next.Handle(ctx, command)
 			return err
 		})

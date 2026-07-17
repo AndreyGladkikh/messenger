@@ -7,6 +7,7 @@
 package di
 
 import (
+	"messenger/messenger/internal/adapters/out/logger"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
@@ -15,7 +16,6 @@ import (
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
-	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
 )
 
@@ -28,16 +28,16 @@ func InitializeApi() (*Container, func(), error) {
 		return nil, nil, err
 	}
 	manager := transaction.NewManager(db)
+	loggerLogger := logger.New()
 	queriesQueries := queries.New(db)
 	messageRepository := repositories.NewMessageRepository(db, queriesQueries)
 	provider := uuid.NewProvider()
 	handler := send_message.NewHandler(messageRepository, provider)
-	bus := BuildCommandBusForApi(manager, handler)
+	bus := BuildCommandBusForApi(manager, loggerLogger, handler)
 	eventBus := event.NewBus()
 	controller := http_server.NewController(bus)
 	server := http_server.NewServer(configConfig, controller)
-	slogLogger := logger.NewLogger()
-	container := NewContainer(db, manager, bus, eventBus, handler, messageRepository, server, slogLogger)
+	container := NewContainer(db, manager, bus, eventBus, handler, messageRepository, server, loggerLogger)
 	return container, func() {
 		cleanup()
 	}, nil

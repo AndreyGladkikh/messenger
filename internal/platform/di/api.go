@@ -2,6 +2,7 @@ package di
 
 import (
 	"context"
+	"messenger/messenger/internal/adapters/out/logger"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/platform/command_bus"
@@ -10,11 +11,15 @@ import (
 
 func BuildCommandBusForApi(
 	txManager *transaction.Manager,
+	logger *logger.Logger,
 	sendMessageHandler *send_message.Handler,
 ) *command_bus.Bus {
 	bus := command_bus.NewBus()
 
+	loggingMiddlewareContainer := middlewares.NewLoggerMiddlewareContainer(logger)
 	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager)
+	
+	bus.Use(loggingMiddlewareContainer.Middleware)
 	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.ErrorTranslator)
 

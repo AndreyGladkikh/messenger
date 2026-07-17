@@ -6,9 +6,9 @@ import (
 )
 
 type Error struct {
-	Code    string `json:"code"`
+	Code    string `json:"code,omitempty"`
 	Message string `json:"message"`
-	Details []any `json:"details"`
+	Details []any `json:"details,omitempty"`
 	Wrapped error `json:"-"`
 }
 
@@ -23,7 +23,6 @@ func (e *Error) Unwrap() error {
 func Translate(err error) *Error {
 	e := &Error{
 		Message: "Непредвиденная ошибка",
-		Details: make([]any, 0),
 		Wrapped: err,
 	}
 

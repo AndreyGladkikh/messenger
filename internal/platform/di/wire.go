@@ -4,7 +4,7 @@ package di
 
 import (
 	"database/sql"
-	"log/slog"
+	loggerAdapter "messenger/messenger/internal/adapters/out/logger"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
@@ -16,7 +16,6 @@ import (
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
-	loggerAdapter "messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
 
 	"github.com/google/wire"
@@ -33,7 +32,7 @@ func InitializeApi() (*Container, func(), error) {
 
 		wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
 		
-		wire.Bind(new(appLogger.Logger), new(*slog.Logger)),
+		wire.Bind(new(appLogger.Logger), new(*loggerAdapter.Logger)),
 
 		config.Load,
 
@@ -57,7 +56,7 @@ func InitializeApi() (*Container, func(), error) {
 
 		// other
 		uuid.NewProvider,
-		loggerAdapter.NewLogger,
+		loggerAdapter.New,
 	)
 	return new(Container), func() {}, nil
 }

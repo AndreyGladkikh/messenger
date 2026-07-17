@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"messenger/messenger/internal/adapters/out/logger"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
-	"messenger/messenger/internal/application/logger"
 	"time"
 
 	"github.com/google/uuid"

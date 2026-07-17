@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/message"
+	"messenger/messenger/internal/platform/uow"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,6 +51,11 @@ func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
 		},
 		CreatedAt: sql.NullTime{Time: time.Now(), Valid: true},
 	})
+
+	if uo, ok := uow.FromContext(ctx); ok {
+		uo.RegisterAggregate(m)
+	}
+
 	return err
 }
 
