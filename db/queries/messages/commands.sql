@@ -4,10 +4,9 @@ INSERT INTO messages (
     sender_id,
     chat_id,
     body,
-    reply_to_message_id,
-    created_at
+    reply_to_message_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  $1, $2, $3, $4, $5
 );
 
 -- name: UpdateMessage :exec

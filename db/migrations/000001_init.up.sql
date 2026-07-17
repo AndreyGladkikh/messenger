@@ -20,7 +20,7 @@ CREATE TABLE messages(
     chat_id UUID NOT NULL REFERENCES chats ON DELETE CASCADE,
     body TEXT NOT NULL,
     reply_to_message_id UUID REFERENCES messages,
-    created_at TIMESTAMP DEFAULT now(),
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now(),
     deleted_at TIMESTAMP
 );

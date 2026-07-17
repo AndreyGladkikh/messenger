@@ -59,7 +59,7 @@ type Message struct {
 	ChatID           uuid.UUID
 	Body             string
 	ReplyToMessageID uuid.NullUUID
-	CreatedAt        sql.NullTime
+	CreatedAt        time.Time
 	UpdatedAt        sql.NullTime
 	DeletedAt        sql.NullTime
 }
@@ -69,13 +69,4 @@ type MessagesFile struct {
 	MessageID uuid.NullUUID
 	FileID    uuid.NullUUID
 	Name      sql.NullString
-}
-
-type Outbox struct {
-	ID           uuid.UUID
-	EventID      uuid.NullUUID
-	EventType    string
-	EventPayload pqtype.NullRawMessage
-	PublishedAt  sql.NullTime
-	ProcessedAt  sql.NullTime
 }

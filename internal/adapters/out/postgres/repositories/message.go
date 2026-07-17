@@ -3,66 +3,45 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/message"
-	"messenger/messenger/internal/platform/uow"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 type MessageRepository struct {
-	db *sql.DB
-	qs *queries.Queries
+	Repository
 }
 
 func NewMessageRepository(
 	db *sql.DB,
-	qs *queries.Queries,
+	q *queries.Queries,
 ) *MessageRepository {
 	return &MessageRepository{
-		db: db,
-		qs: qs,
+		Repository: Repository{
+			db: db,
+			q: q,
+		},
 	}
 }
 
 func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
-	messageID, err := uuid.Parse(m.ID())
-	if err != nil {
-		return err
-	}
-	senderID, err := uuid.Parse(m.SenderID())
-	if err != nil {
-		return err
-	}
-	chatID, err := uuid.Parse(m.ChatID())
-	if err != nil {
-		return err
-	}
-	replyToMessageID := uuid.NullUUID{}
-	if m.ReplyToMessageID() != "" {
-		replyID, err := uuid.Parse(m.ReplyToMessageID())
-		if err != nil {
-			return err
-		}
-		replyToMessageID.UUID = replyID
-		replyToMessageID.Valid = true
-	}
-
-	err = r.qs.CreateMessage(ctx, queries.CreateMessageParams{
-		ID:       messageID,
-		SenderID: senderID,
-		ChatID:   chatID,
+	err := r.queries(ctx).CreateMessage(ctx, queries.CreateMessageParams{
+		ID:       uuid.MustParse(m.ID()),
+		SenderID: uuid.MustParse(m.SenderID()),
+		ChatID:   uuid.MustParse(m.ChatID()),
 		Body:     m.Body(),
-		ReplyToMessageID: replyToMessageID,
-		CreatedAt: sql.NullTime{Time: time.Now(), Valid: true},
+		ReplyToMessageID: mapping.OptionalUUID(m.ReplyToMessageID()),
 	})
 
-	if uo, ok := uow.FromContext(ctx); ok {
-		uo.RegisterAggregate(m)
+	if err != nil {
+		return err
 	}
 
-	return err
+	r.RegisterAggregate(ctx, m)
+
+	return nil
 }
 
 func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limit, offset int) ([]*message.Message, error) {
@@ -78,7 +57,7 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 		return nil, err
 	}
 
-	messageRows, err := r.qs.ListMessagesForChat(ctx, queries.ListMessagesForChatParams{
+	messageRows, err := r.queries(ctx).ListMessagesForChat(ctx, queries.ListMessagesForChatParams{
 		ChatID: chatUUID,
 		Limit:  int32(limit),
 		Offset: int32(offset),

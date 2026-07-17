@@ -1,6 +1,9 @@
 package chat
 
+import "messenger/messenger/internal/domain"
+
 type Chat struct {
+	domain.BaseAggregate
 	id   string
 	typ  ChatType
 	name string

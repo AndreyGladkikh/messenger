@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
+	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/chat"
 
@@ -10,21 +10,20 @@ import (
 )
 
 type ChatRepository struct {
-	db *sql.DB
-	qs *queries.Queries
+	Repository
 }
 
 func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
-	id, err := uuid.Parse(chat.ID())
+	err := r.queries(ctx).CreateChat(ctx, queries.CreateChatParams{
+		ID:   uuid.MustParse(chat.ID()),
+		Type: string(chat.Type()),
+		Name: mapping.OptionalString(chat.Name()),
+	})
 	if err != nil {
 		return err
 	}
-	name := sql.NullString{String: chat.Name(), Valid: chat.Name() != ""}
 
-	err = r.qs.CreateChat(ctx, queries.CreateChatParams{
-		ID:   id,
-		Type: string(chat.Type()),
-		Name: name,
-	})
+	r.RegisterAggregate(ctx, chat)
+
 	return err
 }

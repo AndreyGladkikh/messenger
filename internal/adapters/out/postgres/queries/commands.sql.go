@@ -77,10 +77,9 @@ INSERT INTO messages (
     sender_id,
     chat_id,
     body,
-    reply_to_message_id,
-    created_at
+    reply_to_message_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  $1, $2, $3, $4, $5
 )
 `
 
@@ -90,7 +89,6 @@ type CreateMessageParams struct {
 	ChatID           uuid.UUID
 	Body             string
 	ReplyToMessageID uuid.NullUUID
-	CreatedAt        sql.NullTime
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
@@ -100,7 +98,6 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) er
 		arg.ChatID,
 		arg.Body,
 		arg.ReplyToMessageID,
-		arg.CreatedAt,
 	)
 	return err
 }
