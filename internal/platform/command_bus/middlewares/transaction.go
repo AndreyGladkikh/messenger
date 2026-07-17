@@ -4,11 +4,13 @@ import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/platform/command_bus"
+	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/uow"
 )
 
 type TransactionMiddlewareContainer struct {
 	txManager *transaction.Manager
+	eventStorage *event.EventStorage
 }
 
 func NewTransactionMiddlewareContainer(txManager *transaction.Manager) *TransactionMiddlewareContainer {
@@ -28,13 +30,22 @@ func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) co
 				return err
 			}
 			
-			for _, aggregate := range uowo.Aggregates() {
-				_ = aggregate.PullEvents()
-			}
+			c.storeEvents(ctx, uowo)
 
 			return nil
 		})
 
 		return
 	})
+}
+
+func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context, uow *uow.UnitOfWork) error {
+	for _, aggregate := range uow.Aggregates() {
+		for _, event := range aggregate.PullEvents() {
+			if err := c.eventStorage.Add(ctx, event); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

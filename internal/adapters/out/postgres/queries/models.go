@@ -32,7 +32,7 @@ type Event struct {
 	ID           uuid.UUID
 	EventType    string
 	EventPayload pqtype.NullRawMessage
-	OccurredAt   sql.NullTime
+	OccurredAt   time.Time
 	ProcessedAt  sql.NullTime
 }
 

@@ -52,13 +52,8 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 		offset = 0
 	}
 
-	chatUUID, err := uuid.Parse(chatID)
-	if err != nil {
-		return nil, err
-	}
-
 	messageRows, err := r.queries(ctx).ListMessagesForChat(ctx, queries.ListMessagesForChatParams{
-		ChatID: chatUUID,
+		ChatID: uuid.MustParse(chatID),
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
@@ -73,7 +68,7 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 			row.ChatID.String(),
 			row.SenderID.String(),
 			row.Body,
-			row.ReplyToMessageID.UUID.String(),
+			mapping.UUIDString(row.ReplyToMessageID),
 		)
 	}
 

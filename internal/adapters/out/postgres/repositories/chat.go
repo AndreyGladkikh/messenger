@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/chat"
@@ -11,6 +12,18 @@ import (
 
 type ChatRepository struct {
 	Repository
+}
+
+func NewChatRepository(
+	db *sql.DB,
+	q *queries.Queries,
+) *ChatRepository {
+	return &ChatRepository{
+		Repository: Repository{
+			db: db,
+			q: q,
+		},
+	}
 }
 
 func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {

@@ -41,3 +41,10 @@ func OptionalTime(value time.Time) sql.NullTime {
 		Valid: true,
 	}
 }
+
+func UUIDString(value uuid.NullUUID) string {
+	if value.Valid {
+		return value.UUID.String()
+	}
+	return ""
+}

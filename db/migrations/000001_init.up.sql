@@ -44,7 +44,7 @@ CREATE TABLE events(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type TEXT NOT NULL,
     event_payload JSONB,
-    occurred_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     processed_at TIMESTAMP WITH TIME ZONE
 );
 

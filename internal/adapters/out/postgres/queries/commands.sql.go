@@ -10,6 +10,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 const createChat = `-- name: CreateChat :exec
@@ -37,6 +38,27 @@ func (q *Queries) CreateChat(ctx context.Context, arg CreateChatParams) error {
 		arg.Name,
 		arg.CreatedAt,
 	)
+	return err
+}
+
+const createEvent = `-- name: CreateEvent :exec
+INSERT INTO events (
+    id,
+    event_type,
+    event_payload
+) VALUES (
+  $1, $2, $3
+)
+`
+
+type CreateEventParams struct {
+	ID           uuid.UUID
+	EventType    string
+	EventPayload pqtype.NullRawMessage
+}
+
+func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) error {
+	_, err := q.db.ExecContext(ctx, createEvent, arg.ID, arg.EventType, arg.EventPayload)
 	return err
 }
 

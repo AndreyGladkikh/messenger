@@ -1,3 +1,12 @@
+-- name: CreateEvent :exec
+INSERT INTO events (
+    id,
+    event_type,
+    event_payload
+) VALUES (
+  $1, $2, $3
+);
+
 -- name: ProcessEvent :exec
 UPDATE events
   set processed_at = $2
