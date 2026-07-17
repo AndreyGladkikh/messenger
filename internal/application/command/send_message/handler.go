@@ -2,7 +2,6 @@ package send_message
 
 import (
 	"context"
-	"errors"
 	"messenger/messenger/internal/application/id"
 	"messenger/messenger/internal/domain/message"
 )
@@ -23,9 +22,6 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(ctx context.Context, command *Command) (response any, err error) {
-	// todo rm
-	return nil, errors.New("fake err")
-
 	chatID := command.ChatID
 	if chatID == "" {
 		chatID = ""

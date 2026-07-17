@@ -19,6 +19,7 @@ func BuildCommandBusForApi(
 	loggingMiddlewareContainer := middlewares.NewLoggerMiddlewareContainer(logger)
 	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager)
 	
+	bus.Use(middlewares.Recoverer)
 	bus.Use(loggingMiddlewareContainer.Middleware)
 	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.ErrorTranslator)

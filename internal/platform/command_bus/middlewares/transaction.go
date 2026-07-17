@@ -7,10 +7,6 @@ import (
 	"messenger/messenger/internal/platform/uow"
 )
 
-// type txManager interface {
-// 	WithTransaction(ctx context.Context, fn func(context.Context) error) error
-// }
-
 type TransactionMiddlewareContainer struct {
 	txManager *transaction.Manager
 }
@@ -28,12 +24,16 @@ func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) co
 
 		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
 			response, err = next.Handle(ctx, command)
-			return err
-		})
+			if err != nil {
+				return err
+			}
+			
+			for _, aggregate := range uowo.Aggregates() {
+				_ = aggregate.PullEvents()
+			}
 
-		for _, aggregate := range uowo.Aggregates() {
-			_ = aggregate.PullEvents()
-		}
+			return nil
+		})
 
 		return
 	})
