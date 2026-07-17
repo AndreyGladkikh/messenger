@@ -71,29 +71,3 @@ func WithContentType(contentType string) Option {
 		r.contentType = contentType
 	}
 }
-
-// type res interface {
-// 	Status() string
-// }
-
-// type Success struct {
-// 	Response
-// 	Data any
-// }
-
-// func (s *Success) Status() string {
-// 	return "success"
-// }
-
-// type Error struct {
-// 	Response
-// 	Error struct {
-// 		Messsage string
-// 		Code string
-// 		Details []any
-// 	}
-// }
-
-// func (s *Error) Status() string {
-// 	return "error"
-// }

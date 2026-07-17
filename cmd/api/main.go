@@ -32,6 +32,7 @@ func main() {
 	errCh := make(chan error)
 
 	go func() {
+		logger.Info("http server started")
 		if err := httpServer.Run(); err != nil {
 			select {
 			case errCh <-err:
