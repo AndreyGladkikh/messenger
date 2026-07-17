@@ -35,6 +35,7 @@ func NewContainer(
 	sendMessageHandler *send_message.Handler,
 	messageRepository message.Repository,
 	httpServer *http_server.Server,
+	logger logger.Logger,
 ) *Container {
 	return &Container{
 		DB:                 db,
@@ -43,7 +44,8 @@ func NewContainer(
 		EventBus:           eventBus,
 		SendMessageHandler: sendMessageHandler,
 		MessageRepository:  messageRepository,
-		HttpServer:  httpServer,
+		HttpServer: httpServer,
+		Logger: logger,
 	}
 }
 

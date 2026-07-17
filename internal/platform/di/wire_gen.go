@@ -15,6 +15,7 @@ import (
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
+	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
 )
 
@@ -35,7 +36,8 @@ func InitializeApi() (*Container, func(), error) {
 	eventBus := event.NewBus()
 	controller := http_server.NewController(bus)
 	server := http_server.NewServer(configConfig, controller)
-	container := NewContainer(db, manager, bus, eventBus, handler, messageRepository, server)
+	slogLogger := logger.NewLogger()
+	container := NewContainer(db, manager, bus, eventBus, handler, messageRepository, server, slogLogger)
 	return container, func() {
 		cleanup()
 	}, nil

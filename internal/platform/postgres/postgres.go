@@ -13,20 +13,21 @@ func NewPool(cfg *config.Config) (*sql.DB, func(), error) {
 		"%s://%s:%s@%s:%s/%s",
 		cfg.Database.Schema,
 		cfg.Database.User,
-		cfg.Database.Pass,
+		cfg.Database.Password,
 		cfg.Database.Host,
 		cfg.Database.Port,
 		cfg.Database.Name,
 	)
+
 	pool, err := sql.Open(cfg.Database.Driver, dsn)
-	// pool, err := sql.Open("pgx", "postgres://app:secret@postgres:5432/app")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("postgres open: %w", err)
 	}
 
 	cleanup := func() {
 		pool.Close()
 	}
+	
 	pool.SetMaxOpenConns(50)
 	pool.SetMaxIdleConns(10)
 	pool.SetConnMaxLifetime(1 * time.Hour)
@@ -36,7 +37,7 @@ func NewPool(cfg *config.Config) (*sql.DB, func(), error) {
 	defer cancel()
 
 	if err := pool.PingContext(ctx); err != nil {
-		return nil, cleanup, fmt.Errorf("unable to connect to database: %w", err)
+		return nil, cleanup, fmt.Errorf("postgres ping: %w", err)
 	}
 
 	return pool, cleanup, nil

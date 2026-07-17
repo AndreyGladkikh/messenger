@@ -3,9 +3,9 @@ Database:
   Schema: postgres
   Host: localhost
   Port: 5432
-  User: app
-  Pass: secret
   Name: app
+  User:
+  Password:
 
 HttpServer:
   Addr: :3000

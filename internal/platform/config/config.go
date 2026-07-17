@@ -12,21 +12,20 @@ import (
 )
 
 type Config struct {
-	Env      string
-	Database DatabaseConfig
-	Cache    CacheConfig
-	HttpServer    HttpServerConfig
+	Env        string
+	Database   *DatabaseConfig
+	Cache      *CacheConfig
+	HttpServer *HttpServerConfig
 }
 
 type DatabaseConfig struct {
-	Driver string
-	Schema string
-	Host string
-	Port string
-	Name string
-	User string
-	Pass string
-	DSN    string
+	Driver   string
+	Schema   string
+	Host     string
+	Port     string
+	Name     string
+	User     string
+	Password string
 }
 
 type CacheConfig struct {
@@ -35,31 +34,27 @@ type CacheConfig struct {
 
 type HttpServerConfig struct {
 	Addr string
-	Port int
 }
 
 func Load() *Config {
 	loadEnv()
 
-    k := koanf.New(".")
+	k := koanf.New(".")
 
 	projRoot, _ := utils.ProjectRoot()
-    if err := k.Load(file.Provider(projRoot + "/configs/config.yaml"), yaml.Parser()); err != nil {
-        log.Fatal(err.Error())
-    }
+	if err := k.Load(file.Provider(projRoot+"/configs/config.yaml"), yaml.Parser()); err != nil {
+		log.Fatal(err.Error())
+	}
 
-    var cfg *Config
+	var cfg *Config
 
-    if err := k.Unmarshal("", &cfg); err != nil {
-        log.Fatal(err.Error())
-    }
+	if err := k.Unmarshal("", &cfg); err != nil {
+		log.Fatal(err.Error())
+	}
 
-    return cfg
-	
-	// s3Bucket := os.Getenv("S3_BUCKET")
-	// secretKey := os.Getenv("SECRET_KEY")
+	loadSecrets(cfg)
 
-	// return &Config{}
+	return cfg
 }
 
 func loadEnv() {
@@ -82,4 +77,12 @@ func loadEnv() {
 	}
 
 	godotenv.Load(projRoot + "./env." + env + ".local")
+}
+
+func loadSecrets(cfg *Config) {
+	dbUser := os.Getenv("DATABASE_USER")
+	cfg.Database.User = dbUser
+
+	dbPass := os.Getenv("DATABASE_PASSWORD")
+	cfg.Database.Password = dbPass
 }

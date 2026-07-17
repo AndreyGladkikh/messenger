@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"os/signal"
 	"syscall"
 	"time"
@@ -14,20 +14,17 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Println(err)
-	}
-}
-
-func run() error {
 	interruptCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	api, cleanup, err := di.InitializeApi()
-	if err != nil {
-		return err
+	if cleanup != nil {
+		defer cleanup()
 	}
-	defer cleanup()
+	if err != nil {
+		slog.Error("api: failed to init dependencies", "error", err)
+		return
+	}
 
 	logger := api.Logger
 	httpServer := api.HttpServer
@@ -36,24 +33,21 @@ func run() error {
 
 	go func() {
 		if err := httpServer.Run(); err != nil {
-			errCh <-err
+			select {
+			case errCh <-err:
+				logger.Error("http server failed", "error", err)
+			default:
+			}
 		}
 	}()
 
 	select {
-	case err := <-errCh:
-		fmt.Printf("errCh: %s", err.Error())
-		logger.Error("api error: %v", err)
+	case <-errCh:
 	case <-interruptCtx.Done():
-		fmt.Println("interruptCtx")
 	}
 	
-
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	httpServer.Shutdown(shutdownCtx)
-	fmt.Printf("shutdown")
-
-	return nil
 }
