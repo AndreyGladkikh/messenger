@@ -6,7 +6,7 @@ import (
 )
 
 type Message struct {
-	*domain.BaseAggregate
+	domain.BaseAggregate
 
 	id               string
 	body             string

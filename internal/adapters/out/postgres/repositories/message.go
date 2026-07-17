@@ -39,16 +39,22 @@ func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
 	if err != nil {
 		return err
 	}
+	replyToMessageID := uuid.NullUUID{}
+	if m.ReplyToMessageID() != "" {
+		replyID, err := uuid.Parse(m.ReplyToMessageID())
+		if err != nil {
+			return err
+		}
+		replyToMessageID.UUID = replyID
+		replyToMessageID.Valid = true
+	}
 
 	err = r.qs.CreateMessage(ctx, queries.CreateMessageParams{
 		ID:       messageID,
 		SenderID: senderID,
 		ChatID:   chatID,
 		Body:     m.Body(),
-		ReplyToMessageID: uuid.NullUUID{
-			UUID:  uuid.MustParse(m.ReplyToMessageID()),
-			Valid: m.ReplyToMessageID() != "",
-		},
+		ReplyToMessageID: replyToMessageID,
 		CreatedAt: sql.NullTime{Time: time.Now(), Valid: true},
 	})
 
