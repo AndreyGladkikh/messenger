@@ -7,17 +7,19 @@ import (
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/platform/command_bus"
 	"messenger/messenger/internal/platform/command_bus/middlewares"
+	"messenger/messenger/internal/platform/event"
 )
 
 func BuildCommandBusForApi(
 	txManager *transaction.Manager,
 	logger *logger.Logger,
+	eventStorage *event.EventStorage,
 	sendMessageHandler *send_message.Handler,
 ) *command_bus.Bus {
 	bus := command_bus.NewBus()
 
 	loggingMiddlewareContainer := middlewares.NewLoggerMiddlewareContainer(logger)
-	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager)
+	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager, eventStorage)
 	
 	bus.Use(middlewares.Recoverer)
 	bus.Use(loggingMiddlewareContainer.Middleware)

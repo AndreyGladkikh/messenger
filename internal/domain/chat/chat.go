@@ -9,6 +9,35 @@ type Chat struct {
 	name string
 }
 
+func Create(
+	id   string,
+	typ  ChatType,
+	name string,
+) *Chat {
+	c := new(Chat)
+	c.id = id
+	c.typ = typ
+	c.name = name
+
+	c.AddEvent(ChatCreated{
+		ChatID: id,
+	})
+
+	return c
+}
+
+func Rehydrate(
+	id   string,
+	typ  ChatType,
+	name string,
+) *Chat {
+	return &Chat{
+		id: id,
+		typ: typ,
+		name: name,
+	}
+}
+
 func (c *Chat) ID() string {
 	return c.id
 }

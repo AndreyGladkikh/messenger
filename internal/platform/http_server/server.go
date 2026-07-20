@@ -24,6 +24,7 @@ func NewServer(
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.AllowContentType("application/json"))
+	r.Use(AuthMiddleware)
 
 	registerApi(r, controller)
 
@@ -48,3 +49,4 @@ func (s *Server) Run() error {
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
+

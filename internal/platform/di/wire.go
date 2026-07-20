@@ -50,7 +50,10 @@ func InitializeApi() (*Container, func(), error) {
 
 		// repositories
 		repositories.NewMessageRepository,
-		repositories.NewChatRepository,
+		// repositories.NewChatRepository,
+
+		// storages
+		event.NewEventStorage,
 
 		// command handlers
 		send_message.NewHandler,

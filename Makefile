@@ -25,7 +25,7 @@ down_test:
 	docker compose -f compose.yaml -f compose.test.yaml down --remove-orphans
 
 run:
-	go run cmd/api
+	go run cmd/api/main.go
 
 run_dev:
 	docker compose exec -itu root: app bash -c '/go/bin/dlv --listen=:40040 --headless=true --api-version=2 --accept-multiclient debug cmd/dev/main.go'
@@ -51,3 +51,6 @@ migration_down:
 
 queries:
 	sqlc generate
+
+di:
+	wire ./internal/platform/di

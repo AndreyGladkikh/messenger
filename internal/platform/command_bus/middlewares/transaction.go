@@ -13,7 +13,10 @@ type TransactionMiddlewareContainer struct {
 	eventStorage *event.EventStorage
 }
 
-func NewTransactionMiddlewareContainer(txManager *transaction.Manager) *TransactionMiddlewareContainer {
+func NewTransactionMiddlewareContainer(
+	txManager *transaction.Manager,
+	eventStorage *event.EventStorage,
+) *TransactionMiddlewareContainer {
 	return &TransactionMiddlewareContainer{
 		txManager: txManager,
 	}
