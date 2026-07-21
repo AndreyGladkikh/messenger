@@ -2,15 +2,16 @@ package transaction
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Manager struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 func NewManager(
-	db *sql.DB,
+	db *pgxpool.Pool,
 ) *Manager {
 	return &Manager{
 		db,
@@ -18,11 +19,11 @@ func NewManager(
 }
 
 func (t *Manager) WithTransaction(ctx context.Context, fn func(context.Context) error) error {
-	tx, err := t.db.Begin()
+	tx, err := t.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
 	ctx = NewContext(ctx, tx)
 
@@ -30,5 +31,5 @@ func (t *Manager) WithTransaction(ctx context.Context, fn func(context.Context) 
 		return err
 	}
 
-	return tx.Commit()
+	return tx.Commit(ctx)
 }

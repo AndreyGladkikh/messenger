@@ -2,7 +2,6 @@ package message
 
 import (
 	"messenger/messenger/internal/domain"
-	"messenger/messenger/internal/domain/file"
 )
 
 type Message struct {
@@ -13,7 +12,6 @@ type Message struct {
 	senderID         string
 	chatID           string
 	replyToMessageID string
-	attachments      []*file.File
 }
 
 func Send(
@@ -79,12 +77,6 @@ func (m *Message) SetReplyToMessageID(messageID string) error {
 	return nil
 }
 
-func (m *Message) AddAttachment(file *file.File) error {
-	m.attachments = append(m.attachments, file)
-
-	return nil
-}
-
 func (m *Message) ID() string {
 	return m.id
 }
@@ -103,8 +95,4 @@ func (m *Message) ChatID() string {
 
 func (m *Message) ReplyToMessageID() string {
 	return m.replyToMessageID
-}
-
-func (m *Message) Attachments() []*file.File {
-	return m.attachments
 }

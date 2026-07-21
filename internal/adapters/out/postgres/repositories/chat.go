@@ -2,12 +2,9 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/chat"
-
-	"github.com/google/uuid"
 )
 
 type ChatRepository struct {
@@ -15,12 +12,10 @@ type ChatRepository struct {
 }
 
 func NewChatRepository(
-	db *sql.DB,
 	q *queries.Queries,
 ) *ChatRepository {
 	return &ChatRepository{
 		Repository: Repository{
-			db: db,
 			q: q,
 		},
 	}
@@ -28,9 +23,9 @@ func NewChatRepository(
 
 func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
 	err := r.queries(ctx).CreateChat(ctx, queries.CreateChatParams{
-		ID:   uuid.MustParse(chat.ID()),
+		ID:   mapping.PgUUID(chat.ID()),
 		Type: string(chat.Type()),
-		Name: mapping.OptionalString(chat.Name()),
+		Name: mapping.PgText(chat.Name()),
 	})
 	if err != nil {
 		return err
@@ -39,4 +34,16 @@ func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
 	r.RegisterAggregate(ctx, chat)
 
 	return err
+}
+
+func (r *ChatRepository) PrivateChatExists(ctx context.Context, participant1, participant2 string) (bool, error) {
+	exists, err := r.queries(ctx).PrivateChatExists(ctx, queries.PrivateChatExistsParams{
+		ParticipantID: mapping.PgUUID(participant1),
+		ParticipantID_2: mapping.PgUUID(participant2),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return bool(exists), nil
 }

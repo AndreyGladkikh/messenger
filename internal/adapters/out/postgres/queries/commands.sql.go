@@ -7,10 +7,8 @@ package queries
 
 import (
 	"context"
-	"database/sql"
 
-	"github.com/google/uuid"
-	"github.com/sqlc-dev/pqtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createChat = `-- name: CreateChat :exec
@@ -25,14 +23,14 @@ INSERT INTO chats (
 `
 
 type CreateChatParams struct {
-	ID        uuid.UUID
+	ID        pgtype.UUID
 	Type      string
-	Name      sql.NullString
-	CreatedAt sql.NullTime
+	Name      pgtype.Text
+	CreatedAt pgtype.Timestamp
 }
 
 func (q *Queries) CreateChat(ctx context.Context, arg CreateChatParams) error {
-	_, err := q.db.ExecContext(ctx, createChat,
+	_, err := q.db.Exec(ctx, createChat,
 		arg.ID,
 		arg.Type,
 		arg.Name,
@@ -52,13 +50,13 @@ INSERT INTO events (
 `
 
 type CreateEventParams struct {
-	ID           uuid.UUID
+	ID           pgtype.UUID
 	EventType    string
-	EventPayload pqtype.NullRawMessage
+	EventPayload []byte
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) error {
-	_, err := q.db.ExecContext(ctx, createEvent, arg.ID, arg.EventType, arg.EventPayload)
+	_, err := q.db.Exec(ctx, createEvent, arg.ID, arg.EventType, arg.EventPayload)
 	return err
 }
 
@@ -74,13 +72,13 @@ RETURNING id, event_id, handler_type, attempts, error, next_retry_at
 `
 
 type CreateEventHandlerExecutionParams struct {
-	ID          uuid.UUID
-	EventID     uuid.UUID
+	ID          pgtype.UUID
+	EventID     pgtype.UUID
 	HandlerType string
 }
 
 func (q *Queries) CreateEventHandlerExecution(ctx context.Context, arg CreateEventHandlerExecutionParams) (EventHandlerExecution, error) {
-	row := q.db.QueryRowContext(ctx, createEventHandlerExecution, arg.ID, arg.EventID, arg.HandlerType)
+	row := q.db.QueryRow(ctx, createEventHandlerExecution, arg.ID, arg.EventID, arg.HandlerType)
 	var i EventHandlerExecution
 	err := row.Scan(
 		&i.ID,
@@ -106,15 +104,15 @@ INSERT INTO messages (
 `
 
 type CreateMessageParams struct {
-	ID               uuid.UUID
-	SenderID         uuid.UUID
-	ChatID           uuid.UUID
+	ID               pgtype.UUID
+	SenderID         pgtype.UUID
+	ChatID           pgtype.UUID
 	Body             string
-	ReplyToMessageID uuid.NullUUID
+	ReplyToMessageID pgtype.UUID
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
-	_, err := q.db.ExecContext(ctx, createMessage,
+	_, err := q.db.Exec(ctx, createMessage,
 		arg.ID,
 		arg.SenderID,
 		arg.ChatID,
@@ -131,12 +129,12 @@ WHERE id = $1
 `
 
 type DeleteChatParams struct {
-	ID        uuid.UUID
-	DeletedAt sql.NullTime
+	ID        pgtype.UUID
+	DeletedAt pgtype.Timestamp
 }
 
 func (q *Queries) DeleteChat(ctx context.Context, arg DeleteChatParams) error {
-	_, err := q.db.ExecContext(ctx, deleteChat, arg.ID, arg.DeletedAt)
+	_, err := q.db.Exec(ctx, deleteChat, arg.ID, arg.DeletedAt)
 	return err
 }
 
@@ -147,12 +145,12 @@ WHERE id = $1
 `
 
 type DeleteMessageParams struct {
-	ID        uuid.UUID
-	DeletedAt sql.NullTime
+	ID        pgtype.UUID
+	DeletedAt pgtype.Timestamp
 }
 
 func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) error {
-	_, err := q.db.ExecContext(ctx, deleteMessage, arg.ID, arg.DeletedAt)
+	_, err := q.db.Exec(ctx, deleteMessage, arg.ID, arg.DeletedAt)
 	return err
 }
 
@@ -163,12 +161,12 @@ WHERE id = $1
 `
 
 type ProcessEventParams struct {
-	ID          uuid.UUID
-	ProcessedAt sql.NullTime
+	ID          pgtype.UUID
+	ProcessedAt pgtype.Timestamptz
 }
 
 func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) error {
-	_, err := q.db.ExecContext(ctx, processEvent, arg.ID, arg.ProcessedAt)
+	_, err := q.db.Exec(ctx, processEvent, arg.ID, arg.ProcessedAt)
 	return err
 }
 
@@ -181,14 +179,14 @@ WHERE id = $1
 `
 
 type UpdateEventHandlerExecutionParams struct {
-	ID          uuid.UUID
+	ID          pgtype.UUID
 	Attempts    int32
-	Error       sql.NullString
-	NextRetryAt sql.NullTime
+	Error       pgtype.Text
+	NextRetryAt pgtype.Timestamptz
 }
 
 func (q *Queries) UpdateEventHandlerExecution(ctx context.Context, arg UpdateEventHandlerExecutionParams) error {
-	_, err := q.db.ExecContext(ctx, updateEventHandlerExecution,
+	_, err := q.db.Exec(ctx, updateEventHandlerExecution,
 		arg.ID,
 		arg.Attempts,
 		arg.Error,
@@ -205,12 +203,12 @@ WHERE id = $1
 `
 
 type UpdateMessageParams struct {
-	ID        uuid.UUID
+	ID        pgtype.UUID
 	Body      string
-	UpdatedAt sql.NullTime
+	UpdatedAt pgtype.Timestamp
 }
 
 func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) error {
-	_, err := q.db.ExecContext(ctx, updateMessage, arg.ID, arg.Body, arg.UpdatedAt)
+	_, err := q.db.Exec(ctx, updateMessage, arg.ID, arg.Body, arg.UpdatedAt)
 	return err
 }

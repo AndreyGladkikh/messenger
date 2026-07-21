@@ -2,12 +2,9 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/message"
-
-	"github.com/google/uuid"
 )
 
 type MessageRepository struct {
@@ -15,12 +12,10 @@ type MessageRepository struct {
 }
 
 func NewMessageRepository(
-	db *sql.DB,
 	q *queries.Queries,
 ) *MessageRepository {
 	return &MessageRepository{
 		Repository: Repository{
-			db: db,
 			q: q,
 		},
 	}
@@ -28,11 +23,11 @@ func NewMessageRepository(
 
 func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
 	err := r.queries(ctx).CreateMessage(ctx, queries.CreateMessageParams{
-		ID:       uuid.MustParse(m.ID()),
-		SenderID: uuid.MustParse(m.SenderID()),
-		ChatID:   uuid.MustParse(m.ChatID()),
+		ID:       mapping.PgUUID(m.ID()),
+		SenderID: mapping.PgUUID(m.SenderID()),
+		ChatID:   mapping.PgUUID(m.ChatID()),
 		Body:     m.Body(),
-		ReplyToMessageID: mapping.OptionalUUID(m.ReplyToMessageID()),
+		ReplyToMessageID: mapping.PgUUID(m.ReplyToMessageID()),
 	})
 
 	if err != nil {
@@ -53,7 +48,7 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 	}
 
 	messageRows, err := r.queries(ctx).ListMessagesForChat(ctx, queries.ListMessagesForChatParams{
-		ChatID: uuid.MustParse(chatID),
+		ChatID: mapping.PgUUID(chatID),
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	})
@@ -68,7 +63,7 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 			row.ChatID.String(),
 			row.SenderID.String(),
 			row.Body,
-			mapping.UUIDString(row.ReplyToMessageID),
+			row.ReplyToMessageID.String(),
 		)
 	}
 

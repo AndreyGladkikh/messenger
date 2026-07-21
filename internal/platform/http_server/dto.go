@@ -2,8 +2,16 @@ package http_server
 
 import (
 	"bytes"
-	"net/http"
 )
+
+type Chat struct {
+	Type string
+	Name string
+}
+
+type CreateChatRequest struct {
+	Chat
+}
 
 type Message struct {
 	Body             string
@@ -12,10 +20,6 @@ type Message struct {
 	Attachments      []*bytes.Buffer
 }
 
-func (m *Message) Bind(r *http.Request) error {
-	return nil
-}
-
 type SendMessageRequest struct {
-	*Message
+	Message
 }

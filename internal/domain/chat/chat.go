@@ -12,12 +12,10 @@ type Chat struct {
 func Create(
 	id   string,
 	typ  ChatType,
-	name string,
 ) *Chat {
 	c := new(Chat)
 	c.id = id
 	c.typ = typ
-	c.name = name
 
 	c.AddEvent(ChatCreated{
 		ChatID: id,

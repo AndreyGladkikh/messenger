@@ -8,7 +8,7 @@ package queries
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getChat = `-- name: GetChat :one
@@ -16,8 +16,8 @@ SELECT id, type, name, created_at, deleted_at FROM chats
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetChat(ctx context.Context, id uuid.UUID) (Chat, error) {
-	row := q.db.QueryRowContext(ctx, getChat, id)
+func (q *Queries) GetChat(ctx context.Context, id pgtype.UUID) (Chat, error) {
+	row := q.db.QueryRow(ctx, getChat, id)
 	var i Chat
 	err := row.Scan(
 		&i.ID,
@@ -37,12 +37,12 @@ LIMIT 1
 `
 
 type GetEventHandlerExecutionByEventIdParams struct {
-	EventID     uuid.UUID
+	EventID     pgtype.UUID
 	HandlerType string
 }
 
 func (q *Queries) GetEventHandlerExecutionByEventId(ctx context.Context, arg GetEventHandlerExecutionByEventIdParams) (EventHandlerExecution, error) {
-	row := q.db.QueryRowContext(ctx, getEventHandlerExecutionByEventId, arg.EventID, arg.HandlerType)
+	row := q.db.QueryRow(ctx, getEventHandlerExecutionByEventId, arg.EventID, arg.HandlerType)
 	var i EventHandlerExecution
 	err := row.Scan(
 		&i.ID,
@@ -60,8 +60,8 @@ SELECT id, event_id, handler_type, attempts, error, next_retry_at FROM event_han
 WHERE event_id = $1
 `
 
-func (q *Queries) GetEventHandlerExecutionsByEventId(ctx context.Context, eventID uuid.UUID) ([]EventHandlerExecution, error) {
-	rows, err := q.db.QueryContext(ctx, getEventHandlerExecutionsByEventId, eventID)
+func (q *Queries) GetEventHandlerExecutionsByEventId(ctx context.Context, eventID pgtype.UUID) ([]EventHandlerExecution, error) {
+	rows, err := q.db.Query(ctx, getEventHandlerExecutionsByEventId, eventID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +81,6 @@ func (q *Queries) GetEventHandlerExecutionsByEventId(ctx context.Context, eventI
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -95,8 +92,8 @@ SELECT id, sender_id, chat_id, body, reply_to_message_id, created_at, updated_at
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetMessage(ctx context.Context, id uuid.UUID) (Message, error) {
-	row := q.db.QueryRowContext(ctx, getMessage, id)
+func (q *Queries) GetMessage(ctx context.Context, id pgtype.UUID) (Message, error) {
+	row := q.db.QueryRow(ctx, getMessage, id)
 	var i Message
 	err := row.Scan(
 		&i.ID,
@@ -124,13 +121,13 @@ OFFSET $3
 `
 
 type ListChatsForUserParams struct {
-	ParticipantID uuid.UUID
+	ParticipantID pgtype.UUID
 	Limit         int32
 	Offset        int32
 }
 
 func (q *Queries) ListChatsForUser(ctx context.Context, arg ListChatsForUserParams) ([]Chat, error) {
-	rows, err := q.db.QueryContext(ctx, listChatsForUser, arg.ParticipantID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listChatsForUser, arg.ParticipantID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -149,9 +146,6 @@ func (q *Queries) ListChatsForUser(ctx context.Context, arg ListChatsForUserPara
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -166,7 +160,7 @@ LIMIT 100
 `
 
 func (q *Queries) ListEventHandlerExecutions(ctx context.Context) ([]EventHandlerExecution, error) {
-	rows, err := q.db.QueryContext(ctx, listEventHandlerExecutions)
+	rows, err := q.db.Query(ctx, listEventHandlerExecutions)
 	if err != nil {
 		return nil, err
 	}
@@ -186,9 +180,6 @@ func (q *Queries) ListEventHandlerExecutions(ctx context.Context) ([]EventHandle
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -204,13 +195,13 @@ OFFSET $3
 `
 
 type ListMessagesForChatParams struct {
-	ChatID uuid.UUID
+	ChatID pgtype.UUID
 	Limit  int32
 	Offset int32
 }
 
 func (q *Queries) ListMessagesForChat(ctx context.Context, arg ListMessagesForChatParams) ([]Message, error) {
-	rows, err := q.db.QueryContext(ctx, listMessagesForChat, arg.ChatID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listMessagesForChat, arg.ChatID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -232,9 +223,6 @@ func (q *Queries) ListMessagesForChat(ctx context.Context, arg ListMessagesForCh
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -249,7 +237,7 @@ LIMIT 100
 `
 
 func (q *Queries) ListUnprocessedEvents(ctx context.Context) ([]Event, error) {
-	rows, err := q.db.QueryContext(ctx, listUnprocessedEvents)
+	rows, err := q.db.Query(ctx, listUnprocessedEvents)
 	if err != nil {
 		return nil, err
 	}
@@ -268,11 +256,35 @@ func (q *Queries) ListUnprocessedEvents(ctx context.Context) ([]Event, error) {
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+const privateChatExists = `-- name: PrivateChatExists :one
+
+SELECT EXISTS (
+    SELECT 1 
+    FROM chats c
+    WHERE c.type = 'private_chat'
+    AND EXISTS(SELECT 1 FROM chat_participants cp WHERE cp.chat_id = c.id AND cp.participant_id = $1)
+    AND EXISTS(SELECT 1 FROM chat_participants cp WHERE cp.chat_id = c.id AND cp.participant_id = $2)
+)
+`
+
+type PrivateChatExistsParams struct {
+	ParticipantID   pgtype.UUID
+	ParticipantID_2 pgtype.UUID
+}
+
+// -- name: PrivateChatExists :one
+// SELECT 1 FROM private_chats
+// WHERE user1_id = $1
+// AND user2_id = $2;
+func (q *Queries) PrivateChatExists(ctx context.Context, arg PrivateChatExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, privateChatExists, arg.ParticipantID, arg.ParticipantID_2)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }

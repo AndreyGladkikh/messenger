@@ -3,7 +3,8 @@ package chat
 import "context"
 
 type Repository interface {
-	Add(context.Context, *Chat) error
-	Get(context.Context, string) (*Chat, error)
-	ListForUser(context.Context, string) ([]*Chat, error)
+	Add(ctx context.Context, c *Chat) error
+	// Get(ctx context.Context, id string) (*Chat, error)
+	// ListForUser(ctx context.Context, userID string) ([]*Chat, error)
+	PrivateChatExists(ctx context.Context, participant1, participant2 string) (bool, error)
 }

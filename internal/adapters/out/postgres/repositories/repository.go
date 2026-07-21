@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/domain"
@@ -10,7 +9,6 @@ import (
 )
 
 type Repository struct {
-	db *sql.DB
 	q *queries.Queries
 }
 
@@ -21,8 +19,10 @@ func (r *Repository) queries(ctx context.Context) *queries.Queries {
 	return r.q
 }
 
-func (r *Repository) RegisterAggregate(ctx context.Context, aggregate domain.Aggregate) {
+func (r *Repository) RegisterAggregate(ctx context.Context, aggregates ...domain.Aggregate) {
 	if uow, ok := uow.FromContext(ctx); ok {
-		uow.RegisterAggregate(aggregate)
+		for _, a := range aggregates {
+			uow.RegisterAggregate(a)
+		}
 	}
 }

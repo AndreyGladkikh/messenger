@@ -22,20 +22,28 @@ func translateStoredEventToDispatchedEvent(storedEvent queries.Event) (Event, er
 }
 
 func rehydrateEvent(fromStoredEvent queries.Event, toEvent Event) error {
-	if !fromStoredEvent.EventPayload.Valid {
-		return nil
-	}
-
-	var data []byte
-
-	a := fromStoredEvent.EventPayload.RawMessage.UnmarshalJSON(data)
-	b, _ := fromStoredEvent.EventPayload.RawMessage.MarshalJSON()
-	_ = a
-	_ = b
-
-	err := json.Unmarshal([]byte(fromStoredEvent.EventPayload.RawMessage), &toEvent)
+	err := json.Unmarshal(fromStoredEvent.EventPayload, &toEvent)
 	if err != nil {
 		return fmt.Errorf("failed to deserialize stored event payload: %w", err)
 	}
 	return nil
 }
+
+// func rehydrateEvent(fromStoredEvent queries.Event, toEvent Event) error {
+// 	if !fromStoredEvent.EventPayload.Valid {
+// 		return nil
+// 	}
+
+// 	var data []byte
+
+// 	a := fromStoredEvent.EventPayload.RawMessage.UnmarshalJSON(data)
+// 	b, _ := fromStoredEvent.EventPayload.RawMessage.MarshalJSON()
+// 	_ = a
+// 	_ = b
+
+// 	err := json.Unmarshal([]byte(fromStoredEvent.EventPayload.RawMessage), &toEvent)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to deserialize stored event payload: %w", err)
+// 	}
+// 	return nil
+// }

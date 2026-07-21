@@ -6,12 +6,20 @@ CREATE TABLE chats(
     deleted_at TIMESTAMP
 );
 
+-- CREATE TABLE private_chats(
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     chat_id UUID REFERENCES chats ON DELETE CASCADE,
+--     user1_id UUID NOT NULL,
+--     user2_id UUID NOT NULL
+-- );
+
 CREATE TABLE chat_participants(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     chat_id UUID REFERENCES chats ON DELETE CASCADE,
     participant_id UUID NOT NULL,
     role TEXT NOT NULL,
-    joined_at timestamp NOT NULL
+    joined_at timestamp NOT NULL DEFAULT now(),
+    CONSTRAINT unique_chat_participant UNIQUE(chat_id, participant_id)
 );
 
 CREATE TABLE messages(

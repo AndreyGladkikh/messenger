@@ -1,4 +1,4 @@
-package create_chat
+package create_private_chat
 
 import (
 	"context"
@@ -22,17 +22,27 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(ctx context.Context, command *Command) (response any, err error) {
-	chatType, err := chat.CreateType(command.Type)
+	exists, err := h.chatRepository.PrivateChatExists(ctx, command.InitiatorID, command.ChatWithUserID)
 	if err != nil {
 		return nil, err
+	}
+	if exists {
+		return nil, chat.ErrPrivateChatExists
 	}
 
 	message := chat.Create(
 		h.idProvider.ID(),
-		chatType,
+		chat.PrivateChat,
 	)
 
 	err = h.chatRepository.Add(ctx, message)
+
+	participants := []string{
+		command.InitiatorID,
+		command.ChatWithUserID,
+	}
+
+	_ = participants
 
 	return nil, err
 }

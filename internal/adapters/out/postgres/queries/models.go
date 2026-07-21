@@ -5,68 +5,64 @@
 package queries
 
 import (
-	"database/sql"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/sqlc-dev/pqtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Chat struct {
-	ID        uuid.UUID
+	ID        pgtype.UUID
 	Type      string
-	Name      sql.NullString
-	CreatedAt sql.NullTime
-	DeletedAt sql.NullTime
+	Name      pgtype.Text
+	CreatedAt pgtype.Timestamp
+	DeletedAt pgtype.Timestamp
 }
 
 type ChatParticipant struct {
-	ID            uuid.UUID
-	ChatID        uuid.NullUUID
-	ParticipantID uuid.UUID
+	ID            pgtype.UUID
+	ChatID        pgtype.UUID
+	ParticipantID pgtype.UUID
 	Role          string
-	JoinedAt      time.Time
+	JoinedAt      pgtype.Timestamp
 }
 
 type Event struct {
-	ID           uuid.UUID
+	ID           pgtype.UUID
 	EventType    string
-	EventPayload pqtype.NullRawMessage
-	OccurredAt   time.Time
-	ProcessedAt  sql.NullTime
+	EventPayload []byte
+	OccurredAt   pgtype.Timestamptz
+	ProcessedAt  pgtype.Timestamptz
 }
 
 type EventHandlerExecution struct {
-	ID          uuid.UUID
-	EventID     uuid.UUID
+	ID          pgtype.UUID
+	EventID     pgtype.UUID
 	HandlerType string
 	Attempts    int32
-	Error       sql.NullString
-	NextRetryAt sql.NullTime
+	Error       pgtype.Text
+	NextRetryAt pgtype.Timestamptz
 }
 
 type File struct {
-	ID        uuid.UUID
+	ID        pgtype.UUID
 	Hash      []byte
-	Name      sql.NullString
+	Name      pgtype.Text
 	Url       string
-	CreatedAt sql.NullTime
+	CreatedAt pgtype.Timestamp
 }
 
 type Message struct {
-	ID               uuid.UUID
-	SenderID         uuid.UUID
-	ChatID           uuid.UUID
+	ID               pgtype.UUID
+	SenderID         pgtype.UUID
+	ChatID           pgtype.UUID
 	Body             string
-	ReplyToMessageID uuid.NullUUID
-	CreatedAt        time.Time
-	UpdatedAt        sql.NullTime
-	DeletedAt        sql.NullTime
+	ReplyToMessageID pgtype.UUID
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	DeletedAt        pgtype.Timestamp
 }
 
 type MessagesFile struct {
-	ID        uuid.UUID
-	MessageID uuid.NullUUID
-	FileID    uuid.NullUUID
-	Name      sql.NullString
+	ID        pgtype.UUID
+	MessageID pgtype.UUID
+	FileID    pgtype.UUID
+	Name      pgtype.Text
 }

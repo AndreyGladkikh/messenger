@@ -22,7 +22,7 @@ type DatabaseConfig struct {
 	Driver   string
 	Schema   string
 	Host     string
-	Port     string
+	Port     uint16
 	Name     string
 	User     string
 	Password string

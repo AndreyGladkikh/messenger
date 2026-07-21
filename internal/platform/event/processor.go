@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"messenger/messenger/internal/adapters/out/logger"
+	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"time"
@@ -59,10 +60,7 @@ func (p *Processor) Run(ctx context.Context) error {
 			// go p.ProcessEvent(ctx, e)
 			err := p.qs.ProcessEvent(ctx, queries.ProcessEventParams{
 				ID: e.ID,
-				ProcessedAt: sql.NullTime{
-					Time:  time.Now(),
-					Valid: true,
-				},
+				ProcessedAt: mapping.ToDBTimestamp(time.Now()),
 			})
 			if err != nil {
 				return fmt.Errorf("event processor: failed to mark event as processed: %w", err)
@@ -116,11 +114,11 @@ func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Even
 		Attempts: execution.Attempts + 1,
 	}
 	if err != nil {
-		updateParams.Error = sql.NullString{String: err.Error(), Valid: true}
-		updateParams.NextRetryAt = sql.NullTime{Time: time.Now().Add(5 * time.Minute), Valid: true}
+		updateParams.Error = mapping.PgText(err.Error())
+		updateParams.NextRetryAt = mapping.ToDBTimestamp(time.Now().Add(5 * time.Minute))
 	} else {
-		updateParams.Error = sql.NullString{}
-		updateParams.NextRetryAt = sql.NullTime{}
+		updateParams.Error = mapping.PgText("")
+		updateParams.NextRetryAt = mapping.ToDBTimestamp(time.Time{})
 	}
 	if e := p.qs.UpdateEventHandlerExecution(ctx, updateParams); e != nil {
 		err = fmt.Errorf("failed to update event handler execution: %w; %w", e, err)
@@ -156,13 +154,8 @@ func (p *Processor) getExecution(ctx context.Context, storedEvent queries.Event,
 		return handlerExecution, nil
 	}
 
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return handlerExecution, fmt.Errorf("failed to create id for new event handler execution: %w", err)
-	}
-
-	handlerExecution, err = p.qs.CreateEventHandlerExecution(ctx, queries.CreateEventHandlerExecutionParams{
-		ID:          id,
+	handlerExecution, err := p.qs.CreateEventHandlerExecution(ctx, queries.CreateEventHandlerExecutionParams{
+		ID:          mapping.PgUUID(uuid.NewString()),
 		EventID:     storedEvent.ID,
 		HandlerType: handler.Name(),
 	})

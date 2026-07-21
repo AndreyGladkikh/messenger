@@ -12,6 +12,7 @@ import (
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/adapters/out/uuid"
+	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
@@ -21,25 +22,26 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApi() (*Container, func(), error) {
+func InitializeApi() (*Api, func(), error) {
 	configConfig := config.Load()
-	db, cleanup, err := postgres.NewPool(configConfig)
+	pool, cleanup, err := postgres.NewPool(configConfig)
 	if err != nil {
 		return nil, nil, err
 	}
-	manager := transaction.NewManager(db)
+	manager := transaction.NewManager(pool)
 	loggerLogger := logger.New()
-	queriesQueries := queries.New(db)
+	queriesQueries := queries.New(pool)
 	eventStorage := event.NewEventStorage(queriesQueries)
-	messageRepository := repositories.NewMessageRepository(db, queriesQueries)
+	messageRepository := repositories.NewMessageRepository(queriesQueries)
 	provider := uuid.NewProvider()
 	handler := send_message.NewHandler(messageRepository, provider)
-	bus := BuildCommandBusForApi(manager, loggerLogger, eventStorage, handler)
-	eventBus := event.NewBus()
+	chatRepository := repositories.NewChatRepository(queriesQueries)
+	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, provider)
+	bus := BuildCommandBusForApi(manager, loggerLogger, eventStorage, handler, create_private_chatHandler)
 	controller := http_server.NewController(bus)
 	server := http_server.NewServer(configConfig, controller)
-	container := NewContainer(db, manager, bus, eventBus, handler, messageRepository, server, loggerLogger)
-	return container, func() {
+	api := NewApi(server, loggerLogger)
+	return api, func() {
 		cleanup()
 	}, nil
 }

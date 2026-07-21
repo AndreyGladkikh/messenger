@@ -3,15 +3,16 @@
 package di
 
 import (
-	"database/sql"
 	loggerAdapter "messenger/messenger/internal/adapters/out/logger"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/adapters/out/uuid"
+	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/id"
 	appLogger "messenger/messenger/internal/application/logger"
+	"messenger/messenger/internal/domain/chat"
 	"messenger/messenger/internal/domain/message"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
@@ -19,19 +20,21 @@ import (
 	"messenger/messenger/internal/platform/postgres"
 
 	"github.com/google/wire"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func InitializeApi() (*Container, func(), error) {
+func InitializeApi() (*Api, func(), error) {
 	wire.Build(
-		NewContainer,
+		NewApi,
 
 		// bindings
 		wire.Bind(new(id.Provider), new(*uuid.Provider)),
 
-		wire.Bind(new(queries.DBTX), new(*sql.DB)),
+		wire.Bind(new(queries.DBTX), new(*pgxpool.Pool)),
 
 		wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
-		
+		wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
+
 		wire.Bind(new(appLogger.Logger), new(*loggerAdapter.Logger)),
 
 		config.Load,
@@ -46,21 +49,22 @@ func InitializeApi() (*Container, func(), error) {
 
 		// buses
 		BuildCommandBusForApi,
-		event.NewBus,
+		// event.NewBus,
 
 		// repositories
 		repositories.NewMessageRepository,
-		// repositories.NewChatRepository,
+		repositories.NewChatRepository,
 
 		// storages
 		event.NewEventStorage,
 
 		// command handlers
+		create_private_chat.NewHandler,
 		send_message.NewHandler,
 
 		// other
 		uuid.NewProvider,
 		loggerAdapter.New,
 	)
-	return new(Container), func() {}, nil
+	return new(Api), func() {}, nil
 }

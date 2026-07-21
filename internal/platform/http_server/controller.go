@@ -38,20 +38,15 @@ func (c *Controller) sendMessage(w http.ResponseWriter, r *http.Request) {
 	NewResponse(response, err).WriteTo(w)
 }
 
-func (c *Controller) createChat(w http.ResponseWriter, r *http.Request) {
-	var request Message
-	json.NewDecoder(r.Body).Decode(&request)
+// func (c *Controller) createChat(w http.ResponseWriter, r *http.Request) {
+// 	var request Chat
+// 	json.NewDecoder(r.Body).Decode(&request)
 
-	senderID, _ := auth.UserIDFromContext(r.Context())
+// 	command := &create_chat.Command{
+// 		Type: request.Type,
+// 		ChatName: request.Name,
+// 	}
+// 	response, err := c.commandBus.Dispatch(r.Context(), command)
 
-	command := &send_message.Command{
-		SenderID: senderID,
-		ChatID:           request.ChatID,
-		MessageBody:      request.Body,
-		ReplyToMessageID: request.ReplyToMessageID,
-		Attachments:      request.Attachments,
-	}
-	response, err := c.commandBus.Dispatch(r.Context(), command)
-
-	NewResponse(response, err).WriteTo(w)
-}
+// 	NewResponse(response, err).WriteTo(w)
+// }
