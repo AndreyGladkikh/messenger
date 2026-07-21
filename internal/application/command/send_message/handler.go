@@ -22,11 +22,6 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(ctx context.Context, command *Command) (response any, err error) {
-	chatID := command.ChatID
-	if chatID == "" {
-		chatID = ""
-	}
-
 	message := message.Send(
 		h.idProvider.ID(),
 		command.ChatID,

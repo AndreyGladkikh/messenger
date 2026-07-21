@@ -69,5 +69,55 @@ func InitializeApi() (*Api, func(), error) {
 		uuid.NewProvider,
 		loggerAdapter.New,
 	)
+
 	return new(Api), func() {}, nil
 }
+
+// func InitializeEventProcessor() (*event.Processor, func(), error) {
+// 	wire.Build(
+// 		event.NewProcessor,
+
+// 		// bindings
+// 		wire.Bind(new(id.Provider), new(*uuid.Provider)),
+
+// 		wire.Bind(new(queries.DBTX), new(*pgxpool.Pool)),
+
+// 		wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
+// 		wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
+// 		wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
+
+// 		// wire.Bind(new(appLogger.Logger), new(*loggerAdapter.Logger)),
+
+// 		config.Load,
+
+// 		http_server.NewServer,
+// 		http_server.NewController,
+
+// 		// persistence
+// 		postgres.NewPool,
+// 		transaction.NewManager,
+// 		queries.New,
+
+// 		// buses
+// 		BuildCommandBusForApi,
+// 		// event.NewBus,
+
+// 		// repositories
+// 		repositories.NewMessageRepository,
+// 		repositories.NewChatRepository,
+// 		repositories.NewChatParticipantRepository,
+
+// 		// storages
+// 		event.NewEventStorage,
+
+// 		// command handlers
+// 		create_private_chat.NewHandler,
+// 		send_message.NewHandler,
+
+// 		// other
+// 		uuid.NewProvider,
+// 		loggerAdapter.New,
+// 	)
+
+// 	return new(event.Processor), func() {}, nil
+// }
