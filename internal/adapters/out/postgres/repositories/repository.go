@@ -19,10 +19,8 @@ func (r *Repository) queries(ctx context.Context) *queries.Queries {
 	return r.q
 }
 
-func (r *Repository) RegisterAggregate(ctx context.Context, aggregates ...domain.Aggregate) {
+func (r *Repository) RegisterAggregate(ctx context.Context, aggregate domain.Aggregate) {
 	if uow, ok := uow.FromContext(ctx); ok {
-		for _, a := range aggregates {
-			uow.RegisterAggregate(a)
-		}
+		uow.RegisterAggregate(aggregate)
 	}
 }

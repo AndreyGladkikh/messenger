@@ -11,8 +11,9 @@ import (
 	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/id"
-	appLogger "messenger/messenger/internal/application/logger"
+	// appLogger "messenger/messenger/internal/application/logger"
 	"messenger/messenger/internal/domain/chat"
+	"messenger/messenger/internal/domain/chat_participant"
 	"messenger/messenger/internal/domain/message"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
@@ -34,8 +35,9 @@ func InitializeApi() (*Api, func(), error) {
 
 		wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
 		wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
+		wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
 
-		wire.Bind(new(appLogger.Logger), new(*loggerAdapter.Logger)),
+		// wire.Bind(new(appLogger.Logger), new(*loggerAdapter.Logger)),
 
 		config.Load,
 
@@ -54,6 +56,7 @@ func InitializeApi() (*Api, func(), error) {
 		// repositories
 		repositories.NewMessageRepository,
 		repositories.NewChatRepository,
+		repositories.NewChatParticipantRepository,
 
 		// storages
 		event.NewEventStorage,

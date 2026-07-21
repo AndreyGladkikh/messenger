@@ -4,19 +4,23 @@ import (
 	"context"
 	"messenger/messenger/internal/application/id"
 	"messenger/messenger/internal/domain/chat"
+	"messenger/messenger/internal/domain/chat_participant"
 )
 
 type Handler struct {
 	chatRepository chat.Repository
+	chatParticipantRepository chat_participant.Repository
 	idProvider        id.Provider
 }
 
 func NewHandler(
 	chatRepository chat.Repository,
+	chatParticipantRepository chat_participant.Repository,
 	idProvider id.Provider,
 ) *Handler {
 	return &Handler{
 		chatRepository: chatRepository,
+		chatParticipantRepository: chatParticipantRepository,
 		idProvider:        idProvider,
 	}
 }
@@ -30,19 +34,28 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 		return nil, chat.ErrPrivateChatExists
 	}
 
-	message := chat.Create(
-		h.idProvider.ID(),
+	chatID := h.idProvider.ID()
+	chat := chat.Create(
+		chatID,
 		chat.PrivateChat,
 	)
 
-	err = h.chatRepository.Add(ctx, message)
+	err = h.chatRepository.Add(ctx, chat)
 
-	participants := []string{
+	participants := make([]*chat_participant.ChatParticipant, 2)
+	for i, participantID := range []string{
 		command.InitiatorID,
 		command.ChatWithUserID,
+	} {
+		participants[i] = chat_participant.AddToChat(
+			h.idProvider.ID(),
+			chatID,
+			participantID,
+			chat_participant.RoleParticipant,
+		)
 	}
 
-	_ = participants
+	h.chatParticipantRepository.Add(ctx, participants)
 
 	return nil, err
 }

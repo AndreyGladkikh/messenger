@@ -6,8 +6,6 @@ import (
 	"messenger/messenger/internal/platform/config"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -48,24 +46,28 @@ import (
 // }
 
 func NewPool(cfg *config.Config) (*pgxpool.Pool, func(), error) {
-	pool, err := pgxpool.NewWithConfig(context.Background(), &pgxpool.Config{
-		ConnConfig: &pgx.ConnConfig{
-			Config: pgconn.Config{
-				Host: cfg.Database.Host,
-				Port: cfg.Database.Port,
-				Database: cfg.Database.Name,
-				User: cfg.Database.User,
-				Password: cfg.Database.Password,
-				ConnectTimeout: 3*time.Second,
-			},
-		},
-		MaxConnLifetime: 1 * time.Hour,
-		MaxConnIdleTime: 5 * time.Minute,
-		MaxConns: 50,
-		MinIdleConns: 10,
-	})
+	dsn := fmt.Sprintf(
+		"%s://%s:%s@%s:%d/%s",
+		cfg.Database.Schema,
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.Name,
+	)
+	pgxPoolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Unable to create connection pool: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse pgx pool config: %w", err)
+	}
+
+	pgxPoolConfig.MaxConnLifetime = 1 * time.Hour
+	pgxPoolConfig.MaxConnIdleTime = 5 * time.Minute
+	pgxPoolConfig.MaxConns = 50
+	pgxPoolConfig.MinIdleConns = 10
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), pgxPoolConfig)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to create pgx pool: %w", err)
 	}
 	cleanup := func() {
 		pool.Close()

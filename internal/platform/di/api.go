@@ -9,7 +9,23 @@ import (
 	"messenger/messenger/internal/platform/command_bus"
 	"messenger/messenger/internal/platform/command_bus/middlewares"
 	"messenger/messenger/internal/platform/event"
+	"messenger/messenger/internal/platform/http_server"
 )
+
+type Api struct {
+	Logger     *logger.Logger
+	HttpServer *http_server.Server
+}
+
+func NewApi(
+	httpServer *http_server.Server,
+	logger *logger.Logger,
+) *Api {
+	return &Api{
+		HttpServer: httpServer,
+		Logger:     logger,
+	}
+}
 
 func BuildCommandBusForApi(
 	txManager *transaction.Manager,
@@ -23,9 +39,9 @@ func BuildCommandBusForApi(
 	loggingMiddlewareContainer := middlewares.NewLoggerMiddlewareContainer(logger)
 	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager, eventStorage)
 	
+	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.Recoverer)
 	bus.Use(loggingMiddlewareContainer.Middleware)
-	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.ErrorTranslator)
 
 	bus.Register(&send_message.Command{}, command_bus.HandlerFunc(func(ctx context.Context, cmd command_bus.Command) (any, error) {

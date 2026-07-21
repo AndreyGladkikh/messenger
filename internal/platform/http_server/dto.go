@@ -9,8 +9,8 @@ type Chat struct {
 	Name string
 }
 
-type CreateChatRequest struct {
-	Chat
+type CreatePrivateChatRequest struct {
+	ChatWithUserID string
 }
 
 type Message struct {

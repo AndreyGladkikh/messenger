@@ -19,6 +19,7 @@ func NewTransactionMiddlewareContainer(
 ) *TransactionMiddlewareContainer {
 	return &TransactionMiddlewareContainer{
 		txManager: txManager,
+		eventStorage: eventStorage,
 	}
 }
 

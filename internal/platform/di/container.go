@@ -1,25 +1,5 @@
 package di
 
-import (
-	"messenger/messenger/internal/application/logger"
-	"messenger/messenger/internal/platform/http_server"
-)
-
-type Api struct {
-	Logger     logger.Logger
-	HttpServer *http_server.Server
-}
-
-func NewApi(
-	httpServer *http_server.Server,
-	logger logger.Logger,
-) *Api {
-	return &Api{
-		HttpServer: httpServer,
-		Logger:     logger,
-	}
-}
-
 // type Container struct {
 // 	DB        *pgxpool.Pool
 // 	TxManager *transaction.Manager
