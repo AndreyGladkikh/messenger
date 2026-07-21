@@ -2,8 +2,8 @@ CREATE TABLE chats(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type TEXT NOT NULL,
     name TEXT,
-    created_at TIMESTAMP DEFAULT now(),
-    deleted_at TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- CREATE TABLE private_chats(
@@ -18,9 +18,11 @@ CREATE TABLE chat_participants(
     chat_id UUID REFERENCES chats ON DELETE CASCADE,
     participant_id UUID NOT NULL,
     role TEXT NOT NULL,
-    joined_at timestamp NOT NULL DEFAULT now(),
+    joined_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT unique_chat_participant UNIQUE(chat_id, participant_id)
 );
+CREATE INDEX chat_participants_chat_id_index ON chat_participants (chat_id);
+CREATE INDEX chat_participants_participant_id_index ON chat_participants (participant_id);
 
 CREATE TABLE messages(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -28,9 +30,9 @@ CREATE TABLE messages(
     chat_id UUID NOT NULL REFERENCES chats ON DELETE CASCADE,
     body TEXT NOT NULL,
     reply_to_message_id UUID REFERENCES messages,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now(),
-    deleted_at TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE files(
@@ -38,7 +40,7 @@ CREATE TABLE files(
     hash BYTEA NOT NULL,
     name TEXT,
     url TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT now()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 CREATE TABLE messages_files(

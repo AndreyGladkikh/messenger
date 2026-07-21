@@ -12,8 +12,8 @@ type Chat struct {
 	ID        pgtype.UUID
 	Type      string
 	Name      pgtype.Text
-	CreatedAt pgtype.Timestamp
-	DeletedAt pgtype.Timestamp
+	CreatedAt pgtype.Timestamptz
+	DeletedAt pgtype.Timestamptz
 }
 
 type ChatParticipant struct {
@@ -21,7 +21,7 @@ type ChatParticipant struct {
 	ChatID        pgtype.UUID
 	ParticipantID pgtype.UUID
 	Role          string
-	JoinedAt      pgtype.Timestamp
+	JoinedAt      pgtype.Timestamptz
 }
 
 type Event struct {
@@ -46,7 +46,7 @@ type File struct {
 	Hash      []byte
 	Name      pgtype.Text
 	Url       string
-	CreatedAt pgtype.Timestamp
+	CreatedAt pgtype.Timestamptz
 }
 
 type Message struct {
@@ -55,9 +55,9 @@ type Message struct {
 	ChatID           pgtype.UUID
 	Body             string
 	ReplyToMessageID pgtype.UUID
-	CreatedAt        pgtype.Timestamp
-	UpdatedAt        pgtype.Timestamp
-	DeletedAt        pgtype.Timestamp
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+	DeletedAt        pgtype.Timestamptz
 }
 
 type MessagesFile struct {

@@ -4,7 +4,7 @@ WHERE id = $1 LIMIT 1;
 
 -- name: ListChatsForUser :many
 SELECT * FROM chats
-WHERE chat_id = ANY(
+WHERE id = ANY(
     SELECT chat_id
     FROM chat_participants
     WHERE participant_id = $1

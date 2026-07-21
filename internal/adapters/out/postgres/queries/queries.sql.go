@@ -110,7 +110,7 @@ func (q *Queries) GetMessage(ctx context.Context, id pgtype.UUID) (Message, erro
 
 const listChatsForUser = `-- name: ListChatsForUser :many
 SELECT id, type, name, created_at, deleted_at FROM chats
-WHERE chat_id = ANY(
+WHERE id = ANY(
     SELECT chat_id
     FROM chat_participants
     WHERE participant_id = $1

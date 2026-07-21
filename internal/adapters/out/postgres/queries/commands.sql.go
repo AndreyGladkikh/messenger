@@ -15,27 +15,20 @@ const createChat = `-- name: CreateChat :exec
 INSERT INTO chats (
     id,
     type,
-    name,
-    created_at
+    name
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 )
 `
 
 type CreateChatParams struct {
-	ID        pgtype.UUID
-	Type      string
-	Name      pgtype.Text
-	CreatedAt pgtype.Timestamp
+	ID   pgtype.UUID
+	Type string
+	Name pgtype.Text
 }
 
 func (q *Queries) CreateChat(ctx context.Context, arg CreateChatParams) error {
-	_, err := q.db.Exec(ctx, createChat,
-		arg.ID,
-		arg.Type,
-		arg.Name,
-		arg.CreatedAt,
-	)
+	_, err := q.db.Exec(ctx, createChat, arg.ID, arg.Type, arg.Name)
 	return err
 }
 
@@ -130,7 +123,7 @@ WHERE id = $1
 
 type DeleteChatParams struct {
 	ID        pgtype.UUID
-	DeletedAt pgtype.Timestamp
+	DeletedAt pgtype.Timestamptz
 }
 
 func (q *Queries) DeleteChat(ctx context.Context, arg DeleteChatParams) error {
@@ -146,7 +139,7 @@ WHERE id = $1
 
 type DeleteMessageParams struct {
 	ID        pgtype.UUID
-	DeletedAt pgtype.Timestamp
+	DeletedAt pgtype.Timestamptz
 }
 
 func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) error {
@@ -205,7 +198,7 @@ WHERE id = $1
 type UpdateMessageParams struct {
 	ID        pgtype.UUID
 	Body      string
-	UpdatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamptz
 }
 
 func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) error {

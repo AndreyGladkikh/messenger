@@ -2,10 +2,9 @@
 INSERT INTO chats (
     id,
     type,
-    name,
-    created_at
+    name
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3
 );
 
 -- name: DeleteChat :exec
