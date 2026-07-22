@@ -20,7 +20,7 @@ type ProcessorConfig struct {
 type Processor struct {
 	logger    *logger.Logger
 	qs        *queries.Queries
-	eventBus  *Bus
+	eventBus  *Bus[domain.Event]
 	cfg       *ProcessorConfig
 	inShutdown bool
 }
@@ -28,7 +28,7 @@ type Processor struct {
 func NewProcessor(
 	logger *logger.Logger,
 	qs *queries.Queries,
-	eventBus *Bus,
+	eventBus *Bus[domain.Event],
 ) *Processor {
 	return &Processor{
 		logger:    logger,
@@ -104,7 +104,7 @@ func (p *Processor) processEvent(ctx context.Context, storedEvent queries.Event)
 	return nil
 }
 
-func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Event, event domain.Event, handler event.Handler, handlerExecutions map[string]queries.EventHandlerExecution) error {
+func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Event, event domain.Event, handler event.Handler[domain.Event], handlerExecutions map[string]queries.EventHandlerExecution) error {
 	execution, err := p.getExecution(ctx, storedEvent, handler, handlerExecutions)
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Even
 	return err
 }
 
-func shouldExecuteHandler(handler event.Handler, handlerExecutions map[string]queries.EventHandlerExecution) bool {
+func shouldExecuteHandler[T domain.Event](handler event.Handler[T], handlerExecutions map[string]queries.EventHandlerExecution) bool {
 	var execution queries.EventHandlerExecution
 
 	execution, ok := handlerExecutions[handler.Name()]
@@ -153,7 +153,7 @@ func shouldExecuteHandler(handler event.Handler, handlerExecutions map[string]qu
 	return true
 }
 
-func (p *Processor) getExecution(ctx context.Context, storedEvent queries.Event, handler event.Handler, handlerExecutions map[string]queries.EventHandlerExecution) (queries.EventHandlerExecution, error) {
+func (p *Processor) getExecution(ctx context.Context, storedEvent queries.Event, handler event.Handler[domain.Event], handlerExecutions map[string]queries.EventHandlerExecution) (queries.EventHandlerExecution, error) {
 	var handlerExecution queries.EventHandlerExecution
 
 	if handlerExecution, ok := handlerExecutions[handler.Name()]; ok {
