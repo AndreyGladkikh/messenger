@@ -3,34 +3,23 @@ package event
 import (
 	"context"
 	"fmt"
+	"maps"
 	"messenger/messenger/internal/application/event"
 	"messenger/messenger/internal/domain"
 )
 
-type Bus[T domain.Event] struct {
-	handlers    map[string]map[string]event.Handler[T]
-	middlewares []Middleware[T]
+type Bus struct {
+	handlers    map[string]map[string]Handler
+	middlewares []Middleware
 }
 
-func NewBus[T domain.Event]() *Bus[T] {
-	return &Bus[T]{
-		handlers: make(map[string]map[string]event.Handler[T]),
+func NewBus() *Bus {
+	return &Bus{
+		handlers: make(map[string]map[string]Handler),
 	}
 }
 
-func (b *Bus[T]) Register(e T, h event.Handler[T]) {
-	for _, m := range b.middlewares {
-		h = m(h)
-	}
-
-	_, ok := b.handlers[e.Name()]
-	if !ok {
-		b.handlers[e.Name()] = make(map[string]event.Handler[T], 0)
-	}
-	b.handlers[e.Name()][h.Name()] = h
-}
-
-func (b *Bus[T]) Dispatch(ctx context.Context, e T) error {
+func (b *Bus) Dispatch(ctx context.Context, e domain.Event) error {
 	if handlers, ok := b.handlers[e.Name()]; ok {
 		for _, h := range handlers {
 			go h.Handle(ctx, e)
@@ -39,7 +28,7 @@ func (b *Bus[T]) Dispatch(ctx context.Context, e T) error {
 	return nil
 }
 
-func (b *Bus[T]) DispatchForHandler(ctx context.Context, e T, h event.Handler[T]) error {
+func (b *Bus) DispatchForHandler(ctx context.Context, e domain.Event, h Handler) error {
 	if _, ok := b.handlers[e.Name()]; !ok {
 		return fmt.Errorf("there is no handlers for %q event", e.Name())
 	}
@@ -51,7 +40,7 @@ func (b *Bus[T]) DispatchForHandler(ctx context.Context, e T, h event.Handler[T]
 	return handler.Handle(ctx, e)
 }
 
-func (b *Bus[T]) Use(m Middleware[T]) {
+func (b *Bus) Use(m Middleware) {
 	b.middlewares = append(b.middlewares, m)
 
 	for eventName, eventHandlers := range b.handlers {
@@ -61,19 +50,56 @@ func (b *Bus[T]) Use(m Middleware[T]) {
 	}
 }
 
-func (b *Bus[T]) HandlersForEvent(e T) map[string]event.Handler[T] {
-	return b.handlers[e.Name()]
+func (b *Bus) HandlersForEvent(e domain.Event) map[string]Handler {
+	return maps.Clone(b.handlers[e.Name()])
 }
 
-type Middleware[T domain.Event] func(event.Handler[T]) event.Handler[T]
+func RegisterHandler[E domain.Event](b *Bus, e E, h event.Handler[E]) {
+	var handler Handler = EventHandlerAdapter[E]{handler: h}
 
-type HandlerFunc func(context.Context, domain.Event) error
+	for _, m := range b.middlewares {
+		handler = m(handler)
+	}
 
-func (hf HandlerFunc) Handle(ctx context.Context, e domain.Event) error {
-	return hf(ctx, e)
+	_, ok := b.handlers[e.Name()]
+	if !ok {
+		b.handlers[e.Name()] = make(map[string]Handler, 0)
+	}
+	b.handlers[e.Name()][h.Name()] = handler
 }
 
-func (hf HandlerFunc) Name() string {
+type Middleware func(Handler) Handler
 
+type Handler interface {
+	Handle(context.Context, domain.Event) error
+	Name() string
 }
+
+type EventHandlerAdapter[T domain.Event] struct {
+	handler event.Handler[T]
+}
+
+func (h EventHandlerAdapter[T]) Handle(ctx context.Context, e domain.Event) error {
+	typedEvent, ok := e.(T)
+	if !ok {
+		return fmt.Errorf("unexpected event type for handler %q", h.Name())
+	}
+
+	return h.handler.Handle(ctx, typedEvent)
+}
+
+func (h EventHandlerAdapter[T]) Name() string {
+	return h.handler.Name()
+}
+
+
+// type HandlerFunc func(context.Context, domain.Event) error
+
+// func (hf HandlerFunc) Handle(ctx context.Context, e domain.Event) error {
+// 	return hf(ctx, e)
+// }
+
+// func (hf HandlerFunc) Name() string {
+
+// }
 

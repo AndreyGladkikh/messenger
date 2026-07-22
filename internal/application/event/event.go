@@ -5,7 +5,7 @@ import (
 	"messenger/messenger/internal/domain"
 )
 
-type Handler[T domain.Event] interface {
-	Handle(context.Context, T) error
+type Handler[E domain.Event] interface {
+	Handle(context.Context, E) error
 	Name() string
 }

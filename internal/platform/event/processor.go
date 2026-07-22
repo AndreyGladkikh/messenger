@@ -20,7 +20,7 @@ type ProcessorConfig struct {
 type Processor struct {
 	logger    *logger.Logger
 	qs        *queries.Queries
-	eventBus  *Bus[domain.Event]
+	eventBus  *Bus
 	cfg       *ProcessorConfig
 	inShutdown bool
 }
@@ -28,7 +28,7 @@ type Processor struct {
 func NewProcessor(
 	logger *logger.Logger,
 	qs *queries.Queries,
-	eventBus *Bus[domain.Event],
+	eventBus *Bus,
 ) *Processor {
 	return &Processor{
 		logger:    logger,
