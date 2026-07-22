@@ -76,6 +76,7 @@ func InitializeApi() (*Api, func(), error) {
 func InitializeEventProcessor() (*event.Processor, func(), error) {
 	wire.Build(
 		event.NewProcessor,
+		BuildEventBusForProcessor,
 		CommonSet,
 	)
 

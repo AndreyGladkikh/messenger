@@ -14,6 +14,7 @@ import (
 	"messenger/messenger/internal/adapters/out/uuid"
 	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
+	"messenger/messenger/internal/application/event/message_sent"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
@@ -43,6 +44,26 @@ func InitializeApi() (*Api, func(), error) {
 	server := http_server.NewServer(configConfig, controller)
 	api := NewApi(server, loggerLogger)
 	return api, func() {
+		cleanup()
+	}, nil
+}
+
+func InitializeEventProcessor() (*event.Processor, func(), error) {
+	loggerLogger := logger.New()
+	configConfig := config.Load()
+	pool, cleanup, err := postgres.NewPool(configConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	queriesQueries := queries.New(pool)
+	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler()
+	bus, err := BuildEventBusForProcessor(notifyChatParticipantsHandler)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	processor := event.NewProcessor(loggerLogger, queriesQueries, bus)
+	return processor, func() {
 		cleanup()
 	}, nil
 }

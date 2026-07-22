@@ -8,6 +8,7 @@ import (
 	"messenger/messenger/internal/adapters/out/uuid"
 	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
+	"messenger/messenger/internal/application/event/message_sent"
 	"messenger/messenger/internal/application/id"
 	"messenger/messenger/internal/domain/chat"
 	"messenger/messenger/internal/domain/chat_participant"
@@ -21,39 +22,53 @@ import (
 )
 
 var CommonSet = wire.NewSet(
-	// bindings
 	wire.Bind(new(id.Provider), new(*uuid.Provider)),
-
 	wire.Bind(new(queries.DBTX), new(*pgxpool.Pool)),
-
-	wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
-	wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
-	wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
-
+	
 	config.Load,
+	Repositories,
+	CommandHandlers,
+	EventHandlers,
+
 
 	// persistence
 	postgres.NewPool,
 	transaction.NewManager,
 	queries.New,
 
-	// buses
-	BuildCommandBusForApi,
-	// event.NewBus,
-
-	// repositories
-	repositories.NewMessageRepository,
-	repositories.NewChatRepository,
-	repositories.NewChatParticipantRepository,
-
 	// storages
 	event.NewEventStorage,
-
-	// command handlers
-	create_private_chat.NewHandler,
-	send_message.NewHandler,
 
 	// other
 	uuid.NewProvider,
 	logger.New,
+)
+
+var Repositories = wire.NewSet(
+	wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
+	wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
+	wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
+
+	repositories.NewMessageRepository,
+	repositories.NewChatRepository,
+	repositories.NewChatParticipantRepository,
+)
+
+// var Repositories = wire.NewSet(
+// 	wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
+// 	wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
+// 	wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
+
+// 	repositories.NewMessageRepository,
+// 	repositories.NewChatRepository,
+// 	repositories.NewChatParticipantRepository,
+// )
+
+var CommandHandlers = wire.NewSet(
+	create_private_chat.NewHandler,
+	send_message.NewHandler,
+)
+
+var EventHandlers = wire.NewSet(
+	message_sent.NewNotifyChatParticipantsHandler,
 )

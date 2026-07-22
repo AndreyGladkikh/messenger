@@ -91,15 +91,3 @@ func (h EventHandlerAdapter[T]) Handle(ctx context.Context, e domain.Event) erro
 func (h EventHandlerAdapter[T]) Name() string {
 	return h.handler.Name()
 }
-
-
-// type HandlerFunc func(context.Context, domain.Event) error
-
-// func (hf HandlerFunc) Handle(ctx context.Context, e domain.Event) error {
-// 	return hf(ctx, e)
-// }
-
-// func (hf HandlerFunc) Name() string {
-
-// }
-

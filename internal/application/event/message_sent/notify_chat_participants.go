@@ -2,16 +2,24 @@ package message_sent
 
 import (
 	"context"
+	"fmt"
 	"messenger/messenger/internal/domain/message"
 )
 
 type NotifyChatParticipantsHandler struct {
 }
 
+func NewNotifyChatParticipantsHandler() *NotifyChatParticipantsHandler {
+	return &NotifyChatParticipantsHandler{
+		
+	}
+}
+
 func (h *NotifyChatParticipantsHandler) Handle(ctx context.Context, event message.MessageSent) error {
+	fmt.Println("event handled")
 	return nil
 }
 
 func (h *NotifyChatParticipantsHandler) Name() string {
-	return "NotifyChatParticipantsHandler"
+	return "event_handler.notify_chat_participants.v1"
 }
