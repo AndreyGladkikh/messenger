@@ -7,7 +7,8 @@ import (
 	"messenger/messenger/internal/adapters/out/logger"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
-	"messenger/messenger/internal/adapters/out/postgres/transaction"
+	"messenger/messenger/internal/application/event"
+	"messenger/messenger/internal/domain"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,23 +18,20 @@ type ProcessorConfig struct {
 }
 
 type Processor struct {
-	logger    logger.Logger
-	txManager *transaction.Manager
+	logger    *logger.Logger
 	qs        *queries.Queries
 	eventBus  *Bus
 	cfg       *ProcessorConfig
+	inShutdown bool
 }
 
 func NewProcessor(
-	logger logger.Logger,
-	txManager *transaction.Manager,
+	logger *logger.Logger,
 	qs *queries.Queries,
 	eventBus *Bus,
-	cfg *ProcessorConfig,
 ) *Processor {
 	return &Processor{
 		logger:    logger,
-		txManager: txManager,
 		qs:        qs,
 		eventBus:  eventBus,
 	}
@@ -41,10 +39,14 @@ func NewProcessor(
 
 func (p *Processor) Run(ctx context.Context) error {
 	for {
+		if p.inShutdown {
+			return nil
+		}
 		events, err := p.qs.ListUnprocessedEvents(ctx)
 		if err != nil {
 			return fmt.Errorf("event processor: failed to retreive events: %w", err)
 		}
+		// todo sleep 1sec if empty
 
 		for _, e := range events {
 			go func() {
@@ -57,7 +59,6 @@ func (p *Processor) Run(ctx context.Context) error {
 					)
 				}
 			}()
-			// go p.ProcessEvent(ctx, e)
 			err := p.qs.ProcessEvent(ctx, queries.ProcessEventParams{
 				ID: e.ID,
 				ProcessedAt: mapping.ToDBTimestamp(time.Now()),
@@ -67,6 +68,11 @@ func (p *Processor) Run(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+func (p *Processor) Shutdown(ctx context.Context) error {
+	p.inShutdown = true
+	return nil
 }
 
 func (p *Processor) processEvent(ctx context.Context, storedEvent queries.Event) error {
@@ -98,7 +104,7 @@ func (p *Processor) processEvent(ctx context.Context, storedEvent queries.Event)
 	return nil
 }
 
-func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Event, event Event, handler Handler, handlerExecutions map[string]queries.EventHandlerExecution) error {
+func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Event, event domain.Event, handler event.Handler, handlerExecutions map[string]queries.EventHandlerExecution) error {
 	execution, err := p.getExecution(ctx, storedEvent, handler, handlerExecutions)
 	if err != nil {
 		return err
@@ -126,7 +132,7 @@ func (p *Processor) executeHandler(ctx context.Context, storedEvent queries.Even
 	return err
 }
 
-func shouldExecuteHandler(handler Handler, handlerExecutions map[string]queries.EventHandlerExecution) bool {
+func shouldExecuteHandler(handler event.Handler, handlerExecutions map[string]queries.EventHandlerExecution) bool {
 	var execution queries.EventHandlerExecution
 
 	execution, ok := handlerExecutions[handler.Name()]
@@ -147,7 +153,7 @@ func shouldExecuteHandler(handler Handler, handlerExecutions map[string]queries.
 	return true
 }
 
-func (p *Processor) getExecution(ctx context.Context, storedEvent queries.Event, handler Handler, handlerExecutions map[string]queries.EventHandlerExecution) (queries.EventHandlerExecution, error) {
+func (p *Processor) getExecution(ctx context.Context, storedEvent queries.Event, handler event.Handler, handlerExecutions map[string]queries.EventHandlerExecution) (queries.EventHandlerExecution, error) {
 	var handlerExecution queries.EventHandlerExecution
 
 	if handlerExecution, ok := handlerExecutions[handler.Name()]; ok {

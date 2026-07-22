@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"messenger/messenger/internal/adapters/out/postgres/queries"
+	"messenger/messenger/internal/domain"
 	"messenger/messenger/internal/domain/message"
 )
 
-func translateStoredEventToDispatchedEvent(storedEvent queries.Event) (Event, error) {
-	var event Event
+func translateStoredEventToDispatchedEvent(storedEvent queries.Event) (domain.Event, error) {
+	var event domain.Event
 
 	switch storedEvent.EventType {
 	case message.MessageSent{}.Name():
@@ -21,7 +22,7 @@ func translateStoredEventToDispatchedEvent(storedEvent queries.Event) (Event, er
 	return event, err
 }
 
-func rehydrateEvent(fromStoredEvent queries.Event, toEvent Event) error {
+func rehydrateEvent(fromStoredEvent queries.Event, toEvent domain.Event) error {
 	err := json.Unmarshal(fromStoredEvent.EventPayload, &toEvent)
 	if err != nil {
 		return fmt.Errorf("failed to deserialize stored event payload: %w", err)

@@ -31,7 +31,7 @@ CREATE TABLE messages(
     body TEXT NOT NULL,
     reply_to_message_id UUID REFERENCES messages,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 

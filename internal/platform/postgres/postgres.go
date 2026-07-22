@@ -63,7 +63,6 @@ func NewPool(cfg *config.Config) (*pgxpool.Pool, func(), error) {
 	pgxPoolConfig.MaxConnLifetime = 1 * time.Hour
 	pgxPoolConfig.MaxConnIdleTime = 5 * time.Minute
 	pgxPoolConfig.MaxConns = 50
-	pgxPoolConfig.MinIdleConns = 10
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), pgxPoolConfig)
 	if err != nil {
