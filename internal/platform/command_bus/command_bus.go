@@ -3,6 +3,7 @@ package command_bus
 import (
 	"context"
 	"fmt"
+	"messenger/messenger/internal/application/command"
 )
 
 type Bus struct {
@@ -16,7 +17,7 @@ func NewBus() *Bus {
 	}
 }
 
-func (b *Bus) Register(command Command, handler Handler) error {
+func (b *Bus) Register(command command.Command, handler Handler) error {
 	for _, m := range b.middlewares {
 		handler = m(handler)
 	}
@@ -27,7 +28,7 @@ func (b *Bus) Register(command Command, handler Handler) error {
 	return nil
 }
 
-func (b *Bus) Dispatch(ctx context.Context, command Command) (any, error) {
+func (b *Bus) Dispatch(ctx context.Context, command command.Command) (any, error) {
 	handler, ok := b.handlers[command.Name()]
 	if !ok {
 		var zero any
@@ -45,18 +46,13 @@ func (b *Bus) Use(middleware Middleware) {
 	b.middlewares = append(b.middlewares, middleware)
 }
 
-type Command interface {
-	IsCommand()
-	Name() string
-}
-
 type Handler interface {
-	Handle(context.Context, Command) (any, error)
+	Handle(context.Context, command.Command) (any, error)
 }
 
-type HandlerFunc func(ctx context.Context, command Command) (any, error)
+type HandlerFunc func(ctx context.Context, command command.Command) (any, error)
 
-func (f HandlerFunc) Handle(ctx context.Context, command Command) (any, error) {
+func (f HandlerFunc) Handle(ctx context.Context, command command.Command) (any, error) {
 	return f(ctx, command)
 }
 

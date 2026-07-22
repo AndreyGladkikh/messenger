@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"fmt"
+	"messenger/messenger/internal/application/command"
 	"messenger/messenger/internal/platform/command_bus"
 	"runtime/debug"
 )
@@ -25,7 +26,7 @@ func (e *PanicError) Error() string {
 }
 
 func Recoverer(next command_bus.Handler) command_bus.Handler {
-	fn := func(ctx context.Context, command command_bus.Command) (response any, err error) {
+	fn := func(ctx context.Context, command command.Command) (response any, err error) {
 		defer func() {
 			if r := recover(); r != nil {
 				err = &PanicError{

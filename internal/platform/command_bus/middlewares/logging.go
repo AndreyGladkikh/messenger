@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"messenger/messenger/internal/adapters/out/logger"
+	"messenger/messenger/internal/application/command"
 	"messenger/messenger/internal/platform/command_bus"
 )
 
@@ -20,7 +21,7 @@ func NewLoggerMiddlewareContainer(
 }
 
 func (c *LoggerMiddlewareContainer) Middleware(next command_bus.Handler) command_bus.Handler {
-	fn := func(ctx context.Context, command command_bus.Command) (any, error) {
+	fn := func(ctx context.Context, command command.Command) (any, error) {
 		response, err := next.Handle(ctx, command)
 		if err != nil {
 			logArgs := []any{

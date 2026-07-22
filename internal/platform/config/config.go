@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"messenger/messenger/internal/platform/utils"
 	"os"
@@ -37,11 +38,15 @@ type HttpServerConfig struct {
 }
 
 func Load() *Config {
+	projRoot, err := utils.LoadProjectRoot()
+	if err != nil {
+		log.Fatal(fmt.Errorf("failed to load project root: %w", err))
+	}
+	
 	loadEnv()
 
 	k := koanf.New(".")
 
-	projRoot, _ := utils.ProjectRoot()
 	if err := k.Load(file.Provider(projRoot+"/configs/config.yaml"), yaml.Parser()); err != nil {
 		log.Fatal(err.Error())
 	}
@@ -58,7 +63,7 @@ func Load() *Config {
 }
 
 func loadEnv() {
-	projRoot, _ := utils.ProjectRoot()
+	projRoot := utils.ProjectRoot()
 
 	env := os.Getenv("MESSENGER_ENV")
 	if "" == env {

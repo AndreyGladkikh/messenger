@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 )
 
-func ProjectRoot() (string, error) {
+var projectRoot string
+
+func LoadProjectRoot() (string, error) {
     dir, err := os.Getwd()
     if err != nil {
         return "", err
@@ -14,6 +16,7 @@ func ProjectRoot() (string, error) {
 
     for {
         if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+            projectRoot = dir
             return dir, nil
         }
 
@@ -24,4 +27,8 @@ func ProjectRoot() (string, error) {
 
         dir = parent
     }
+}
+
+func ProjectRoot() string {
+    return projectRoot
 }
