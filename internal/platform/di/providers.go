@@ -2,7 +2,6 @@ package di
 
 import (
 	"messenger/messenger/internal/adapters/out/logger"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/adapters/out/uuid"
@@ -14,6 +13,7 @@ import (
 	"messenger/messenger/internal/domain/chat_participant"
 	"messenger/messenger/internal/domain/message"
 	"messenger/messenger/internal/platform/config"
+	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/postgres"
 
@@ -23,18 +23,20 @@ import (
 
 var CommonSet = wire.NewSet(
 	wire.Bind(new(id.Provider), new(*uuid.Provider)),
-	wire.Bind(new(queries.DBTX), new(*pgxpool.Pool)),
-	
+	wire.Bind(new(db.DBTX), new(*pgxpool.Pool)),
+
 	config.Load,
+
+	db.New,
+	db.NewStorage,
 	Repositories,
+
 	CommandHandlers,
 	EventHandlers,
-
 
 	// persistence
 	postgres.NewPool,
 	transaction.NewManager,
-	queries.New,
 
 	// storages
 	event.NewEventStorage,

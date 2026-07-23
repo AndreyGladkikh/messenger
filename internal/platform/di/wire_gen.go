@@ -8,7 +8,6 @@ package di
 
 import (
 	"messenger/messenger/internal/adapters/out/logger"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/adapters/out/uuid"
@@ -16,6 +15,7 @@ import (
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/event/message_sent"
 	"messenger/messenger/internal/platform/config"
+	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/postgres"
@@ -31,13 +31,14 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	manager := transaction.NewManager(pool)
 	loggerLogger := logger.New()
-	queriesQueries := queries.New(pool)
-	eventStorage := event.NewEventStorage(queriesQueries)
-	messageRepository := repositories.NewMessageRepository(queriesQueries)
+	queries := db.New(pool)
+	storage := db.NewStorage(queries)
+	eventStorage := event.NewEventStorage(storage)
+	messageRepository := repositories.NewMessageRepository(queries)
 	provider := uuid.NewProvider()
 	handler := send_message.NewHandler(messageRepository, provider)
-	chatRepository := repositories.NewChatRepository(queriesQueries)
-	chatParticipantRepository := repositories.NewChatParticipantRepository(queriesQueries)
+	chatRepository := repositories.NewChatRepository(queries)
+	chatParticipantRepository := repositories.NewChatParticipantRepository(queries)
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository, provider)
 	bus := BuildCommandBusForApi(manager, loggerLogger, eventStorage, handler, create_private_chatHandler)
 	controller := http_server.NewController(bus)
@@ -49,20 +50,23 @@ func InitializeApi() (*Api, func(), error) {
 }
 
 func InitializeEventProcessor() (*event.Processor, func(), error) {
-	loggerLogger := logger.New()
 	configConfig := config.Load()
 	pool, cleanup, err := postgres.NewPool(configConfig)
 	if err != nil {
 		return nil, nil, err
 	}
-	queriesQueries := queries.New(pool)
+	queries := db.New(pool)
+	storage := db.NewStorage(queries)
+	eventStorage := event.NewEventStorage(storage)
+	manager := transaction.NewManager(pool)
+	loggerLogger := logger.New()
 	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler()
 	bus, err := BuildEventBusForProcessor(notifyChatParticipantsHandler)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	processor := event.NewProcessor(loggerLogger, queriesQueries, bus)
+	processor := event.NewProcessor(eventStorage, manager, loggerLogger, queries, bus)
 	return processor, func() {
 		cleanup()
 	}, nil

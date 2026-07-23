@@ -22,7 +22,9 @@ func NewBus() *Bus {
 func (b *Bus) Dispatch(ctx context.Context, e domain.Event) error {
 	if handlers, ok := b.handlers[e.Name()]; ok {
 		for _, h := range handlers {
-			go h.Handle(ctx, e)
+			if err := h.Handle(ctx, e); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -79,10 +81,10 @@ type EventHandlerAdapter[T domain.Event] struct {
 	handler event.Handler[T]
 }
 
-func (h EventHandlerAdapter[T]) Handle(ctx context.Context, e domain.Event) error {
-	typedEvent, ok := e.(T)
+func (h EventHandlerAdapter[E]) Handle(ctx context.Context, e domain.Event) error {
+	typedEvent, ok := e.(E)
 	if !ok {
-		return fmt.Errorf("unexpected event type for handler %q", h.Name())
+		return fmt.Errorf("handler %q: expected %T, got %T", h.Name(), *new(E), e)
 	}
 
 	return h.handler.Handle(ctx, typedEvent)

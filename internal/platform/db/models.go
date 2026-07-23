@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.31.1
 
-package queries
+package db
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
@@ -29,7 +29,11 @@ type Event struct {
 	EventType    string
 	EventPayload []byte
 	OccurredAt   pgtype.Timestamptz
-	ProcessedAt  pgtype.Timestamptz
+	Status       string
+	ClaimedAt    pgtype.Timestamptz
+	Attempts     int32
+	Error        pgtype.Text
+	NextRetryAt  pgtype.Timestamptz
 }
 
 type EventHandlerExecution struct {

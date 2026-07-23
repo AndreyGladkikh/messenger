@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: commands.sql
 
-package queries
+package db
 
 import (
 	"context"
@@ -149,17 +149,17 @@ func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) er
 
 const processEvent = `-- name: ProcessEvent :exec
 UPDATE events
-  set processed_at = $2
+  set claimed_at = $2
 WHERE id = $1
 `
 
 type ProcessEventParams struct {
-	ID          pgtype.UUID
-	ProcessedAt pgtype.Timestamptz
+	ID        pgtype.UUID
+	ClaimedAt pgtype.Timestamptz
 }
 
 func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) error {
-	_, err := q.db.Exec(ctx, processEvent, arg.ID, arg.ProcessedAt)
+	_, err := q.db.Exec(ctx, processEvent, arg.ID, arg.ClaimedAt)
 	return err
 }
 

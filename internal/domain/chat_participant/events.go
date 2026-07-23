@@ -5,6 +5,8 @@ type ParticipantAddedToChat struct {
 	ParticipantID string
 }
 
+func (c ParticipantAddedToChat) IsEvent() {}
+
 func (p ParticipantAddedToChat) Name() string {
 	return "ParticipantAddedToChat"
 }

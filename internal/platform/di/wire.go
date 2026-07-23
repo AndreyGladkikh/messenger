@@ -4,18 +4,17 @@ package di
 
 import (
 	loggerAdapter "messenger/messenger/internal/adapters/out/logger"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/repositories"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/adapters/out/uuid"
 	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/id"
-	// appLogger "messenger/messenger/internal/application/logger"
 	"messenger/messenger/internal/domain/chat"
 	"messenger/messenger/internal/domain/chat_participant"
 	"messenger/messenger/internal/domain/message"
 	"messenger/messenger/internal/platform/config"
+	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/postgres"
@@ -31,7 +30,7 @@ func InitializeApi() (*Api, func(), error) {
 		// bindings
 		wire.Bind(new(id.Provider), new(*uuid.Provider)),
 
-		wire.Bind(new(queries.DBTX), new(*pgxpool.Pool)),
+		wire.Bind(new(db.DBTX), new(*pgxpool.Pool)),
 
 		wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
 		wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
@@ -47,7 +46,8 @@ func InitializeApi() (*Api, func(), error) {
 		// persistence
 		postgres.NewPool,
 		transaction.NewManager,
-		queries.New,
+		db.New,
+		db.NewStorage,
 
 		// buses
 		BuildCommandBusForApi,

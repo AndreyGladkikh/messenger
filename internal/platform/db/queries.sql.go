@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: queries.sql
 
-package queries
+package db
 
 import (
 	"context"
@@ -85,6 +85,53 @@ func (q *Queries) GetEventHandlerExecutionsByEventId(ctx context.Context, eventI
 		return nil, err
 	}
 	return items, nil
+}
+
+const getEventToProcess = `-- name: GetEventToProcess :one
+
+
+WITH events_to_process as (
+    SELECT id, event_type, event_payload, occurred_at, status, claimed_at, attempts, error, next_retry_at FROM events
+    WHERE status = 'pending'
+    OR (status = 'retry' AND now() >= next_retry_at)
+    ORDER BY occurred_at
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED
+)
+UPDATE events e
+SET status = 'processing'
+FROM events_to_process ep
+WHERE e.id = ep.id
+RETURNING e.id, e.event_type, e.event_payload, e.occurred_at, e.status, e.claimed_at, e.attempts, e.error, e.next_retry_at
+`
+
+// -- name: ListUnprocessedEvents :many
+// SELECT * FROM events
+// WHERE processed_at IS NULL
+// ORDER BY occurred_at
+// LIMIT 100
+// FOR UPDATE;
+// -- name: GetNextUnprocessedEvent :one
+// SELECT * FROM events
+// WHERE processed_at IS NULL
+// ORDER BY occurred_at
+// LIMIT 1
+// FOR UPDATE SKIP LOCKED;
+func (q *Queries) GetEventToProcess(ctx context.Context) (Event, error) {
+	row := q.db.QueryRow(ctx, getEventToProcess)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.EventType,
+		&i.EventPayload,
+		&i.OccurredAt,
+		&i.Status,
+		&i.ClaimedAt,
+		&i.Attempts,
+		&i.Error,
+		&i.NextRetryAt,
+	)
+	return i, err
 }
 
 const getMessage = `-- name: GetMessage :one
@@ -218,39 +265,6 @@ func (q *Queries) ListMessagesForChat(ctx context.Context, arg ListMessagesForCh
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listUnprocessedEvents = `-- name: ListUnprocessedEvents :many
-SELECT id, event_type, event_payload, occurred_at, processed_at FROM events
-WHERE processed_at IS NULL
-ORDER BY occurred_at
-LIMIT 100
-`
-
-func (q *Queries) ListUnprocessedEvents(ctx context.Context) ([]Event, error) {
-	rows, err := q.db.Query(ctx, listUnprocessedEvents)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Event
-	for rows.Next() {
-		var i Event
-		if err := rows.Scan(
-			&i.ID,
-			&i.EventType,
-			&i.EventPayload,
-			&i.OccurredAt,
-			&i.ProcessedAt,
 		); err != nil {
 			return nil, err
 		}

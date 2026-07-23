@@ -55,7 +55,11 @@ CREATE TABLE events(
     event_type TEXT NOT NULL,
     event_payload JSONB,
     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    processed_at TIMESTAMP WITH TIME ZONE
+    status TEXT NOT NULL DEFAULT 'pending',
+    claimed_at TIMESTAMP WITH TIME ZONE,
+    attempts INT NOT NULL DEFAULT 0,
+    error TEXT,
+    next_retry_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE event_handler_executions(
@@ -64,5 +68,6 @@ CREATE TABLE event_handler_executions(
     handler_type TEXT NOT NULL,
     attempts INT NOT NULL DEFAULT 0,
     error TEXT,
-    next_retry_at TIMESTAMP WITH TIME ZONE
+    next_retry_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT event_handler_executions_unique UNIQUE(event_id, handler_type)
 );

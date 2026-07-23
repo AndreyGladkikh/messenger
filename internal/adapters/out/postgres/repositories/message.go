@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/message"
+	"messenger/messenger/internal/platform/db"
 )
 
 type MessageRepository struct {
@@ -12,7 +12,7 @@ type MessageRepository struct {
 }
 
 func NewMessageRepository(
-	q *queries.Queries,
+	q *db.Queries,
 ) *MessageRepository {
 	return &MessageRepository{
 		Repository: Repository{
@@ -22,11 +22,11 @@ func NewMessageRepository(
 }
 
 func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
-	err := r.queries(ctx).CreateMessage(ctx, queries.CreateMessageParams{
-		ID:       mapping.PgUUID(m.ID()),
-		SenderID: mapping.PgUUID(m.SenderID()),
-		ChatID:   mapping.PgUUID(m.ChatID()),
-		Body:     m.Body(),
+	err := r.queries(ctx).CreateMessage(ctx, db.CreateMessageParams{
+		ID:               mapping.PgUUID(m.ID()),
+		SenderID:         mapping.PgUUID(m.SenderID()),
+		ChatID:           mapping.PgUUID(m.ChatID()),
+		Body:             m.Body(),
 		ReplyToMessageID: mapping.PgUUID(m.ReplyToMessageID()),
 	})
 
@@ -47,7 +47,7 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 		offset = 0
 	}
 
-	messageRows, err := r.queries(ctx).ListMessagesForChat(ctx, queries.ListMessagesForChatParams{
+	messageRows, err := r.queries(ctx).ListMessagesForChat(ctx, db.ListMessagesForChatParams{
 		ChatID: mapping.PgUUID(chatID),
 		Limit:  int32(limit),
 		Offset: int32(offset),

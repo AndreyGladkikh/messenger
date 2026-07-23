@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"fmt"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/application/command"
 	"messenger/messenger/internal/platform/command_bus"
@@ -35,7 +36,9 @@ func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) co
 				return err
 			}
 			
-			c.storeEvents(ctx, uowo)
+			if err := c.storeEvents(ctx, uowo); err != nil {
+				return err
+			}
 
 			return nil
 		})
@@ -48,7 +51,7 @@ func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context, uow *u
 	for _, aggregate := range uow.Aggregates() {
 		for _, event := range aggregate.PullEvents() {
 			if err := c.eventStorage.Add(ctx, event); err != nil {
-				return err
+				return fmt.Errorf("failed to store event: %w", err)
 			}
 		}
 	}

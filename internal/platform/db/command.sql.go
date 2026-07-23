@@ -3,7 +3,7 @@
 //   sqlc v1.31.1
 // source: command.sql
 
-package queries
+package db
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"

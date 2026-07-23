@@ -3,7 +3,7 @@ package main
 // import (
 // 	"context"
 // 	"fmt"
-// 	"messenger/messenger/internal/adapters/out/postgres/queries"
+// 	"messenger/messenger/internal/platform/db"
 // 	"messenger/messenger/internal/platform/config"
 // 	"messenger/messenger/internal/platform/di"
 // )
@@ -37,4 +37,4 @@ package main
 
 // 	return nil
 // }
-// 
+//

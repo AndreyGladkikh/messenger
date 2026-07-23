@@ -2,17 +2,17 @@ package repositories
 
 import (
 	"context"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/domain"
+	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/uow"
 )
 
 type Repository struct {
-	q *queries.Queries
+	q *db.Queries
 }
 
-func (r *Repository) queries(ctx context.Context) *queries.Queries {
+func (r *Repository) queries(ctx context.Context) *db.Queries {
 	if tx, ok := transaction.FromContext(ctx); ok {
 		return r.q.WithTx(tx)
 	}

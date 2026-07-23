@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
-	"messenger/messenger/internal/adapters/out/postgres/queries"
 	"messenger/messenger/internal/domain/chat_participant"
+	"messenger/messenger/internal/platform/db"
 )
 
 type ChatParticipantRepository struct {
@@ -12,7 +12,7 @@ type ChatParticipantRepository struct {
 }
 
 func NewChatParticipantRepository(
-	q *queries.Queries,
+	q *db.Queries,
 ) *ChatParticipantRepository {
 	return &ChatParticipantRepository{
 		Repository: Repository{
@@ -22,13 +22,13 @@ func NewChatParticipantRepository(
 }
 
 func (r *ChatParticipantRepository) Add(ctx context.Context, participants []*chat_participant.ChatParticipant) error {
-	params := make([]queries.AddParticipantsToChatParams, len(participants))
+	params := make([]db.AddParticipantsToChatParams, len(participants))
 	for i, p := range participants {
-		params[i] = queries.AddParticipantsToChatParams{
-			ID: mapping.PgUUID(p.ID()),
-			ChatID: mapping.PgUUID(p.ChatID()),
+		params[i] = db.AddParticipantsToChatParams{
+			ID:            mapping.PgUUID(p.ID()),
+			ChatID:        mapping.PgUUID(p.ChatID()),
 			ParticipantID: mapping.PgUUID(p.ParticipantID()),
-			Role: string(p.Role()),
+			Role:          string(p.Role()),
 		}
 		r.RegisterAggregate(ctx, p)
 	}
