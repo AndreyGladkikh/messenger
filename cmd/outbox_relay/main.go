@@ -3,9 +3,9 @@ package main
 // import (
 // 	"context"
 // 	"fmt"
-// 	"messenger/messenger/internal/platform/db"
-// 	"messenger/messenger/internal/platform/config"
-// 	"messenger/messenger/internal/platform/di"
+// 	"messenger/messenger/internal/infrastructure/db"
+// 	"messenger/messenger/internal/infrastructure/config"
+// 	"messenger/messenger/internal/infrastructure/di"
 // )
 
 // func main() {

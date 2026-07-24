@@ -1,0 +1,26 @@
+package repositories
+
+import (
+	"context"
+	"messenger/messenger/internal/adapters/out/postgres/transaction"
+	"messenger/messenger/internal/domain"
+	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/uow"
+)
+
+type Repository struct {
+	q *db.Queries
+}
+
+func (r *Repository) queries(ctx context.Context) *db.Queries {
+	if tx, ok := transaction.FromContext(ctx); ok {
+		return r.q.WithTx(tx)
+	}
+	return r.q
+}
+
+func (r *Repository) RegisterAggregate(ctx context.Context, aggregate domain.Aggregate) {
+	if uow, ok := uow.FromContext(ctx); ok {
+		uow.RegisterAggregate(aggregate)
+	}
+}

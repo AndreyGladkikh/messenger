@@ -57,4 +57,4 @@ queries:
 	sqlc generate
 
 di:
-	wire ./internal/platform/di
+	wire ./internal/infrastructure/di

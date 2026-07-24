@@ -10,7 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"messenger/messenger/internal/platform/di"
+	"messenger/messenger/internal/infrastructure/di"
 )
 
 func main() {
@@ -35,7 +35,7 @@ func main() {
 		logger.Info("http server started")
 		if err := httpServer.Run(); err != nil {
 			select {
-			case errCh <-err:
+			case errCh <- err:
 				logger.Error("http server failed", "error", err)
 			default:
 			}
@@ -46,7 +46,7 @@ func main() {
 	case <-errCh:
 	case <-interruptCtx.Done():
 	}
-	
+
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
