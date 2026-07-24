@@ -1,34 +1,34 @@
 package event
 
-import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"messenger/messenger/internal/adapters/out/postgres/mapping"
-	"messenger/messenger/internal/domain"
-	"messenger/messenger/internal/platform/db"
+// import (
+// 	"bytes"
+// 	"context"
+// 	"encoding/json"
+// 	"messenger/messenger/internal/adapters/out/postgres/mapping"
+// 	"messenger/messenger/internal/domain"
+// 	"messenger/messenger/internal/platform/db"
 
-	"github.com/google/uuid"
-)
+// 	"github.com/google/uuid"
+// )
 
-type Service struct {
-	storage *db.Storage
-}
+// type Service struct {
+// 	storage *db.Storage
+// }
 
-func (s *EventStorage) StoreEvent(ctx context.Context, e domain.Event) error {
-	buf := new(bytes.Buffer)
-	if err := json.NewEncoder(buf).Encode(e); err != nil {
-		return err
-	}
+// func (s *EventStorage) StoreEvent(ctx context.Context, e domain.Event) error {
+// 	buf := new(bytes.Buffer)
+// 	if err := json.NewEncoder(buf).Encode(e); err != nil {
+// 		return err
+// 	}
 
-	err := s.Queries(ctx).CreateEvent(ctx, db.CreateEventParams{
-		ID:           mapping.PgUUID(uuid.New().String()),
-		EventType:    e.Name(),
-		EventPayload: buf.Bytes(),
-	})
+// 	err := s.Queries(ctx).CreateEvent(ctx, db.CreateEventParams{
+// 		ID:           mapping.PgUUID(uuid.New().String()),
+// 		EventType:    e.Name(),
+// 		EventPayload: buf.Bytes(),
+// 	})
 
-	return err
-}
+// 	return err
+// }
 
 // func (s *EventStorage) ListUnprocessedEvents(ctx context.Context) ([]*StoredEvent, error) {
 // 	events, err := s.Queries(ctx).ListUnprocessedEvents(ctx)

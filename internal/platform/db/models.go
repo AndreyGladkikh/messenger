@@ -24,27 +24,6 @@ type ChatParticipant struct {
 	JoinedAt      pgtype.Timestamptz
 }
 
-type Event struct {
-	ID           pgtype.UUID
-	EventType    string
-	EventPayload []byte
-	OccurredAt   pgtype.Timestamptz
-	Status       string
-	ClaimedAt    pgtype.Timestamptz
-	Attempts     int32
-	Error        pgtype.Text
-	NextRetryAt  pgtype.Timestamptz
-}
-
-type EventHandlerExecution struct {
-	ID          pgtype.UUID
-	EventID     pgtype.UUID
-	HandlerType string
-	Attempts    int32
-	Error       pgtype.Text
-	NextRetryAt pgtype.Timestamptz
-}
-
 type File struct {
 	ID        pgtype.UUID
 	Hash      []byte
@@ -69,4 +48,16 @@ type MessagesFile struct {
 	MessageID pgtype.UUID
 	FileID    pgtype.UUID
 	Name      pgtype.Text
+}
+
+type Outbox struct {
+	ID           pgtype.UUID
+	EventType    string
+	EventPayload []byte
+	OccurredAt   pgtype.Timestamptz
+	Status       string
+	ClaimedAt    pgtype.Timestamptz
+	Attempts     int32
+	Error        pgtype.Text
+	NextRetryAt  pgtype.Timestamptz
 }

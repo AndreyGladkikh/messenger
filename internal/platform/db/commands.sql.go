@@ -32,58 +32,6 @@ func (q *Queries) CreateChat(ctx context.Context, arg CreateChatParams) error {
 	return err
 }
 
-const createEvent = `-- name: CreateEvent :exec
-INSERT INTO events (
-    id,
-    event_type,
-    event_payload
-) VALUES (
-  $1, $2, $3
-)
-`
-
-type CreateEventParams struct {
-	ID           pgtype.UUID
-	EventType    string
-	EventPayload []byte
-}
-
-func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) error {
-	_, err := q.db.Exec(ctx, createEvent, arg.ID, arg.EventType, arg.EventPayload)
-	return err
-}
-
-const createEventHandlerExecution = `-- name: CreateEventHandlerExecution :one
-INSERT INTO event_handler_executions (
-  id,
-  event_id,
-  handler_type
-) VALUES (
-  $1, $2, $3
-)
-RETURNING id, event_id, handler_type, attempts, error, next_retry_at
-`
-
-type CreateEventHandlerExecutionParams struct {
-	ID          pgtype.UUID
-	EventID     pgtype.UUID
-	HandlerType string
-}
-
-func (q *Queries) CreateEventHandlerExecution(ctx context.Context, arg CreateEventHandlerExecutionParams) (EventHandlerExecution, error) {
-	row := q.db.QueryRow(ctx, createEventHandlerExecution, arg.ID, arg.EventID, arg.HandlerType)
-	var i EventHandlerExecution
-	err := row.Scan(
-		&i.ID,
-		&i.EventID,
-		&i.HandlerType,
-		&i.Attempts,
-		&i.Error,
-		&i.NextRetryAt,
-	)
-	return i, err
-}
-
 const createMessage = `-- name: CreateMessage :exec
 INSERT INTO messages (
     id,
@@ -148,43 +96,54 @@ func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) er
 }
 
 const processEvent = `-- name: ProcessEvent :exec
-UPDATE events
-  set claimed_at = $2
+UPDATE outbox
+  set status = $2,
+  claimed_at = $3,
+  attempts = $4,
+  error = $5,
+  next_retry_at = $6
 WHERE id = $1
 `
 
 type ProcessEventParams struct {
-	ID        pgtype.UUID
-	ClaimedAt pgtype.Timestamptz
-}
-
-func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) error {
-	_, err := q.db.Exec(ctx, processEvent, arg.ID, arg.ClaimedAt)
-	return err
-}
-
-const updateEventHandlerExecution = `-- name: UpdateEventHandlerExecution :exec
-UPDATE event_handler_executions
-  set attempts = $2,
-    error = $3,
-    next_retry_at = $4
-WHERE id = $1
-`
-
-type UpdateEventHandlerExecutionParams struct {
 	ID          pgtype.UUID
+	Status      string
+	ClaimedAt   pgtype.Timestamptz
 	Attempts    int32
 	Error       pgtype.Text
 	NextRetryAt pgtype.Timestamptz
 }
 
-func (q *Queries) UpdateEventHandlerExecution(ctx context.Context, arg UpdateEventHandlerExecutionParams) error {
-	_, err := q.db.Exec(ctx, updateEventHandlerExecution,
+func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) error {
+	_, err := q.db.Exec(ctx, processEvent,
 		arg.ID,
+		arg.Status,
+		arg.ClaimedAt,
 		arg.Attempts,
 		arg.Error,
 		arg.NextRetryAt,
 	)
+	return err
+}
+
+const putToOutbox = `-- name: PutToOutbox :exec
+INSERT INTO outbox (
+    id,
+    event_type,
+    event_payload
+) VALUES (
+  $1, $2, $3
+)
+`
+
+type PutToOutboxParams struct {
+	ID           pgtype.UUID
+	EventType    string
+	EventPayload []byte
+}
+
+func (q *Queries) PutToOutbox(ctx context.Context, arg PutToOutboxParams) error {
+	_, err := q.db.Exec(ctx, putToOutbox, arg.ID, arg.EventType, arg.EventPayload)
 	return err
 }
 

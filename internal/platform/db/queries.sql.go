@@ -29,76 +29,17 @@ func (q *Queries) GetChat(ctx context.Context, id pgtype.UUID) (Chat, error) {
 	return i, err
 }
 
-const getEventHandlerExecutionByEventId = `-- name: GetEventHandlerExecutionByEventId :one
-SELECT id, event_id, handler_type, attempts, error, next_retry_at FROM event_handler_executions
-WHERE event_id = $1
-AND handler_type = $2
-LIMIT 1
-`
-
-type GetEventHandlerExecutionByEventIdParams struct {
-	EventID     pgtype.UUID
-	HandlerType string
-}
-
-func (q *Queries) GetEventHandlerExecutionByEventId(ctx context.Context, arg GetEventHandlerExecutionByEventIdParams) (EventHandlerExecution, error) {
-	row := q.db.QueryRow(ctx, getEventHandlerExecutionByEventId, arg.EventID, arg.HandlerType)
-	var i EventHandlerExecution
-	err := row.Scan(
-		&i.ID,
-		&i.EventID,
-		&i.HandlerType,
-		&i.Attempts,
-		&i.Error,
-		&i.NextRetryAt,
-	)
-	return i, err
-}
-
-const getEventHandlerExecutionsByEventId = `-- name: GetEventHandlerExecutionsByEventId :many
-SELECT id, event_id, handler_type, attempts, error, next_retry_at FROM event_handler_executions
-WHERE event_id = $1
-`
-
-func (q *Queries) GetEventHandlerExecutionsByEventId(ctx context.Context, eventID pgtype.UUID) ([]EventHandlerExecution, error) {
-	rows, err := q.db.Query(ctx, getEventHandlerExecutionsByEventId, eventID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []EventHandlerExecution
-	for rows.Next() {
-		var i EventHandlerExecution
-		if err := rows.Scan(
-			&i.ID,
-			&i.EventID,
-			&i.HandlerType,
-			&i.Attempts,
-			&i.Error,
-			&i.NextRetryAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getEventToProcess = `-- name: GetEventToProcess :one
 
-
 WITH events_to_process as (
-    SELECT id, event_type, event_payload, occurred_at, status, claimed_at, attempts, error, next_retry_at FROM events
+    SELECT id, event_type, event_payload, occurred_at, status, claimed_at, attempts, error, next_retry_at FROM outbox
     WHERE status = 'pending'
     OR (status = 'retry' AND now() >= next_retry_at)
     ORDER BY occurred_at
     LIMIT 1
     FOR UPDATE SKIP LOCKED
 )
-UPDATE events e
+UPDATE outbox e
 SET status = 'processing'
 FROM events_to_process ep
 WHERE e.id = ep.id
@@ -106,20 +47,13 @@ RETURNING e.id, e.event_type, e.event_payload, e.occurred_at, e.status, e.claime
 `
 
 // -- name: ListUnprocessedEvents :many
-// SELECT * FROM events
+// SELECT * FROM outbox
 // WHERE processed_at IS NULL
-// ORDER BY occurred_at
-// LIMIT 100
-// FOR UPDATE;
-// -- name: GetNextUnprocessedEvent :one
-// SELECT * FROM events
-// WHERE processed_at IS NULL
-// ORDER BY occurred_at
-// LIMIT 1
-// FOR UPDATE SKIP LOCKED;
-func (q *Queries) GetEventToProcess(ctx context.Context) (Event, error) {
+// ORDER BY published_at
+// LIMIT 100;
+func (q *Queries) GetEventToProcess(ctx context.Context) (Outbox, error) {
 	row := q.db.QueryRow(ctx, getEventToProcess)
-	var i Event
+	var i Outbox
 	err := row.Scan(
 		&i.ID,
 		&i.EventType,
@@ -188,40 +122,6 @@ func (q *Queries) ListChatsForUser(ctx context.Context, arg ListChatsForUserPara
 			&i.Name,
 			&i.CreatedAt,
 			&i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listEventHandlerExecutions = `-- name: ListEventHandlerExecutions :many
-SELECT id, event_id, handler_type, attempts, error, next_retry_at FROM event_handler_executions
-WHERE error IS NOT NULL
-AND next_retry_at >= now()
-LIMIT 100
-`
-
-func (q *Queries) ListEventHandlerExecutions(ctx context.Context) ([]EventHandlerExecution, error) {
-	rows, err := q.db.Query(ctx, listEventHandlerExecutions)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []EventHandlerExecution
-	for rows.Next() {
-		var i EventHandlerExecution
-		if err := rows.Scan(
-			&i.ID,
-			&i.EventID,
-			&i.HandlerType,
-			&i.Attempts,
-			&i.Error,
-			&i.NextRetryAt,
 		); err != nil {
 			return nil, err
 		}

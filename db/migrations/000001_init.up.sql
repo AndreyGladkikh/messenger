@@ -50,24 +50,38 @@ CREATE TABLE messages_files(
     name TEXT
 );
 
-CREATE TABLE events(
+-- CREATE TABLE events(
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     event_type TEXT NOT NULL,
+--     event_payload JSONB,
+--     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+--     status TEXT NOT NULL DEFAULT 'pending',
+--     claimed_at TIMESTAMP WITH TIME ZONE,
+--     attempts INT NOT NULL DEFAULT 0,
+--     error TEXT,
+--     next_retry_at TIMESTAMP WITH TIME ZONE
+-- );
+
+CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type TEXT NOT NULL,
     event_payload JSONB,
     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     status TEXT NOT NULL DEFAULT 'pending',
-    claimed_at TIMESTAMP WITH TIME ZONE,
+    claimed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     attempts INT NOT NULL DEFAULT 0,
     error TEXT,
     next_retry_at TIMESTAMP WITH TIME ZONE
 );
+CREATE INDEX outbox_occurred_at_index ON outbox(occurred_at) WHERE status = 'pending';
+CREATE INDEX outbox_next_retry_at_occurred_at_index ON outbox(next_retry_at, occurred_at) WHERE status = 'retry'
 
-CREATE TABLE event_handler_executions(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id UUID NOT NULL REFERENCES events ON DELETE CASCADE,
-    handler_type TEXT NOT NULL,
-    attempts INT NOT NULL DEFAULT 0,
-    error TEXT,
-    next_retry_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT event_handler_executions_unique UNIQUE(event_id, handler_type)
-);
+-- CREATE TABLE event_handler_executions(
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     event_id UUID NOT NULL REFERENCES events ON DELETE CASCADE,
+--     handler_type TEXT NOT NULL,
+--     attempts INT NOT NULL DEFAULT 0,
+--     error TEXT,
+--     next_retry_at TIMESTAMP WITH TIME ZONE,
+--     CONSTRAINT event_handler_executions_unique UNIQUE(event_id, handler_type)
+-- );

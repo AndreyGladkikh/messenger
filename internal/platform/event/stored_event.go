@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+type status string
+
+const (
+	statusPending status = "pending"
+	statusProcessing status = "processing"
+	statusRetry status = "retry"
+	statusSucceeded status = "succeeded"
+	statusDead status = "dead"
+)
+
 type StoredEvent struct {
 	ID           string
 	EventType    string
@@ -21,7 +31,7 @@ func (e *StoredEvent) Process() {
 	}
 }
 
-func RowToStoredEvent(event db.Event) *StoredEvent {
+func RowToStoredEvent(event db.Outbox) *StoredEvent {
 	return &StoredEvent{
 		ID:           event.ID.String(),
 		EventType:    event.EventType,
@@ -31,8 +41,8 @@ func RowToStoredEvent(event db.Event) *StoredEvent {
 	}
 }
 
-func StoredEventToRow(event StoredEvent) db.Event {
-	return db.Event{
+func StoredEventToRow(event StoredEvent) db.Outbox {
+	return db.Outbox{
 		ID:           mapping.PgUUID(event.ID),
 		EventType:    event.EventType,
 		EventPayload: event.EventPayload.AvailableBuffer(),

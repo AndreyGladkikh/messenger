@@ -1,13 +1,13 @@
--- name: CreateEvent :exec
-INSERT INTO events (
-    id,
-    event_type,
-    event_payload
-) VALUES (
-  $1, $2, $3
-);
+-- -- name: CreateEvent :exec
+-- INSERT INTO events (
+--     id,
+--     event_type,
+--     event_payload
+-- ) VALUES (
+--   $1, $2, $3
+-- );
 
--- name: ProcessEvent :exec
-UPDATE events
-  set claimed_at = $2
-WHERE id = $1;
+-- -- name: ProcessEvent :exec
+-- UPDATE events
+--   set claimed_at = $2
+-- WHERE id = $1;

@@ -26,9 +26,8 @@ func NewTransactionMiddlewareContainer(
 }
 
 func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) command_bus.Handler {
-	return command_bus.HandlerFunc(func(ctx context.Context, command command.Command) (response any, err error) {
-		uowo := uow.New()
-		ctx = uow.NewContext(ctx, uowo)
+	f := func(ctx context.Context, command command.Command) (response any, err error) {
+		ctx = uow.NewContext(ctx, uow.New())
 
 		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
 			response, err = next.Handle(ctx, command)
@@ -36,7 +35,7 @@ func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) co
 				return err
 			}
 			
-			if err := c.storeEvents(ctx, uowo); err != nil {
+			if err := c.storeEvents(ctx); err != nil {
 				return err
 			}
 
@@ -44,14 +43,17 @@ func (c *TransactionMiddlewareContainer) Middleware(next command_bus.Handler) co
 		})
 
 		return
-	})
+	}
+	return command_bus.HandlerFunc(f)
 }
 
-func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context, uow *uow.UnitOfWork) error {
-	for _, aggregate := range uow.Aggregates() {
-		for _, event := range aggregate.PullEvents() {
-			if err := c.eventStorage.Add(ctx, event); err != nil {
-				return fmt.Errorf("failed to store event: %w", err)
+func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context) error {
+	if uow, ok := uow.FromContext(ctx); ok {
+		for _, aggregate := range uow.Aggregates() {
+			for _, event := range aggregate.PullEvents() {
+				if err := c.eventStorage.Add(ctx, event); err != nil {
+					return fmt.Errorf("failed to store event: %w", err)
+				}
 			}
 		}
 	}

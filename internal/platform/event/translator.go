@@ -22,7 +22,7 @@ func decodeAs[E domain.Event](payload []byte) (domain.Event, error) {
 	return e, nil
 }
 
-func translateStoredEventToDispatchedEvent(storedEvent db.Event) (domain.Event, error) {
+func translateStoredEventToDispatchedEvent(storedEvent db.Outbox) (domain.Event, error) {
 	decoder, ok := decoders[storedEvent.EventType]
 	if !ok {
 		return nil, fmt.Errorf("not found decoder for event type %s", storedEvent.EventType)
