@@ -8,14 +8,6 @@ import (
 	"runtime/debug"
 )
 
-// func NewRecovererContainer(
-// 	logger *logger.Logger,
-// ) *LoggerMiddlewareContainer {
-// 	return &LoggerMiddlewareContainer{
-// 		logger: logger,
-// 	}
-// }
-
 type PanicError struct {
 	Value any
 	Stack []byte

@@ -1,4 +1,5 @@
 -- DROP TABLE event_handler_executions;
+DROP TABLE inbox;
 DROP TABLE outbox;
 -- DROP TABLE events;
 DROP TABLE messages_files;

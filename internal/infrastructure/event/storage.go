@@ -75,34 +75,3 @@ func (s *EventStorage) UpdateEvent(
 	}
 	return nil
 }
-
-// func (s *EventStorage) GetEventHandlerExecutionsByEventId(ctx context.Context, eventID string) (map[string]db.EventHandlerExecution, error) {
-// 	handlerExecutions, err := s.Queries(ctx).GetEventHandlerExecutionsByEventId(ctx, mapping.PgUUID(eventID))
-// 	if err != nil {
-// 		return nil, fmt.Errorf("event processor: failed to retrieve event handler executions: %w", err)
-// 	}
-
-// 	handlerExecutionsMap := make(map[string]db.EventHandlerExecution, len(handlerExecutions))
-// 	for _, execution := range handlerExecutions {
-// 		handlerExecutionsMap[execution.HandlerType] = execution
-// 	}
-// 	return handlerExecutionsMap, nil
-// }
-
-// func (s *EventStorage) UpdateExecution(ctx context.Context, execution db.EventHandlerExecution, execErr error) error {
-// 	updateParams := db.UpdateEventHandlerExecutionParams{
-// 		ID:       execution.ID,
-// 		Attempts: execution.Attempts + 1,
-// 	}
-// 	if execErr != nil {
-// 		updateParams.Error = mapping.PgText(execErr.Error())
-// 		updateParams.NextRetryAt = mapping.ToDBTimestamp(time.Now().Add(5 * time.Minute))
-// 	} else {
-// 		updateParams.Error = mapping.PgText("")
-// 		updateParams.NextRetryAt = mapping.ToDBTimestamp(time.Time{})
-// 	}
-// 	if err := s.Queries(ctx).UpdateEventHandlerExecution(ctx, updateParams); err != nil {
-// 		return fmt.Errorf("update event handler execution: %w", err)
-// 	}
-// 	return nil
-// }

@@ -64,6 +64,7 @@ CREATE TABLE messages_files(
 
 CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id TEXT NOT NULL,
     event_type TEXT NOT NULL,
     event_payload JSONB,
     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -74,7 +75,19 @@ CREATE TABLE outbox(
     next_retry_at TIMESTAMP WITH TIME ZONE
 );
 CREATE INDEX outbox_occurred_at_index ON outbox(occurred_at) WHERE status = 'pending';
-CREATE INDEX outbox_next_retry_at_occurred_at_index ON outbox(next_retry_at, occurred_at) WHERE status = 'retry'
+CREATE INDEX outbox_next_retry_at_occurred_at_index ON outbox(next_retry_at, occurred_at) WHERE status = 'retry';
+
+CREATE TABLE inbox(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL,
+    handler TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    claimed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    attempts INT NOT NULL DEFAULT 0,
+    error TEXT,
+    next_retry_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT inbox_unique UNIQUE(event_id, handler)
+);
 
 -- CREATE TABLE event_handler_executions(
 --     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -56,16 +56,6 @@ var Repositories = wire.NewSet(
 	repositories.NewChatParticipantRepository,
 )
 
-// var Repositories = wire.NewSet(
-// 	wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
-// 	wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
-// 	wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
-
-// 	repositories.NewMessageRepository,
-// 	repositories.NewChatRepository,
-// 	repositories.NewChatParticipantRepository,
-// )
-
 var CommandHandlers = wire.NewSet(
 	create_private_chat.NewHandler,
 	send_message.NewHandler,

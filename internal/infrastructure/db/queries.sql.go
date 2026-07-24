@@ -32,7 +32,7 @@ func (q *Queries) GetChat(ctx context.Context, id pgtype.UUID) (Chat, error) {
 const getEventToProcess = `-- name: GetEventToProcess :one
 
 WITH events_to_process as (
-    SELECT id, event_type, event_payload, occurred_at, status, claimed_at, attempts, error, next_retry_at FROM outbox
+    SELECT id, event_id, event_type, event_payload, occurred_at, status, claimed_at, attempts, error, next_retry_at FROM outbox
     WHERE status = 'pending'
     OR (status = 'retry' AND now() >= next_retry_at)
     ORDER BY occurred_at
@@ -43,7 +43,7 @@ UPDATE outbox e
 SET status = 'processing'
 FROM events_to_process ep
 WHERE e.id = ep.id
-RETURNING e.id, e.event_type, e.event_payload, e.occurred_at, e.status, e.claimed_at, e.attempts, e.error, e.next_retry_at
+RETURNING e.id, e.event_id, e.event_type, e.event_payload, e.occurred_at, e.status, e.claimed_at, e.attempts, e.error, e.next_retry_at
 `
 
 // -- name: ListUnprocessedEvents :many
@@ -56,6 +56,7 @@ func (q *Queries) GetEventToProcess(ctx context.Context) (Outbox, error) {
 	var i Outbox
 	err := row.Scan(
 		&i.ID,
+		&i.EventID,
 		&i.EventType,
 		&i.EventPayload,
 		&i.OccurredAt,

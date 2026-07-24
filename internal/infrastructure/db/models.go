@@ -32,6 +32,17 @@ type File struct {
 	CreatedAt pgtype.Timestamptz
 }
 
+type Inbox struct {
+	ID          pgtype.UUID
+	EventID     pgtype.UUID
+	Handler     string
+	Status      string
+	ClaimedAt   pgtype.Timestamptz
+	Attempts    int32
+	Error       pgtype.Text
+	NextRetryAt pgtype.Timestamptz
+}
+
 type Message struct {
 	ID               pgtype.UUID
 	SenderID         pgtype.UUID
@@ -52,6 +63,7 @@ type MessagesFile struct {
 
 type Outbox struct {
 	ID           pgtype.UUID
+	EventID      string
 	EventType    string
 	EventPayload []byte
 	OccurredAt   pgtype.Timestamptz

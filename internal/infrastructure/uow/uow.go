@@ -23,7 +23,3 @@ func (u *UnitOfWork) RegisterAggregate(a domain.Aggregate) {
 func (u *UnitOfWork) Aggregates() []domain.Aggregate {
 	return slices.Collect(maps.Values(u.aggregates))
 }
-
-// type DomainEventProvider interface {
-// 	PullEvents() []event.DomainEvent
-// }
