@@ -15,21 +15,21 @@ import (
 	"github.com/google/uuid"
 )
 
-// var ErrHandlerAlreadyExecuted = errors.New("handler already executed")
+var ErrHandlerAlreadyExecuted = errors.New("handler already executed")
 
-type EventStorage struct {
+type EventService struct {
 	*db.Storage
 }
 
-func NewEventStorage(
+func NewEventService(
 	storage *db.Storage,
-) *EventStorage {
-	return &EventStorage{
+) *EventService {
+	return &EventService{
 		Storage: storage,
 	}
 }
 
-func (s *EventStorage) Add(ctx context.Context, e domain.Event) error {
+func (s *EventService) PutEventToOutbox(ctx context.Context, e domain.Event) error {
 	buf := new(bytes.Buffer)
 	if err := json.NewEncoder(buf).Encode(e); err != nil {
 		return err
@@ -45,22 +45,11 @@ func (s *EventStorage) Add(ctx context.Context, e domain.Event) error {
 	return err
 }
 
-func (s *EventStorage) GetNextUnprocessedEvent(ctx context.Context) (db.Outbox, error) {
+func (s *EventService) GetNextUnprocessedEvent(ctx context.Context) (db.Outbox, error) {
 	return s.Queries(ctx).GetEventToProcess(ctx)
 }
 
-func (s *EventStorage) MarkEventAsProcessed(ctx context.Context, event db.Outbox) error {
-	err := s.Queries(ctx).ProcessEvent(ctx, db.ProcessEventParams{
-		ID:        event.ID,
-		ClaimedAt: mapping.ToDBTimestamp(time.Now()),
-	})
-	if err != nil {
-		return fmt.Errorf("event processor: failed to mark event as processed: %w", err)
-	}
-	return nil
-}
-
-func (s *EventStorage) UpdateEvent(
+func (s *EventService) UpdateEvent(
 	ctx context.Context,
 	event db.Outbox,
 	status Status,
@@ -85,7 +74,7 @@ func (s *EventStorage) UpdateEvent(
 	return nil
 }
 
-func (s *EventStorage) RegisterEventHandlerExecution(ctx context.Context, eventID, handler string) error {
+func (s *EventService) RegisterEventHandlerExecution(ctx context.Context, eventID, handler string) error {
 	_, err := s.Queries(ctx).CreateInbox(ctx, db.CreateInboxParams{
 		EventID: mapping.PgUUID(eventID),
 		Handler: handler,

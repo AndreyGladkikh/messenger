@@ -3,7 +3,7 @@
 package di
 
 import (
-	"messenger/messenger/internal/infrastructure/event"
+	"messenger/messenger/internal/infrastructure/outbox_relay"
 
 	"github.com/google/wire"
 )
@@ -16,10 +16,10 @@ func InitializeApi() (*Api, func(), error) {
 	return new(Api), func() {}, nil
 }
 
-func InitializeEventProcessor() (*event.Processor, func(), error) {
+func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 	wire.Build(
 		OutboxRelaySet,
 	)
 
-	return new(event.Processor), func() {}, nil
+	return new(outbox_relay.OutboxRelay), func() {}, nil
 }

@@ -25,12 +25,12 @@ import (
 
 func InitializeApi() (*Api, func(), error) {
 	configConfig := config.Load()
+	loggerLogger := logger.New()
 	pool, cleanup, err := postgres.NewPool(configConfig)
 	if err != nil {
 		return nil, nil, err
 	}
 	manager := transaction.NewManager(pool)
-	loggerLogger := logger.New()
 	queries := db.New(pool)
 	storage := db.NewStorage(queries)
 	eventStorage := event.NewEventStorage(storage)
@@ -42,7 +42,7 @@ func InitializeApi() (*Api, func(), error) {
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository, provider)
 	bus := BuildCommandBusForApi(manager, loggerLogger, eventStorage, handler, create_private_chatHandler)
 	controller := http_server.NewController(bus)
-	server := http_server.NewServer(configConfig, controller)
+	server := http_server.NewServer(configConfig, loggerLogger, controller)
 	api := NewApi(server, loggerLogger)
 	return api, func() {
 		cleanup()

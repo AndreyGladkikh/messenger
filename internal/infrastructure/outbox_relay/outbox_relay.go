@@ -1,4 +1,4 @@
-package event
+package outbox_relay
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/domain"
 	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/event"
 	"messenger/messenger/internal/infrastructure/logger"
 	"strings"
 	"sync"
@@ -34,23 +35,23 @@ func (e *EventHandlingError) AsStrings() []string {
 	return s
 }
 
-type Processor struct {
-	eventStorage         *EventStorage
+type OutboxRelay struct {
+	eventService         *event.EventService
 	txManager            *transaction.Manager
 	logger               *logger.Logger
 	qs                   *db.Queries
-	eventHandlerRegistry *HandlerRegistry
+	eventHandlerRegistry *event.HandlerRegistry
 }
 
-func NewProcessor(
-	eventStorage *EventStorage,
+func NewOutboxRelay(
+	eventService *event.EventService,
 	txManager *transaction.Manager,
 	logger *logger.Logger,
 	qs *db.Queries,
-	eventHandlerRegistry *HandlerRegistry,
-) *Processor {
-	return &Processor{
-		eventStorage:         eventStorage,
+	eventHandlerRegistry *event.HandlerRegistry,
+) *OutboxRelay {
+	return &OutboxRelay{
+		eventService:         eventService,
 		txManager:            txManager,
 		logger:               logger,
 		qs:                   qs,
@@ -58,25 +59,26 @@ func NewProcessor(
 	}
 }
 
-func (p *Processor) Run(ctx context.Context) error {
+func (r *OutboxRelay) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if err := p.processEvent(); err != nil {
+			if err := r.processEvent(); err != nil {
+				r.logger.Error("outbox relay error", "error", err)
 				return err
 			}
 		}
 	}
 }
 
-func (p *Processor) processEvent() error {
+func (r *OutboxRelay) processEvent() error {
 	ctx := context.Background()
 
-	outboxEvent, err := p.eventStorage.GetNextUnprocessedEvent(ctx)
+	outboxEvent, err := r.eventService.GetNextUnprocessedEvent(ctx)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("retreive event to process: %w", err)
+		return fmt.Errorf("failed to retreive event to process: %w", err)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		time.Sleep(1 * time.Second)
@@ -84,16 +86,16 @@ func (p *Processor) processEvent() error {
 	}
 
 	var (
-		status      Status
+		status      event.Status
 		nextRetryAt time.Time
 		errs        []error
 	)
-	err = p.executeEventHandlers(ctx, outboxEvent)
+	err = r.executeEventHandlers(ctx, outboxEvent)
 	if err != nil {
 		if errors.Is(err, ErrFatal) || outboxEvent.Attempts+1 >= retries {
-			status, nextRetryAt = StatusDead, time.Time{}
+			status, nextRetryAt = event.StatusDead, time.Time{}
 		} else {
-			status, nextRetryAt = StatusRetry, p.calcNextRetry()
+			status, nextRetryAt = event.StatusRetry, r.calcNextRetry()
 		}
 
 		if ehErr, ok := errors.AsType[*EventHandlingError](err); ok {
@@ -101,27 +103,27 @@ func (p *Processor) processEvent() error {
 		} else {
 			errs = append(errs, err)
 		}
-		p.eventStorage.UpdateEvent(ctx, outboxEvent, status, errs, nextRetryAt)
+		r.eventService.UpdateEvent(ctx, outboxEvent, status, errs, nextRetryAt)
 		return nil
 	}
 
-	p.eventStorage.UpdateEvent(ctx, outboxEvent, StatusSucceeded, errs, time.Time{})
+	r.eventService.UpdateEvent(ctx, outboxEvent, event.StatusSucceeded, errs, time.Time{})
 	return nil
 }
 
-func (p *Processor) executeEventHandlers(ctx context.Context, outboxEvent db.Outbox) error {
+func (r *OutboxRelay) executeEventHandlers(ctx context.Context, outboxEvent db.Outbox) error {
 	domainEvent, err := translateStoredEventToDomainEvent(outboxEvent)
 	if err != nil {
 		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)
 	}
 
-	eventHandlers := p.eventHandlerRegistry.HandlersForEvent(domainEvent)
+	eventHandlers := r.eventHandlerRegistry.HandlersForEvent(domainEvent)
 
 	var errs []error
 	var wg sync.WaitGroup
 	for _, handler := range eventHandlers {
 		wg.Go(func() {
-			if err := p.runHandler(ctx, outboxEvent.EventID, domainEvent, handler); err != nil {
+			if err := r.runHandler(ctx, outboxEvent.EventID, domainEvent, handler); err != nil {
 				errs = append(errs, fmt.Errorf("failed to execute handler %q: %w", handler.Name(), err))
 			}
 		})
@@ -133,17 +135,17 @@ func (p *Processor) executeEventHandlers(ctx context.Context, outboxEvent db.Out
 	return nil
 }
 
-func (p *Processor) calcNextRetry() time.Time {
+func (r *OutboxRelay) calcNextRetry() time.Time {
 	return time.Now().Add(5 * time.Second)
 }
 
-func (p *Processor) runHandler(ctx context.Context, eventID string, domainEvent domain.Event, handler Handler) error {
-	return p.txManager.WithTransaction(ctx, func(ctx context.Context) error {
-		err := p.eventStorage.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
-		if err != nil && !errors.Is(err, ErrHandlerAlreadyExecuted) {
+func (r *OutboxRelay) runHandler(ctx context.Context, eventID string, domainEvent domain.Event, handler event.Handler) error {
+	return r.txManager.WithTransaction(ctx, func(ctx context.Context) error {
+		err := r.eventService.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
+		if err != nil && !errors.Is(err, event.ErrHandlerAlreadyExecuted) {
 			return err
 		}
-		if errors.Is(err, ErrHandlerAlreadyExecuted) {
+		if errors.Is(err, event.ErrHandlerAlreadyExecuted) {
 			return nil
 		}
 		return handler.Handle(ctx, domainEvent)

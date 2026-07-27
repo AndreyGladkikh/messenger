@@ -1,18 +1,11 @@
 package event
 
-import "messenger/messenger/internal/domain"
+type Status string
 
-type Envelope struct {
-	EventID    string
-	Event domain.Event
-}
-
-func NewEnvelope(
-	id string,
-	event domain.Event,
-) *Envelope {
-	return &Envelope{
-		EventID:    id,
-		Event: event,
-	}
-}
+const (
+	StatusPending    Status = "pending"
+	StatusProcessing Status = "processing"
+	StatusRetry      Status = "retry"
+	StatusSucceeded  Status = "succeeded"
+	StatusDead       Status = "dead"
+)

@@ -15,6 +15,7 @@ import (
 	"messenger/messenger/internal/infrastructure/http_server"
 	"messenger/messenger/internal/infrastructure/idprovider"
 	"messenger/messenger/internal/infrastructure/logger"
+	"messenger/messenger/internal/infrastructure/outbox_relay"
 	"messenger/messenger/internal/infrastructure/postgres"
 	"messenger/messenger/internal/infrastructure/repositories"
 
@@ -69,7 +70,7 @@ var ApiSet = wire.NewSet(
 )
 
 var OutboxRelaySet = wire.NewSet(
-	event.NewProcessor,
+	outbox_relay.NewOutboxRelay,
 	NewEventHandlerRegistry,
 	CommonSet,
 )
