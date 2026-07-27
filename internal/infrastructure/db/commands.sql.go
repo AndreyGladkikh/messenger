@@ -11,6 +11,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AddParticipantsToChatParams struct {
+	ID            pgtype.UUID
+	ChatID        pgtype.UUID
+	ParticipantID pgtype.UUID
+	Role          string
+}
+
 const createChat = `-- name: CreateChat :exec
 INSERT INTO chats (
     id,

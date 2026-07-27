@@ -21,7 +21,6 @@ type Processor struct {
 	qs           *db.Queries
 	eventBus     *Bus
 	cfg          *ProcessorConfig
-	inShutdown   bool
 }
 
 func NewProcessor(
@@ -41,16 +40,7 @@ func NewProcessor(
 }
 
 func (p *Processor) Run(ctx context.Context) error {
-	go func() {
-		<-ctx.Done()
-		p.Shutdown()
-	}()
-
 	for {
-		if p.inShutdown {
-			return nil
-		}
-
 		outboxEvent, err := p.eventStorage.GetNextUnprocessedEvent(ctx)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("retreive event to process: %w", err)
@@ -79,9 +69,4 @@ func (p *Processor) Run(ctx context.Context) error {
 
 		p.eventStorage.UpdateEvent(ctx, outboxEvent, statusSucceeded, "", time.Time{})
 	}
-}
-
-func (p *Processor) Shutdown() error {
-	p.inShutdown = true
-	return nil
 }

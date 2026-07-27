@@ -3,7 +3,7 @@ package event
 import "messenger/messenger/internal/domain"
 
 type Envelope struct {
-	ID    string
+	EventID    string
 	Event domain.Event
 }
 
@@ -12,7 +12,7 @@ func NewEnvelope(
 	event domain.Event,
 ) *Envelope {
 	return &Envelope{
-		ID:    id,
+		EventID:    id,
 		Event: event,
 	}
 }
