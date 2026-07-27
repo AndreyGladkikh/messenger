@@ -11,7 +11,7 @@ import (
 type Decoder func([]byte) (domain.Event, error)
 
 var decoders = map[string]Decoder{
-	message.MessageSentName: decodeAs[message.MessageSent],
+	message.MessageSentEventName: decodeAs[message.MessageSent],
 }
 
 func decodeAs[E domain.Event](payload []byte) (domain.Event, error) {
@@ -22,7 +22,7 @@ func decodeAs[E domain.Event](payload []byte) (domain.Event, error) {
 	return e, nil
 }
 
-func translateStoredEventToDispatchedEvent(storedEvent db.Outbox) (domain.Event, error) {
+func translateStoredEventToDomainEvent(storedEvent db.Outbox) (domain.Event, error) {
 	decoder, ok := decoders[storedEvent.EventType]
 	if !ok {
 		return nil, fmt.Errorf("not found decoder for event type %s", storedEvent.EventType)

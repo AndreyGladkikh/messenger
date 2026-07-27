@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	interruptCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	processor, cleanup, err := di.InitializeEventProcessor()
@@ -18,18 +18,9 @@ func main() {
 	}
 	if err != nil {
 		log.Fatal("event processor: failed to init dependencies", "error", err)
-		return
 	}
 
-	processor.Run(interruptCtx)
-
-	// errCh := make(chan error)
-
-	// go func() {
-	// 	processor.Run(interruptCtx)
-	// }()
-
-	// select {
-	// case <-interruptCtx.Done():
-	// }
+	if err := processor.Run(ctx); err != nil {
+		log.Fatal("event processor stopped", "error", err)
+	}
 }

@@ -42,17 +42,17 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 
 	err = h.chatRepository.Add(ctx, chat)
 
-	participants := make([]*chat_participant.ChatParticipant, 2)
-	for i, participantID := range []string{
+	participants := make([]*chat_participant.ChatParticipant, 0, 2)
+	for _, participantID := range []string{
 		command.InitiatorID,
 		command.ChatWithUserID,
 	} {
-		participants[i] = chat_participant.AddToChat(
+		participants = append(participants, chat_participant.AddToChat(
 			h.idProvider.ID(),
 			chatID,
 			participantID,
 			chat_participant.RoleParticipant,
-		)
+		))
 	}
 
 	h.chatParticipantRepository.Add(ctx, participants)

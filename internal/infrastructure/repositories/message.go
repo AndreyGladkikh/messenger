@@ -56,15 +56,15 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 		return nil, err
 	}
 
-	messages := make([]*message.Message, len(messageRows))
-	for i, row := range messageRows {
-		messages[i] = message.Rehydrate(
+	messages := make([]*message.Message, 0, len(messageRows))
+	for _, row := range messageRows {
+		messages = append(messages, message.Rehydrate(
 			row.ID.String(),
 			row.ChatID.String(),
 			row.SenderID.String(),
 			row.Body,
 			row.ReplyToMessageID.String(),
-		)
+		))
 	}
 
 	return messages, nil

@@ -32,7 +32,7 @@ func (q *Queries) GetChat(ctx context.Context, id pgtype.UUID) (Chat, error) {
 const getEventToProcess = `-- name: GetEventToProcess :one
 
 WITH events_to_process as (
-    SELECT id, event_id, event_type, event_payload, occurred_at, status, claimed_at, attempts, error, next_retry_at FROM outbox
+    SELECT id, event_id, event_type, event_payload, occurred_at, status, claimed_at, attempts, errors, next_retry_at FROM outbox
     WHERE status = 'pending'
     OR (status = 'retry' AND now() >= next_retry_at)
     ORDER BY occurred_at
@@ -40,10 +40,11 @@ WITH events_to_process as (
     FOR UPDATE SKIP LOCKED
 )
 UPDATE outbox e
-SET status = 'processing'
+SET status = 'processing',
+claimed_at = now()
 FROM events_to_process ep
 WHERE e.id = ep.id
-RETURNING e.id, e.event_id, e.event_type, e.event_payload, e.occurred_at, e.status, e.claimed_at, e.attempts, e.error, e.next_retry_at
+RETURNING e.id, e.event_id, e.event_type, e.event_payload, e.occurred_at, e.status, e.claimed_at, e.attempts, e.errors, e.next_retry_at
 `
 
 // -- name: ListUnprocessedEvents :many
@@ -63,7 +64,7 @@ func (q *Queries) GetEventToProcess(ctx context.Context) (Outbox, error) {
 		&i.Status,
 		&i.ClaimedAt,
 		&i.Attempts,
-		&i.Error,
+		&i.Errors,
 		&i.NextRetryAt,
 	)
 	return i, err

@@ -22,14 +22,14 @@ func NewChatParticipantRepository(
 }
 
 func (r *ChatParticipantRepository) Add(ctx context.Context, participants []*chat_participant.ChatParticipant) error {
-	params := make([]db.AddParticipantsToChatParams, len(participants))
-	for i, p := range participants {
-		params[i] = db.AddParticipantsToChatParams{
+	params := make([]db.AddParticipantsToChatParams, 0, len(participants))
+	for _, p := range participants {
+		params = append(params, db.AddParticipantsToChatParams{
 			ID:            mapping.PgUUID(p.ID()),
 			ChatID:        mapping.PgUUID(p.ChatID()),
 			ParticipantID: mapping.PgUUID(p.ParticipantID()),
 			Role:          string(p.Role()),
-		}
+		})
 		r.RegisterAggregate(ctx, p)
 	}
 	_, err := r.queries(ctx).AddParticipantsToChat(ctx, params)

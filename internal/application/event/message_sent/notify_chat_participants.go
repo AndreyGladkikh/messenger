@@ -16,7 +16,7 @@ func NewNotifyChatParticipantsHandler() *NotifyChatParticipantsHandler {
 }
 
 func (h *NotifyChatParticipantsHandler) Handle(ctx context.Context, event message.MessageSent) error {
-	fmt.Println("event handled")
+	fmt.Printf("event handler %s executed", h.Name())
 	return nil
 }
 

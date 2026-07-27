@@ -39,6 +39,35 @@ func (q *Queries) CreateChat(ctx context.Context, arg CreateChatParams) error {
 	return err
 }
 
+const createInbox = `-- name: CreateInbox :one
+INSERT INTO inbox (
+    event_id,
+    handler,
+    executed_at
+) VALUES (
+  $1, $2, now()
+)
+ON CONFLICT DO NOTHING
+RETURNING id, event_id, handler, executed_at
+`
+
+type CreateInboxParams struct {
+	EventID pgtype.UUID
+	Handler string
+}
+
+func (q *Queries) CreateInbox(ctx context.Context, arg CreateInboxParams) (Inbox, error) {
+	row := q.db.QueryRow(ctx, createInbox, arg.EventID, arg.Handler)
+	var i Inbox
+	err := row.Scan(
+		&i.ID,
+		&i.EventID,
+		&i.Handler,
+		&i.ExecutedAt,
+	)
+	return i, err
+}
+
 const createMessage = `-- name: CreateMessage :exec
 INSERT INTO messages (
     id,
@@ -107,7 +136,7 @@ UPDATE outbox
   set status = $2,
   claimed_at = $3,
   attempts = $4,
-  error = $5,
+  errors = $5,
   next_retry_at = $6
 WHERE id = $1
 `
@@ -117,7 +146,7 @@ type ProcessEventParams struct {
 	Status      string
 	ClaimedAt   pgtype.Timestamptz
 	Attempts    int32
-	Error       pgtype.Text
+	Errors      []string
 	NextRetryAt pgtype.Timestamptz
 }
 
@@ -127,7 +156,7 @@ func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) erro
 		arg.Status,
 		arg.ClaimedAt,
 		arg.Attempts,
-		arg.Error,
+		arg.Errors,
 		arg.NextRetryAt,
 	)
 	return err
@@ -136,21 +165,28 @@ func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) erro
 const putToOutbox = `-- name: PutToOutbox :exec
 INSERT INTO outbox (
     id,
+    event_id,
     event_type,
     event_payload
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 )
 `
 
 type PutToOutboxParams struct {
 	ID           pgtype.UUID
+	EventID      string
 	EventType    string
 	EventPayload []byte
 }
 
 func (q *Queries) PutToOutbox(ctx context.Context, arg PutToOutboxParams) error {
-	_, err := q.db.Exec(ctx, putToOutbox, arg.ID, arg.EventType, arg.EventPayload)
+	_, err := q.db.Exec(ctx, putToOutbox,
+		arg.ID,
+		arg.EventID,
+		arg.EventType,
+		arg.EventPayload,
+	)
 	return err
 }
 

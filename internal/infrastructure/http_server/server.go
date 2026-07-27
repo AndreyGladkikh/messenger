@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"messenger/messenger/internal/infrastructure/config"
+	"messenger/messenger/internal/infrastructure/logger"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,10 +14,12 @@ import (
 
 type Server struct {
 	server *http.Server
+	logger *logger.Logger
 }
 
 func NewServer(
 	cfg *config.Config,
+	logger *logger.Logger,
 	controller *Controller,
 ) *Server {
 	r := chi.NewRouter()
@@ -38,14 +42,21 @@ func NewServer(
 	}
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run(ctx context.Context) error {
+	go func() {
+		<-ctx.Done()
+		s.logger.Info("http server stopped", "error", ctx.Err())
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+	
+		s.server.Shutdown(ctx)
+	}()
+
+	s.logger.Info("http server started")
 	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 
 	return nil
-}
-
-func (s *Server) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
 }

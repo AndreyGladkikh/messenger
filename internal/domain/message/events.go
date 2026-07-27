@@ -1,6 +1,6 @@
 package message
 
-const MessageSentName = "MessageSent"
+const MessageSentEventName = "MessageSent"
 
 type MessageSent struct {
 	MessageID string
@@ -10,5 +10,5 @@ type MessageSent struct {
 func (m MessageSent) IsEvent() {}
 
 func (m MessageSent) Name() string {
-	return MessageSentName
+	return MessageSentEventName
 }

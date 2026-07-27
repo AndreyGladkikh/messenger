@@ -1,5 +1,7 @@
 package chat
 
+const ChatCreatedEventName = "ChatCreated"
+
 type ChatCreated struct {
 	ChatID string
 }
@@ -7,5 +9,5 @@ type ChatCreated struct {
 func (c ChatCreated) IsEvent() {}
 
 func (c ChatCreated) Name() string {
-	return "ChatCreated"
+	return ChatCreatedEventName
 }

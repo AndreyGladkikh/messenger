@@ -61,12 +61,9 @@ func InitializeEventProcessor() (*event.Processor, func(), error) {
 	manager := transaction.NewManager(pool)
 	loggerLogger := logger.New()
 	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler()
-	bus, err := BuildEventBusForProcessor(notifyChatParticipantsHandler)
-	if err != nil {
-		cleanup()
-		return nil, nil, err
-	}
-	processor := event.NewProcessor(eventStorage, manager, loggerLogger, queries, bus)
+	rebuildQueryModelHandler := message_sent.NewRebuildQueryModelHandler()
+	handlerRegistry := NewEventHandlerRegistry(notifyChatParticipantsHandler, rebuildQueryModelHandler)
+	processor := event.NewProcessor(eventStorage, manager, loggerLogger, queries, handlerRegistry)
 	return processor, func() {
 		cleanup()
 	}, nil

@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -14,8 +14,10 @@ import (
 )
 
 func main() {
-	interruptCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	api, cleanup, err := di.InitializeApi()
 	if cleanup != nil {
@@ -26,29 +28,21 @@ func main() {
 		return
 	}
 
-	logger := api.Logger
 	httpServer := api.HttpServer
 
+	var wg sync.WaitGroup
 	errCh := make(chan error)
 
-	go func() {
-		logger.Info("http server started")
-		if err := httpServer.Run(); err != nil {
-			select {
-			case errCh <- err:
-				logger.Error("http server failed", "error", err)
-			default:
-			}
+	wg.Go(func() {
+		if err := httpServer.Run(ctx); err != nil {
+			errCh <- err
 		}
-	}()
+	})
 
 	select {
 	case <-errCh:
-	case <-interruptCtx.Done():
+		cancel()
+	default:
+		wg.Wait()
 	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	httpServer.Shutdown(shutdownCtx)
 }

@@ -17,17 +17,6 @@ func NewBus() *Bus {
 	}
 }
 
-func (b *Bus) Register(command command.Command, handler Handler) error {
-	for _, m := range b.middlewares {
-		handler = m(handler)
-	}
-	if _, ok := b.handlers[command.Name()]; ok {
-		return fmt.Errorf("для команды '%s' уже зарегистрирован обработчик", command.Name())
-	}
-	b.handlers[command.Name()] = handler
-	return nil
-}
-
 func (b *Bus) Dispatch(ctx context.Context, command command.Command) (any, error) {
 	handler, ok := b.handlers[command.Name()]
 	if !ok {

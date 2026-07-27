@@ -33,14 +33,10 @@ type File struct {
 }
 
 type Inbox struct {
-	ID          pgtype.UUID
-	EventID     pgtype.UUID
-	Handler     string
-	Status      string
-	ClaimedAt   pgtype.Timestamptz
-	Attempts    int32
-	Error       pgtype.Text
-	NextRetryAt pgtype.Timestamptz
+	ID         pgtype.UUID
+	EventID    pgtype.UUID
+	Handler    string
+	ExecutedAt pgtype.Timestamptz
 }
 
 type Message struct {
@@ -70,6 +66,6 @@ type Outbox struct {
 	Status       string
 	ClaimedAt    pgtype.Timestamptz
 	Attempts     int32
-	Error        pgtype.Text
+	Errors       []string
 	NextRetryAt  pgtype.Timestamptz
 }
