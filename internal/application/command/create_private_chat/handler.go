@@ -8,9 +8,9 @@ import (
 )
 
 type Handler struct {
-	chatRepository chat.Repository
+	chatRepository            chat.Repository
 	chatParticipantRepository chat_participant.Repository
-	idProvider        id.Provider
+	idProvider                id.Provider
 }
 
 func NewHandler(
@@ -19,9 +19,9 @@ func NewHandler(
 	idProvider id.Provider,
 ) *Handler {
 	return &Handler{
-		chatRepository: chatRepository,
+		chatRepository:            chatRepository,
 		chatParticipantRepository: chatParticipantRepository,
-		idProvider:        idProvider,
+		idProvider:                idProvider,
 	}
 }
 

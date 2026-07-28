@@ -39,6 +39,7 @@ func NewServer(
 
 	return &Server{
 		server: server,
+		logger: logger,
 	}
 }
 
@@ -49,7 +50,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-	
+
 		s.server.Shutdown(ctx)
 	}()
 

@@ -36,7 +36,7 @@ type ApEventHandlerAdapter[E domain.Event] struct {
 	handler event.Handler[E]
 }
 
-func (h *ApEventHandlerAdapter[E]) Name() string { 
+func (h *ApEventHandlerAdapter[E]) Name() string {
 	return h.handler.Name()
 }
 

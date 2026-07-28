@@ -1,4 +1,4 @@
-package derr
+package domain
 
 import (
 	"errors"

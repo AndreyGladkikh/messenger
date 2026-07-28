@@ -6,13 +6,6 @@ CREATE TABLE chats(
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
--- CREATE TABLE private_chats(
---     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
---     chat_id UUID REFERENCES chats ON DELETE CASCADE,
---     user1_id UUID NOT NULL,
---     user2_id UUID NOT NULL
--- );
-
 CREATE TABLE chat_participants(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     chat_id UUID REFERENCES chats ON DELETE CASCADE,
@@ -50,18 +43,6 @@ CREATE TABLE messages_files(
     name TEXT
 );
 
--- CREATE TABLE events(
---     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
---     event_type TEXT NOT NULL,
---     event_payload JSONB,
---     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
---     status TEXT NOT NULL DEFAULT 'pending',
---     claimed_at TIMESTAMP WITH TIME ZONE,
---     attempts INT NOT NULL DEFAULT 0,
---     error TEXT,
---     next_retry_at TIMESTAMP WITH TIME ZONE
--- );
-
 CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_id TEXT NOT NULL,
@@ -84,13 +65,3 @@ CREATE TABLE inbox(
     executed_at TIMESTAMP WITH TIME ZONE,
     CONSTRAINT inbox_unique UNIQUE(event_id, handler)
 );
-
--- CREATE TABLE event_handler_executions(
---     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
---     event_id UUID NOT NULL REFERENCES events ON DELETE CASCADE,
---     handler_type TEXT NOT NULL,
---     attempts INT NOT NULL DEFAULT 0,
---     error TEXT,
---     next_retry_at TIMESTAMP WITH TIME ZONE,
---     CONSTRAINT event_handler_executions_unique UNIQUE(event_id, handler_type)
--- );

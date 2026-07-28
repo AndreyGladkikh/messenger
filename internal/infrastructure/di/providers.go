@@ -1,7 +1,6 @@
 package di
 
 import (
-	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/event/message_sent"
@@ -11,6 +10,7 @@ import (
 	"messenger/messenger/internal/domain/message"
 	"messenger/messenger/internal/infrastructure/config"
 	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/db/transaction"
 	"messenger/messenger/internal/infrastructure/event"
 	"messenger/messenger/internal/infrastructure/http_server"
 	"messenger/messenger/internal/infrastructure/idprovider"

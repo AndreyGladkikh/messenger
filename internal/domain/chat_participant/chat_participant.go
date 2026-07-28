@@ -5,27 +5,27 @@ import "messenger/messenger/internal/domain"
 type ChatParticipant struct {
 	domain.BaseAggregate
 
-	id string
-	chatID    string
+	id            string
+	chatID        string
 	participantID string
-	role Role
+	role          Role
 }
 
 func AddToChat(
 	id string,
-	chatID    string,
+	chatID string,
 	participantID string,
 	role Role,
 ) *ChatParticipant {
 	p := &ChatParticipant{
-		id: id,
-		chatID: chatID,
+		id:            id,
+		chatID:        chatID,
 		participantID: participantID,
-		role: role,
+		role:          role,
 	}
 
 	p.AddEvent(ParticipantAddedToChat{
-		ChatID: chatID,
+		ChatID:        chatID,
 		ParticipantID: participantID,
 	})
 

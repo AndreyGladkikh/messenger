@@ -8,8 +8,8 @@ type ChatType string
 
 const (
 	PrivateChat = ChatType("private_chat")
-	GroupChat = ChatType("group_chat")
-) 
+	GroupChat   = ChatType("group_chat")
+)
 
 func CreateType(typ string) (ChatType, error) {
 	switch typ {

@@ -1,7 +1,7 @@
 package create_private_chat
 
 type Command struct {
-	InitiatorID string
+	InitiatorID    string
 	ChatWithUserID string
 }
 

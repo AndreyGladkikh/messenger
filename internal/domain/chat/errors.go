@@ -1,5 +1,13 @@
 package chat
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"messenger/messenger/internal/domain"
+)
 
-var ErrPrivateChatExists = errors.New("private chat already exists")
+var (
+	ErrDeleted           = errors.New("chat deleted")
+	ErrNotFound          = fmt.Errorf("chat: %w", domain.ErrNotFound)
+	ErrPrivateChatExists = errors.New("private chat already already exists")
+)

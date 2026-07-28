@@ -7,12 +7,12 @@
 package di
 
 import (
-	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/application/command/create_private_chat"
 	"messenger/messenger/internal/application/command/send_message"
 	"messenger/messenger/internal/application/event/message_sent"
 	"messenger/messenger/internal/infrastructure/config"
 	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/db/transaction"
 	"messenger/messenger/internal/infrastructure/event"
 	"messenger/messenger/internal/infrastructure/http_server"
 	"messenger/messenger/internal/infrastructure/idprovider"
@@ -37,9 +37,9 @@ func InitializeApi() (*Api, func(), error) {
 	storage := db.NewStorage(queries)
 	eventService := event.NewEventService(storage)
 	messageRepository := repositories.NewMessageRepository(queries)
-	provider := idprovider.NewProvider()
-	handler := send_message.NewHandler(messageRepository, provider)
 	chatRepository := repositories.NewChatRepository(queries)
+	provider := idprovider.NewProvider()
+	handler := send_message.NewHandler(messageRepository, chatRepository, provider)
 	chatParticipantRepository := repositories.NewChatParticipantRepository(queries)
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository, provider)
 	bus := BuildCommandBusForApi(manager, loggerLogger, eventService, handler, create_private_chatHandler)

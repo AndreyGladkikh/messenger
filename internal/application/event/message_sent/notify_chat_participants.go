@@ -10,9 +10,7 @@ type NotifyChatParticipantsHandler struct {
 }
 
 func NewNotifyChatParticipantsHandler() *NotifyChatParticipantsHandler {
-	return &NotifyChatParticipantsHandler{
-		
-	}
+	return &NotifyChatParticipantsHandler{}
 }
 
 func (h *NotifyChatParticipantsHandler) Handle(ctx context.Context, event message.MessageSent) error {

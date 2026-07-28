@@ -1,9 +1,3 @@
--- -- name: ListUnprocessedEvents :many
--- SELECT * FROM outbox
--- WHERE processed_at IS NULL
--- ORDER BY published_at
--- LIMIT 100;
-
 -- name: GetEventToProcess :one
 WITH events_to_process as (
     SELECT * FROM outbox

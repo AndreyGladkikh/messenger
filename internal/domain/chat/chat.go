@@ -1,17 +1,21 @@
 package chat
 
-import "messenger/messenger/internal/domain"
+import (
+	"messenger/messenger/internal/domain"
+	"time"
+)
 
 type Chat struct {
 	domain.BaseAggregate
-	id   string
-	typ  ChatType
-	name string
+	id        string
+	typ       ChatType
+	name      string
+	deletedAt time.Time
 }
 
 func Create(
-	id   string,
-	typ  ChatType,
+	id string,
+	typ ChatType,
 ) *Chat {
 	c := new(Chat)
 	c.id = id
@@ -25,13 +29,13 @@ func Create(
 }
 
 func Rehydrate(
-	id   string,
-	typ  ChatType,
+	id string,
+	typ ChatType,
 	name string,
 ) *Chat {
 	return &Chat{
-		id: id,
-		typ: typ,
+		id:   id,
+		typ:  typ,
 		name: name,
 	}
 }
@@ -58,4 +62,8 @@ func (c *Chat) Name() string {
 
 func (c *Chat) SetName(name string) {
 	c.name = name
+}
+
+func (c *Chat) IsDeleted() bool {
+	return !c.deletedAt.IsZero()
 }

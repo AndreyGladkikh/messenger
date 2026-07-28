@@ -21,7 +21,7 @@ func NewPool(cfg *config.Config) (*pgxpool.Pool, func(), error) {
 	)
 	pgxPoolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, func(){}, fmt.Errorf("failed to parse pgx pool config: %w", err)
+		return nil, func() {}, fmt.Errorf("failed to parse pgx pool config: %w", err)
 	}
 
 	pgxPoolConfig.MaxConnLifetime = 1 * time.Hour
@@ -30,7 +30,7 @@ func NewPool(cfg *config.Config) (*pgxpool.Pool, func(), error) {
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), pgxPoolConfig)
 	if err != nil {
-		return nil, func(){}, fmt.Errorf("unable to create pgx pool: %w", err)
+		return nil, func() {}, fmt.Errorf("unable to create pgx pool: %w", err)
 	}
 	cleanup := func() {
 		pool.Close()

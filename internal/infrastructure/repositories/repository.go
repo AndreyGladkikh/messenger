@@ -2,8 +2,8 @@ package repositories
 
 import (
 	"context"
-	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/domain"
+	"messenger/messenger/internal/infrastructure/db/transaction"
 	"messenger/messenger/internal/infrastructure/sqlc"
 	"messenger/messenger/internal/infrastructure/uow"
 )

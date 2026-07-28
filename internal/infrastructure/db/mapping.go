@@ -1,4 +1,4 @@
-package mapping
+package db
 
 import (
 	"database/sql"
@@ -9,9 +9,9 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func PgUUID(v string) pgtype.UUID {
+func ToDBUUID(v string) pgtype.UUID {
 	var pgUUID pgtype.UUID
-	
+
 	if v == "" {
 		return pgUUID
 	}
@@ -24,7 +24,7 @@ func PgUUID(v string) pgtype.UUID {
 	return pgUUID
 }
 
-func PgText(v string) pgtype.Text {
+func ToDBText(v string) pgtype.Text {
 	var pgText pgtype.Text
 
 	if v == "" {
@@ -39,7 +39,7 @@ func PgText(v string) pgtype.Text {
 	return pgText
 }
 
-func OptionalUUID(value string) uuid.NullUUID {
+func ToDBOptionalUUID(value string) uuid.NullUUID {
 	if value == "" {
 		return uuid.NullUUID{}
 	}
@@ -47,34 +47,34 @@ func OptionalUUID(value string) uuid.NullUUID {
 	v := uuid.MustParse(value)
 
 	return uuid.NullUUID{
-		UUID: v,
+		UUID:  v,
 		Valid: true,
 	}
 }
 
-func OptionalString(v string) sql.NullString {
+func ToDBOptionalString(v string) sql.NullString {
 	if v == "" {
 		return sql.NullString{}
 	}
 
 	return sql.NullString{
 		String: v,
-		Valid: true,
+		Valid:  true,
 	}
 }
 
-func OptionalTime(v time.Time) sql.NullTime {
+func ToDBOptionalTime(v time.Time) sql.NullTime {
 	if v.IsZero() {
 		return sql.NullTime{}
 	}
 
 	return sql.NullTime{
-		Time: v,
+		Time:  v,
 		Valid: true,
 	}
 }
 
-func UUIDString(value uuid.NullUUID) string {
+func FromDBUUID(value uuid.NullUUID) string {
 	if value.Valid {
 		return value.UUID.String()
 	}
@@ -83,7 +83,7 @@ func UUIDString(value uuid.NullUUID) string {
 
 func ToDBTimestamp(t time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{
-		Time: t,
+		Time:  t,
 		Valid: !t.IsZero(),
 	}
 }

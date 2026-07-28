@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"messenger/messenger/internal/adapters/out/postgres/transaction"
+	"messenger/messenger/internal/infrastructure/db/transaction"
 	"messenger/messenger/internal/infrastructure/sqlc"
 )
 

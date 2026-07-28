@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/domain"
 	"messenger/messenger/internal/infrastructure/db"
 	"messenger/messenger/internal/infrastructure/sqlc"
@@ -37,7 +36,7 @@ func (s *EventService) PutEventToOutbox(ctx context.Context, e domain.Event) err
 	}
 
 	err := s.Queries(ctx).PutToOutbox(ctx, sqlc.PutToOutboxParams{
-		ID:           mapping.PgUUID(uuid.New().String()),
+		ID:           db.ToDBUUID(uuid.New().String()),
 		EventID:      uuid.New().String(),
 		EventType:    e.Name(),
 		EventPayload: buf.Bytes(),
@@ -64,10 +63,10 @@ func (s *EventService) UpdateEvent(
 	err := s.Queries(ctx).ProcessEvent(ctx, sqlc.ProcessEventParams{
 		ID:          event.ID,
 		Status:      string(status),
-		ClaimedAt:   mapping.ToDBTimestamp(time.Now()),
+		ClaimedAt:   db.ToDBTimestamp(time.Now()),
 		Attempts:    event.Attempts + 1,
 		Errors:      errors,
-		NextRetryAt: mapping.ToDBTimestamp(nextRetryAt),
+		NextRetryAt: db.ToDBTimestamp(nextRetryAt),
 	})
 	if err != nil {
 		return fmt.Errorf("event processor: failed to mark event as processed: %w", err)
@@ -77,7 +76,7 @@ func (s *EventService) UpdateEvent(
 
 func (s *EventService) RegisterEventHandlerExecution(ctx context.Context, eventID, handler string) error {
 	_, err := s.Queries(ctx).CreateInbox(ctx, sqlc.CreateInboxParams{
-		EventID: mapping.PgUUID(eventID),
+		EventID: db.ToDBUUID(eventID),
 		Handler: handler,
 	})
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {

@@ -2,8 +2,8 @@ package repositories
 
 import (
 	"context"
-	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/domain/message"
+	"messenger/messenger/internal/infrastructure/db"
 	"messenger/messenger/internal/infrastructure/sqlc"
 )
 
@@ -23,11 +23,11 @@ func NewMessageRepository(
 
 func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
 	err := r.queries(ctx).CreateMessage(ctx, sqlc.CreateMessageParams{
-		ID:               mapping.PgUUID(m.ID()),
-		SenderID:         mapping.PgUUID(m.SenderID()),
-		ChatID:           mapping.PgUUID(m.ChatID()),
+		ID:               db.ToDBUUID(m.ID()),
+		SenderID:         db.ToDBUUID(m.SenderID()),
+		ChatID:           db.ToDBUUID(m.ChatID()),
 		Body:             m.Body(),
-		ReplyToMessageID: mapping.PgUUID(m.ReplyToMessageID()),
+		ReplyToMessageID: db.ToDBUUID(m.ReplyToMessageID()),
 	})
 
 	if err != nil {
@@ -48,7 +48,7 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID string, limi
 	}
 
 	messageRows, err := r.queries(ctx).ListMessagesForChat(ctx, sqlc.ListMessagesForChatParams{
-		ChatID: mapping.PgUUID(chatID),
+		ChatID: db.ToDBUUID(chatID),
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	})

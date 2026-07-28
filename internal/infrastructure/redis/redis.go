@@ -26,9 +26,8 @@ func NewRedis(cfg *config.Config) (*redis.Client, func(), error) {
 
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
-		return nil, func(){}, fmt.Errorf("redis: failed to ping: %w", err)
+		return nil, func() {}, fmt.Errorf("redis: failed to ping: %w", err)
 	}
 
-	
 	return rdb, cleanup, nil
 }

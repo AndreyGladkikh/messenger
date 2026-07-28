@@ -1,7 +1,7 @@
 package chat_participant
 
 type ParticipantAddedToChat struct {
-	ChatID string
+	ChatID        string
 	ParticipantID string
 }
 

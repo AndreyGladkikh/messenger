@@ -1,7 +1,7 @@
 package create_chat
 
 type Command struct {
-	Type string
+	Type     string
 	ChatName string
 }
 

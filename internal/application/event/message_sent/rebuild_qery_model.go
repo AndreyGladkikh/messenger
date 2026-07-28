@@ -10,9 +10,7 @@ type RebuildQueryModelHandler struct {
 }
 
 func NewRebuildQueryModelHandler() *RebuildQueryModelHandler {
-	return &RebuildQueryModelHandler{
-		
-	}
+	return &RebuildQueryModelHandler{}
 }
 
 func (h *RebuildQueryModelHandler) Handle(ctx context.Context, event message.MessageSent) error {

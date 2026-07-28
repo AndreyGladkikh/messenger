@@ -9,11 +9,11 @@ const defaultContentType = "application/json"
 const defaultHttpStatus = http.StatusOK
 
 type Response struct {
-	response any
-	err error
-	status string
+	response    any
+	err         error
+	status      string
 	contentType string
-	httpStatus int
+	httpStatus  int
 }
 
 func NewResponse(response any, err error, opts ...Option) *Response {
@@ -25,11 +25,11 @@ func NewResponse(response any, err error, opts ...Option) *Response {
 	}
 
 	r := &Response{
-		response: response,
-		err: err,
-		status: status,
+		response:    response,
+		err:         err,
+		status:      status,
 		contentType: defaultContentType,
-		httpStatus: httpStatus,
+		httpStatus:  httpStatus,
 	}
 
 	for _, opt := range opts {

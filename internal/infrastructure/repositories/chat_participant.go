@@ -2,8 +2,8 @@ package repositories
 
 import (
 	"context"
-	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/domain/chat_participant"
+	"messenger/messenger/internal/infrastructure/db"
 	"messenger/messenger/internal/infrastructure/sqlc"
 )
 
@@ -25,9 +25,9 @@ func (r *ChatParticipantRepository) Add(ctx context.Context, participants []*cha
 	params := make([]sqlc.AddParticipantsToChatParams, 0, len(participants))
 	for _, p := range participants {
 		params = append(params, sqlc.AddParticipantsToChatParams{
-			ID:            mapping.PgUUID(p.ID()),
-			ChatID:        mapping.PgUUID(p.ChatID()),
-			ParticipantID: mapping.PgUUID(p.ParticipantID()),
+			ID:            db.ToDBUUID(p.ID()),
+			ChatID:        db.ToDBUUID(p.ChatID()),
+			ParticipantID: db.ToDBUUID(p.ParticipantID()),
 			Role:          string(p.Role()),
 		})
 		r.RegisterAggregate(ctx, p)

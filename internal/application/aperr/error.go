@@ -2,14 +2,15 @@ package aperr
 
 import (
 	"errors"
-	"messenger/messenger/internal/domain/derr"
+	"messenger/messenger/internal/domain"
+	"messenger/messenger/internal/domain/chat"
 )
 
 type Error struct {
-	Code    string `json:"code,omitempty"`
-	Message string `json:"message"`
-	Details []any `json:"details,omitempty"`
-	Wrapped error `json:"-"`
+	Code    string         `json:"code,omitempty"`
+	Message string         `json:"message"`
+	Details map[string]any `json:"details,omitempty"`
+	Wrapped error          `json:"-"`
 }
 
 func (e *Error) Error() string {
@@ -21,15 +22,37 @@ func (e *Error) Unwrap() error {
 }
 
 func Translate(err error) *Error {
-	e := &Error{
-		Message: "Непредвиденная ошибка",
+	return &Error{
+		Code:    code(err),
+		Message: message(err),
+		Details: details(err),
 		Wrapped: err,
 	}
+}
 
-	if errors.Is(err, derr.ErrNotFound) {
-		e.Code = "NOT_FOUND"
-		e.Message = "Ресурс не найден"
+func code(err error) string {
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return "NOT_FOUND"
+	default:
+		return "INTERNAL"
 	}
+}
 
-	return e
+func message(err error) string {
+	switch {
+	case errors.Is(err, chat.ErrNotFound):
+		return "Чат не найден"
+	case errors.Is(err, domain.ErrNotFound):
+		return "Ресурс не найден"
+	default:
+		return "Непредвиденная ошибка"
+	}
+}
+
+func details(err error) map[string]any {
+	switch {
+	default:
+		return nil
+	}
 }
