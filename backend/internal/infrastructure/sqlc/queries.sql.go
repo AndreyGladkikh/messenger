@@ -13,7 +13,7 @@ import (
 
 const getChat = `-- name: GetChat :one
 SELECT id, type, name, created_at, deleted_at FROM chats
-WHERE id = $1 LIMIT 1
+WHERE id = $1
 `
 
 func (q *Queries) GetChat(ctx context.Context, id pgtype.UUID) (Chat, error) {
@@ -30,7 +30,6 @@ func (q *Queries) GetChat(ctx context.Context, id pgtype.UUID) (Chat, error) {
 }
 
 const getEventToProcess = `-- name: GetEventToProcess :one
-
 WITH events_to_process as (
     SELECT id, event_id, event_type, event_payload, occurred_at, status, claimed_at, attempts, errors, next_retry_at FROM outbox
     WHERE status = 'pending'
@@ -47,11 +46,6 @@ WHERE e.id = ep.id
 RETURNING e.id, e.event_id, e.event_type, e.event_payload, e.occurred_at, e.status, e.claimed_at, e.attempts, e.errors, e.next_retry_at
 `
 
-// -- name: ListUnprocessedEvents :many
-// SELECT * FROM outbox
-// WHERE processed_at IS NULL
-// ORDER BY published_at
-// LIMIT 100;
 func (q *Queries) GetEventToProcess(ctx context.Context) (Outbox, error) {
 	row := q.db.QueryRow(ctx, getEventToProcess)
 	var i Outbox
@@ -179,7 +173,6 @@ func (q *Queries) ListMessagesForChat(ctx context.Context, arg ListMessagesForCh
 }
 
 const privateChatExists = `-- name: PrivateChatExists :one
-
 SELECT EXISTS (
     SELECT 1 
     FROM chats c
@@ -194,10 +187,6 @@ type PrivateChatExistsParams struct {
 	ParticipantID_2 pgtype.UUID
 }
 
-// -- name: PrivateChatExists :one
-// SELECT 1 FROM private_chats
-// WHERE user1_id = $1
-// AND user2_id = $2;
 func (q *Queries) PrivateChatExists(ctx context.Context, arg PrivateChatExistsParams) (bool, error) {
 	row := q.db.QueryRow(ctx, privateChatExists, arg.ParticipantID, arg.ParticipantID_2)
 	var exists bool
