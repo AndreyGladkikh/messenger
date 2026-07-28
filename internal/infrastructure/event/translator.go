@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"messenger/messenger/internal/domain"
 	"messenger/messenger/internal/domain/message"
-	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/sqlc"
 )
 
 type Decoder func([]byte) (domain.Event, error)
@@ -22,7 +22,7 @@ func decodeAs[E domain.Event](payload []byte) (domain.Event, error) {
 	return e, nil
 }
 
-func translateStoredEventToDomainEvent(storedEvent db.Outbox) (domain.Event, error) {
+func translateStoredEventToDomainEvent(storedEvent sqlc.Outbox) (domain.Event, error) {
 	decoder, ok := decoders[storedEvent.EventType]
 	if !ok {
 		return nil, fmt.Errorf("not found decoder for event type %s", storedEvent.EventType)

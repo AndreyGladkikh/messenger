@@ -17,8 +17,10 @@ import (
 	"messenger/messenger/internal/infrastructure/http_server"
 	"messenger/messenger/internal/infrastructure/idprovider"
 	"messenger/messenger/internal/infrastructure/logger"
+	"messenger/messenger/internal/infrastructure/outbox_relay"
 	"messenger/messenger/internal/infrastructure/postgres"
 	"messenger/messenger/internal/infrastructure/repositories"
+	"messenger/messenger/internal/infrastructure/sqlc"
 )
 
 // Injectors from wire.go:
@@ -31,16 +33,16 @@ func InitializeApi() (*Api, func(), error) {
 		return nil, nil, err
 	}
 	manager := transaction.NewManager(pool)
-	queries := db.New(pool)
+	queries := sqlc.New(pool)
 	storage := db.NewStorage(queries)
-	eventStorage := event.NewEventStorage(storage)
+	eventService := event.NewEventService(storage)
 	messageRepository := repositories.NewMessageRepository(queries)
 	provider := idprovider.NewProvider()
 	handler := send_message.NewHandler(messageRepository, provider)
 	chatRepository := repositories.NewChatRepository(queries)
 	chatParticipantRepository := repositories.NewChatParticipantRepository(queries)
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository, provider)
-	bus := BuildCommandBusForApi(manager, loggerLogger, eventStorage, handler, create_private_chatHandler)
+	bus := BuildCommandBusForApi(manager, loggerLogger, eventService, handler, create_private_chatHandler)
 	controller := http_server.NewController(bus)
 	server := http_server.NewServer(configConfig, loggerLogger, controller)
 	api := NewApi(server, loggerLogger)
@@ -49,22 +51,22 @@ func InitializeApi() (*Api, func(), error) {
 	}, nil
 }
 
-func InitializeEventProcessor() (*event.Processor, func(), error) {
+func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 	configConfig := config.Load()
 	pool, cleanup, err := postgres.NewPool(configConfig)
 	if err != nil {
 		return nil, nil, err
 	}
-	queries := db.New(pool)
+	queries := sqlc.New(pool)
 	storage := db.NewStorage(queries)
-	eventStorage := event.NewEventStorage(storage)
+	eventService := event.NewEventService(storage)
 	manager := transaction.NewManager(pool)
 	loggerLogger := logger.New()
 	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler()
 	rebuildQueryModelHandler := message_sent.NewRebuildQueryModelHandler()
 	handlerRegistry := NewEventHandlerRegistry(notifyChatParticipantsHandler, rebuildQueryModelHandler)
-	processor := event.NewProcessor(eventStorage, manager, loggerLogger, queries, handlerRegistry)
-	return processor, func() {
+	outboxRelay := outbox_relay.NewOutboxRelay(eventService, manager, loggerLogger, queries, handlerRegistry)
+	return outboxRelay, func() {
 		cleanup()
 	}, nil
 }

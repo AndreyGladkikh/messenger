@@ -12,7 +12,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	processor, cleanup, err := di.InitializeEventProcessor()
+	relay, cleanup, err := di.InitializeOutboxRelay()
 	if cleanup != nil {
 		defer cleanup()
 	}
@@ -20,7 +20,7 @@ func main() {
 		log.Fatal("event processor: failed to init dependencies", "error", err)
 	}
 
-	if err := processor.Run(ctx); err != nil {
+	if err := relay.Run(ctx); err != nil {
 		log.Fatal("event processor stopped", "error", err)
 	}
 }

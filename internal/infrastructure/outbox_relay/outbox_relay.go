@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/domain"
-	"messenger/messenger/internal/infrastructure/db"
 	"messenger/messenger/internal/infrastructure/event"
 	"messenger/messenger/internal/infrastructure/logger"
+	"messenger/messenger/internal/infrastructure/sqlc"
 	"strings"
 	"sync"
 	"time"
@@ -39,7 +39,7 @@ type OutboxRelay struct {
 	eventService         *event.EventService
 	txManager            *transaction.Manager
 	logger               *logger.Logger
-	qs                   *db.Queries
+	qs                   *sqlc.Queries
 	eventHandlerRegistry *event.HandlerRegistry
 }
 
@@ -47,7 +47,7 @@ func NewOutboxRelay(
 	eventService *event.EventService,
 	txManager *transaction.Manager,
 	logger *logger.Logger,
-	qs *db.Queries,
+	qs *sqlc.Queries,
 	eventHandlerRegistry *event.HandlerRegistry,
 ) *OutboxRelay {
 	return &OutboxRelay{
@@ -111,7 +111,7 @@ func (r *OutboxRelay) processEvent() error {
 	return nil
 }
 
-func (r *OutboxRelay) executeEventHandlers(ctx context.Context, outboxEvent db.Outbox) error {
+func (r *OutboxRelay) executeEventHandlers(ctx context.Context, outboxEvent sqlc.Outbox) error {
 	domainEvent, err := translateStoredEventToDomainEvent(outboxEvent)
 	if err != nil {
 		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)

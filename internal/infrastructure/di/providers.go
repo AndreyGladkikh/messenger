@@ -18,6 +18,7 @@ import (
 	"messenger/messenger/internal/infrastructure/outbox_relay"
 	"messenger/messenger/internal/infrastructure/postgres"
 	"messenger/messenger/internal/infrastructure/repositories"
+	"messenger/messenger/internal/infrastructure/sqlc"
 
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,7 +30,7 @@ var ApiSet = wire.NewSet(
 	// bindings
 	wire.Bind(new(id.Provider), new(*idprovider.Provider)),
 
-	wire.Bind(new(db.DBTX), new(*pgxpool.Pool)),
+	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 
 	wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
 	wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
@@ -45,7 +46,7 @@ var ApiSet = wire.NewSet(
 	// persistence
 	postgres.NewPool,
 	transaction.NewManager,
-	db.New,
+	sqlc.New,
 	db.NewStorage,
 
 	// buses
@@ -57,8 +58,7 @@ var ApiSet = wire.NewSet(
 	repositories.NewChatRepository,
 	repositories.NewChatParticipantRepository,
 
-	// storages
-	event.NewEventStorage,
+	event.NewEventService,
 
 	// command handlers
 	create_private_chat.NewHandler,
@@ -77,11 +77,11 @@ var OutboxRelaySet = wire.NewSet(
 
 var CommonSet = wire.NewSet(
 	wire.Bind(new(id.Provider), new(*idprovider.Provider)),
-	wire.Bind(new(db.DBTX), new(*pgxpool.Pool)),
+	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 
 	config.Load,
 
-	db.New,
+	sqlc.New,
 	db.NewStorage,
 	Repositories,
 
@@ -92,8 +92,7 @@ var CommonSet = wire.NewSet(
 	postgres.NewPool,
 	transaction.NewManager,
 
-	// storages
-	event.NewEventStorage,
+	event.NewEventService,
 
 	// other
 	idprovider.NewProvider,

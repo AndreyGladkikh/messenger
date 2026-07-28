@@ -4,7 +4,7 @@ import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/domain/chat"
-	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/sqlc"
 )
 
 type ChatRepository struct {
@@ -12,7 +12,7 @@ type ChatRepository struct {
 }
 
 func NewChatRepository(
-	q *db.Queries,
+	q *sqlc.Queries,
 ) *ChatRepository {
 	return &ChatRepository{
 		Repository: Repository{
@@ -22,7 +22,7 @@ func NewChatRepository(
 }
 
 func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
-	err := r.queries(ctx).CreateChat(ctx, db.CreateChatParams{
+	err := r.queries(ctx).CreateChat(ctx, sqlc.CreateChatParams{
 		ID:   mapping.PgUUID(chat.ID()),
 		Type: string(chat.Type()),
 		Name: mapping.PgText(chat.Name()),
@@ -37,7 +37,7 @@ func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
 }
 
 func (r *ChatRepository) PrivateChatExists(ctx context.Context, participant1, participant2 string) (bool, error) {
-	exists, err := r.queries(ctx).PrivateChatExists(ctx, db.PrivateChatExistsParams{
+	exists, err := r.queries(ctx).PrivateChatExists(ctx, sqlc.PrivateChatExistsParams{
 		ParticipantID:   mapping.PgUUID(participant1),
 		ParticipantID_2: mapping.PgUUID(participant2),
 	})

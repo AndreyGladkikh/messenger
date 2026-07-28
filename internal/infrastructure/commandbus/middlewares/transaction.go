@@ -12,16 +12,16 @@ import (
 
 type TransactionMiddlewareContainer struct {
 	txManager    *transaction.Manager
-	eventStorage *event.EventStorage
+	eventService *event.EventService
 }
 
 func NewTransactionMiddlewareContainer(
 	txManager *transaction.Manager,
-	eventStorage *event.EventStorage,
+	eventService *event.EventService,
 ) *TransactionMiddlewareContainer {
 	return &TransactionMiddlewareContainer{
 		txManager:    txManager,
-		eventStorage: eventStorage,
+		eventService: eventService,
 	}
 }
 
@@ -51,7 +51,7 @@ func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context) error 
 	if uow, ok := uow.FromContext(ctx); ok {
 		for _, aggregate := range uow.Aggregates() {
 			for _, event := range aggregate.PullEvents() {
-				if err := c.eventStorage.Add(ctx, event); err != nil {
+				if err := c.eventService.PutEventToOutbox(ctx, event); err != nil {
 					return fmt.Errorf("failed to store event: %w", err)
 				}
 			}

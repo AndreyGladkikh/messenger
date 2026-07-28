@@ -10,6 +10,7 @@ import (
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/domain"
 	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/sqlc"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,7 +36,7 @@ func (s *EventService) PutEventToOutbox(ctx context.Context, e domain.Event) err
 		return err
 	}
 
-	err := s.Queries(ctx).PutToOutbox(ctx, db.PutToOutboxParams{
+	err := s.Queries(ctx).PutToOutbox(ctx, sqlc.PutToOutboxParams{
 		ID:           mapping.PgUUID(uuid.New().String()),
 		EventID:      uuid.New().String(),
 		EventType:    e.Name(),
@@ -45,13 +46,13 @@ func (s *EventService) PutEventToOutbox(ctx context.Context, e domain.Event) err
 	return err
 }
 
-func (s *EventService) GetNextUnprocessedEvent(ctx context.Context) (db.Outbox, error) {
+func (s *EventService) GetNextUnprocessedEvent(ctx context.Context) (sqlc.Outbox, error) {
 	return s.Queries(ctx).GetEventToProcess(ctx)
 }
 
 func (s *EventService) UpdateEvent(
 	ctx context.Context,
-	event db.Outbox,
+	event sqlc.Outbox,
 	status Status,
 	errs []error,
 	nextRetryAt time.Time,
@@ -60,7 +61,7 @@ func (s *EventService) UpdateEvent(
 	for _, e := range errs {
 		errors = append(errors, e.Error())
 	}
-	err := s.Queries(ctx).ProcessEvent(ctx, db.ProcessEventParams{
+	err := s.Queries(ctx).ProcessEvent(ctx, sqlc.ProcessEventParams{
 		ID:          event.ID,
 		Status:      string(status),
 		ClaimedAt:   mapping.ToDBTimestamp(time.Now()),
@@ -75,7 +76,7 @@ func (s *EventService) UpdateEvent(
 }
 
 func (s *EventService) RegisterEventHandlerExecution(ctx context.Context, eventID, handler string) error {
-	_, err := s.Queries(ctx).CreateInbox(ctx, db.CreateInboxParams{
+	_, err := s.Queries(ctx).CreateInbox(ctx, sqlc.CreateInboxParams{
 		EventID: mapping.PgUUID(eventID),
 		Handler: handler,
 	})

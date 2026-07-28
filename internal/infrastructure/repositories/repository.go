@@ -4,15 +4,15 @@ import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/transaction"
 	"messenger/messenger/internal/domain"
-	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/sqlc"
 	"messenger/messenger/internal/infrastructure/uow"
 )
 
 type Repository struct {
-	q *db.Queries
+	q *sqlc.Queries
 }
 
-func (r *Repository) queries(ctx context.Context) *db.Queries {
+func (r *Repository) queries(ctx context.Context) *sqlc.Queries {
 	if tx, ok := transaction.FromContext(ctx); ok {
 		return r.q.WithTx(tx)
 	}

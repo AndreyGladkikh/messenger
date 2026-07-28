@@ -29,14 +29,14 @@ func NewApi(
 func BuildCommandBusForApi(
 	txManager *transaction.Manager,
 	logger *logger.Logger,
-	eventStorage *event.EventStorage,
+	eventService *event.EventService,
 	sendMessageHandler *send_message.Handler,
 	createPrivateChatHandler *create_private_chat.Handler,
 ) *commandbus.Bus {
 	bus := commandbus.NewBus()
 
 	loggingMiddlewareContainer := middlewares.NewLoggerMiddlewareContainer(logger)
-	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager, eventStorage)
+	txMiddlewareContainer := middlewares.NewTransactionMiddlewareContainer(txManager, eventService)
 
 	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.Recoverer)

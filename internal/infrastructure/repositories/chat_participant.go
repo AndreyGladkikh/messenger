@@ -4,7 +4,7 @@ import (
 	"context"
 	"messenger/messenger/internal/adapters/out/postgres/mapping"
 	"messenger/messenger/internal/domain/chat_participant"
-	"messenger/messenger/internal/infrastructure/db"
+	"messenger/messenger/internal/infrastructure/sqlc"
 )
 
 type ChatParticipantRepository struct {
@@ -12,7 +12,7 @@ type ChatParticipantRepository struct {
 }
 
 func NewChatParticipantRepository(
-	q *db.Queries,
+	q *sqlc.Queries,
 ) *ChatParticipantRepository {
 	return &ChatParticipantRepository{
 		Repository: Repository{
@@ -22,9 +22,9 @@ func NewChatParticipantRepository(
 }
 
 func (r *ChatParticipantRepository) Add(ctx context.Context, participants []*chat_participant.ChatParticipant) error {
-	params := make([]db.AddParticipantsToChatParams, 0, len(participants))
+	params := make([]sqlc.AddParticipantsToChatParams, 0, len(participants))
 	for _, p := range participants {
-		params = append(params, db.AddParticipantsToChatParams{
+		params = append(params, sqlc.AddParticipantsToChatParams{
 			ID:            mapping.PgUUID(p.ID()),
 			ChatID:        mapping.PgUUID(p.ChatID()),
 			ParticipantID: mapping.PgUUID(p.ParticipantID()),
