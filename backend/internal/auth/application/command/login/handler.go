@@ -1,0 +1,52 @@
+package login
+
+import (
+	"context"
+	"messenger/messenger/internal/auth/application/password"
+	"messenger/messenger/internal/auth/application/token"
+	"messenger/messenger/internal/auth/domain/session"
+	"messenger/messenger/internal/auth/domain/user"
+)
+
+type Handler struct {
+	userRepo     user.Repository
+	sessionRepo  session.Repository
+	passHasher   password.Hasher
+	tokenService token.Service
+}
+
+func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
+	u, err := h.userRepo.GetByLogin(ctx, cmd.Login)
+	if err != nil {
+		return nil, err
+	}
+
+	eq, err := h.passHasher.Compare(cmd.Password, u.PasswordHash)
+	if err != nil {
+		return nil, err
+	}
+	if !eq {
+		return nil, user.ErrWrongPassword
+	}
+	
+	refreshToken := h.tokenService.GenerateRefreshToken()
+	refreshTokenHash := h.tokenService.HashRefreshToken(refreshToken)
+
+	session := session.Create(
+		u.ID,
+		refreshTokenHash,
+	)
+	if err = h.sessionRepo.Add(ctx, session); err != nil {
+		return nil, err
+	}
+
+	accessToken, err := h.tokenService.GenerateAccessToken(session)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Response{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}

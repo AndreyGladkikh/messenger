@@ -1,10 +1,24 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "./db/queries/**/*.sql"
+    queries:
+
+      - "./db/queries/*.sql"
+      - "./db/queries/**/*.sql"
+      - "./db/queries/**/**/*.sql"
     schema: "./db/migrations"
     gen:
       go:
         package: "sqlc"
-        out: "./internal/infrastructure/sqlc"
+        out: "./internal/messaging/infrastructure/sqlc"
         sql_package: "pgx/v5"
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+          - db_type: "uuid"
+            nullable: true
+            go_type:
+              import: "github.com/google/uuid"
+              type: "NullUUID"

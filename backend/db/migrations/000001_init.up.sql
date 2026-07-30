@@ -1,34 +1,60 @@
-CREATE TABLE chats(
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS messaging;
+
+CREATE TABLE auth.users(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    type TEXT NOT NULL,
+    login TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
     name TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE chat_participants(
+CREATE TABLE auth.sessions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    chat_id UUID REFERENCES chats ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
+    refresh_token_hash TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked_at TIMESTAMP WITH TIME ZONE,
+    last_used_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    device TEXT NOT NULL,
+    ip INET NOT NULL
+);
+CREATE INDEX session_user_id_index on auth.sessions (user_id);
+CREATE INDEX session_refresh_token_index on auth.sessions (refresh_token_hash);
+
+CREATE TABLE messaging.chats(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    kind TEXT NOT NULL,
+    name TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE messaging.chat_participants(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chat_id UUID REFERENCES messaging.chats ON DELETE CASCADE,
     participant_id UUID NOT NULL,
     role TEXT NOT NULL,
     joined_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT unique_chat_participant UNIQUE(chat_id, participant_id)
 );
-CREATE INDEX chat_participants_chat_id_index ON chat_participants (chat_id);
-CREATE INDEX chat_participants_participant_id_index ON chat_participants (participant_id);
+CREATE INDEX chat_participants_chat_id_index ON messaging.chat_participants (chat_id);
+CREATE INDEX chat_participants_participant_id_index ON messaging.chat_participants (participant_id);
 
-CREATE TABLE messages(
+CREATE TABLE messaging.messages(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sender_id UUID NOT NULL,
-    chat_id UUID NOT NULL REFERENCES chats ON DELETE CASCADE,
+    chat_id UUID NOT NULL REFERENCES messaging.chats ON DELETE CASCADE,
     body TEXT NOT NULL,
-    reply_to_message_id UUID REFERENCES messages,
+    reply_to_message_id UUID REFERENCES messaging.messages,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE files(
+CREATE TABLE messaging.files(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     hash BYTEA NOT NULL,
     name TEXT,
@@ -36,10 +62,10 @@ CREATE TABLE files(
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE TABLE messages_files(
+CREATE TABLE messaging.message_files(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    message_id UUID REFERENCES messages ON DELETE CASCADE,
-    file_id UUID REFERENCES files ON DELETE CASCADE,
+    message_id UUID REFERENCES messaging.messages ON DELETE CASCADE,
+    file_id UUID REFERENCES messaging.files ON DELETE CASCADE,
     name TEXT
 );
 
@@ -60,7 +86,7 @@ CREATE INDEX outbox_next_retry_at_occurred_at_index ON outbox(next_retry_at, occ
 
 CREATE TABLE inbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id UUID NOT NULL,
+    event_id TEXT NOT NULL,
     handler TEXT NOT NULL,
     executed_at TIMESTAMP WITH TIME ZONE,
     CONSTRAINT inbox_unique UNIQUE(event_id, handler)

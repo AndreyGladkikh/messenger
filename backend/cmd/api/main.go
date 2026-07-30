@@ -10,7 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"messenger/messenger/internal/infrastructure/di"
+	"messenger/messenger/internal/messaging/infrastructure/di"
 )
 
 func main() {
