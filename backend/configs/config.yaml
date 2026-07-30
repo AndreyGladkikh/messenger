@@ -1,9 +1,4 @@
 Auth:
-  Memory: 64 * 1024
-  Iterations: 3
-  Parallelism: 1
-  SaltLength: 16
-  KeyLength: 32
   JWT:
     PrivateKey: /etc/app/keys/jwt-private.pem
     PublicKey: /etc/app/keys/jwt-public.pem

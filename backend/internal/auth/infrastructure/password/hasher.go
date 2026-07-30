@@ -34,27 +34,18 @@ var (
 )
 
 type Hasher struct {
-	params *params
 }
 
 func NewHasher(config *config.Config) *Hasher {
-	return &Hasher{
-		params: &params{
-			memory: config.Auth.Memory,
-			iterations: config.Auth.Iterations,
-			parallelism: config.Auth.Parallelism,
-			saltLength: config.Auth.SaltLength,
-			keyLength: config.Auth.KeyLength,
-		},
-	}
+	return &Hasher{}
 }
 
 func (h *Hasher) Hash(password string) (string, error) {
-	salt, err := generateRandomBytes(h.params.saltLength)
+	salt, err := generateRandomBytes(p.saltLength)
 	if err != nil {
 		return "", err
 	}
-	hash := argon2.IDKey([]byte(password), salt, h.params.iterations, h.params.memory, h.params.parallelism, h.params.keyLength)
+	hash := argon2.IDKey([]byte(password), salt, p.iterations, p.memory, p.parallelism, p.keyLength)
 
 	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
 	b64Hash := base64.RawStdEncoding.EncodeToString(hash)
@@ -62,9 +53,9 @@ func (h *Hasher) Hash(password string) (string, error) {
 	encodedHash := fmt.Sprintf(
 		"$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s", 
 		argon2.Version, 
-		h.params.memory, 
-		h.params.iterations, 
-		h.params.parallelism, 
+		p.memory, 
+		p.iterations, 
+		p.parallelism, 
 		b64Salt, 
 		b64Hash,
 	)

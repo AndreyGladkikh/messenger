@@ -57,4 +57,4 @@ queries:
 	cd ./backend && sqlc generate
 
 di:
-	cd ./backend && wire ./internal/messaging/infrastructure/di
+	cd ./backend && wire ./internal/platform/di

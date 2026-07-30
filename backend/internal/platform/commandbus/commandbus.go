@@ -34,16 +34,18 @@ func (b *Bus) Use(middleware Middleware) {
 	b.middlewares = append(b.middlewares, middleware)
 }
 
-func RegisterHandler[C Command](b *Bus, commandName string, handler ApCommandHandler[C]) error {
+func RegisterHandler[C Command](b *Bus, handler ApCommandHandler[C]) error {
+	c := *new(C)
+
 	var adapted CommandHandler = ApHandlerAdapter[C]{handler: handler}
 
 	for _, m := range b.middlewares {
 		adapted = m(adapted)
 	}
-	if _, ok := b.handlers[commandName]; ok {
-		return fmt.Errorf("для команды '%s' уже зарегистрирован обработчик", commandName)
+	if _, ok := b.handlers[c.Name()]; ok {
+		return fmt.Errorf("для команды '%s' уже зарегистрирован обработчик", c.Name())
 	}
-	b.handlers[commandName] = adapted
+	b.handlers[c.Name()] = adapted
 	return nil
 }
 

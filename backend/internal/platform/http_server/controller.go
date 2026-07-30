@@ -26,11 +26,11 @@ func (c *Controller) registerUser(w http.ResponseWriter, r *http.Request) {
 	var request RegisterUserRequest
 	json.NewDecoder(r.Body).Decode(&request)
 
-	_ = &register.Command{
+	command := &register.Command{
 		Login:    request.Login,
 		Password: request.Password,
 	}
-	response, err := c.commandBus.Dispatch(r.Context(), nil)
+	response, err := c.commandBus.Dispatch(r.Context(), command)
 
 	NewResponse(response, err).WriteTo(w)
 }

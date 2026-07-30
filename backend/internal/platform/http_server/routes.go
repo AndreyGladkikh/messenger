@@ -11,9 +11,14 @@ func registerApi(mux *chi.Mux, c *Controller) {
 		w.Write([]byte("pong"))
 	})
 
+	mux.Route("/auth", func(r chi.Router) {
+		r.Post("/register", c.registerUser)
+	})
+
 	mux.Route("/chats", func(r chi.Router) {
 		r.Post("/private", c.createPrivateChat)
 	})
+
 	mux.Route("/messages", func(r chi.Router) {
 		r.Post("/", c.sendMessage)
 	})

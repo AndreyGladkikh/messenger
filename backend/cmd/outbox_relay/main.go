@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"log"
-	"messenger/messenger/internal/messaging/infrastructure/di"
+	"messenger/messenger/internal/platform/di"
 	"os/signal"
 	"syscall"
 )

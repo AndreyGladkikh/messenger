@@ -14,18 +14,9 @@ import (
 
 type Config struct {
 	Env        string
-	Auth   *Auth
 	Database   *DatabaseConfig
 	Cache      *CacheConfig
 	HttpServer *HttpServerConfig
-}
-
-type Auth struct {
-	Memory uint32
-	Iterations uint32
-	Parallelism uint8
-	SaltLength uint32
-	KeyLength uint32
 }
 
 type DatabaseConfig struct {

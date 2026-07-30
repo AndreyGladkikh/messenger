@@ -45,9 +45,9 @@ func BuildCommandBusForApi(
 	bus.Use(loggingMiddlewareContainer.Middleware)
 	bus.Use(middlewares.ErrorTranslator)
 
-	commandbus.RegisterHandler(bus, register.CommandName, registerUserHandler)
-	commandbus.RegisterHandler(bus, send_message.CommandName, sendMessageHandler)
-	commandbus.RegisterHandler(bus, create_private_chat.CommandName, createPrivateChatHandler)
+	commandbus.RegisterHandler(bus, registerUserHandler)
+	commandbus.RegisterHandler(bus, sendMessageHandler)
+	commandbus.RegisterHandler(bus, createPrivateChatHandler)
 
 	return bus
 }
