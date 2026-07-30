@@ -37,14 +37,14 @@ type Hasher struct {
 	params *params
 }
 
-func NewHasher(config *config.Auth) *Hasher {
+func NewHasher(config *config.Config) *Hasher {
 	return &Hasher{
 		params: &params{
-			memory: config.Memory,
-			iterations: config.Iterations,
-			parallelism: config.Parallelism,
-			saltLength: config.SaltLength,
-			keyLength: config.KeyLength,
+			memory: config.Auth.Memory,
+			iterations: config.Auth.Iterations,
+			parallelism: config.Auth.Parallelism,
+			saltLength: config.Auth.SaltLength,
+			keyLength: config.Auth.KeyLength,
 		},
 	}
 }

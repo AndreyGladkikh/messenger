@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const CommandName = "SendMessage"
+
 type Command struct {
 	SenderID         uuid.UUID
 	ChatID           uuid.UUID
@@ -17,5 +19,5 @@ type Command struct {
 func (c *Command) IsCommand() {}
 
 func (c *Command) Name() string {
-	return "SendMessage"
+	return CommandName
 }

@@ -3,7 +3,6 @@ package middlewares
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/messaging/application/command"
 	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -25,8 +24,8 @@ func NewTransactionMiddlewareContainer(
 	}
 }
 
-func (c *TransactionMiddlewareContainer) Middleware(next commandbus.Handler) commandbus.Handler {
-	f := func(ctx context.Context, command command.Command) (response any, err error) {
+func (c *TransactionMiddlewareContainer) Middleware(next commandbus.CommandHandler) commandbus.CommandHandler {
+	f := func(ctx context.Context, command commandbus.Command) (response any, err error) {
 		ctx = uow.NewContext(ctx, uow.New())
 
 		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {

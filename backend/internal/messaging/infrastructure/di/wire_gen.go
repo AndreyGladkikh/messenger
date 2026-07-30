@@ -7,6 +7,10 @@
 package di
 
 import (
+	"messenger/messenger/internal/auth/application/command/register"
+	"messenger/messenger/internal/auth/infrastructure/password"
+	repository2 "messenger/messenger/internal/auth/infrastructure/repository"
+	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
@@ -20,6 +24,7 @@ import (
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/repository"
 )
 
 // Injectors from wire.go:
@@ -35,12 +40,22 @@ func InitializeApi() (*Api, func(), error) {
 	queries := sqlc.New(pool)
 	storage := db.NewStorage(queries)
 	eventService := event.NewEventService(storage)
+	repositoryRepository := repository.NewRepository(storage)
+	userRepository := repository2.NewUserRepository(repositoryRepository)
+	sessionRepository := repository2.NewSessionRepository(repositoryRepository)
+	hasher := password.NewHasher(configConfig)
+	service, err := token.NewService()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	handler := register.NewHandler(userRepository, sessionRepository, hasher, service)
 	messageRepository := repositories.NewMessageRepository(queries)
 	chatRepository := repositories.NewChatRepository(queries)
-	handler := send_message.NewHandler(messageRepository, chatRepository)
+	send_messageHandler := send_message.NewHandler(messageRepository, chatRepository)
 	chatParticipantRepository := repositories.NewChatParticipantRepository(queries)
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository)
-	bus := BuildCommandBusForApi(manager, loggerLogger, eventService, handler, create_private_chatHandler)
+	bus := BuildCommandBusForApi(manager, loggerLogger, eventService, handler, send_messageHandler, create_private_chatHandler)
 	controller := http_server.NewController(bus)
 	server := http_server.NewServer(configConfig, loggerLogger, controller)
 	api := NewApi(server, loggerLogger)

@@ -1,6 +1,14 @@
 package di
 
 import (
+	"messenger/messenger/internal/auth/application/command/register"
+	authPasswordPort "messenger/messenger/internal/auth/application/password"
+	authTokenPort "messenger/messenger/internal/auth/application/token"
+	"messenger/messenger/internal/auth/domain/session"
+	"messenger/messenger/internal/auth/domain/user"
+	authPasswordAdapter "messenger/messenger/internal/auth/infrastructure/password"
+	authRepository "messenger/messenger/internal/auth/infrastructure/repository"
+	authTokenAdapter "messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
@@ -10,13 +18,14 @@ import (
 	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/messaging/infrastructure/outbox_relay"
 	"messenger/messenger/internal/messaging/infrastructure/postgres"
-	"messenger/messenger/internal/messaging/infrastructure/repositories"
+	messagingRepository "messenger/messenger/internal/messaging/infrastructure/repositories"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/repository"
 
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -25,43 +34,15 @@ import (
 var ApiSet = wire.NewSet(
 	NewApi,
 
-	// bindings
-	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
-
-	wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
-	wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
-	wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
-
-	// wire.Bind(new(appLogger.Logger), new(*loggerAdapter.Logger)),
-
-	config.Load,
-
+	CommonSet,
 	http_server.NewServer,
 	http_server.NewController,
-
-	// persistence
-	postgres.NewPool,
-	transaction.NewManager,
-	sqlc.New,
-	db.NewStorage,
-
-	// buses
 	BuildCommandBusForApi,
-	// event.NewBus,
+	authPasswordAdapter.NewHasher,
+	authTokenAdapter.NewService,
 
-	// repositories
-	repositories.NewMessageRepository,
-	repositories.NewChatRepository,
-	repositories.NewChatParticipantRepository,
-
-	event.NewEventService,
-
-	// command handlers
-	create_private_chat.NewHandler,
-	send_message.NewHandler,
-
-	// other
-	logger.New,
+	wire.Bind(new(authPasswordPort.Hasher), new(*authPasswordAdapter.Hasher)),
+	wire.Bind(new(authTokenPort.Service), new(*authTokenAdapter.Service)),
 )
 
 var OutboxRelaySet = wire.NewSet(
@@ -71,8 +52,6 @@ var OutboxRelaySet = wire.NewSet(
 )
 
 var CommonSet = wire.NewSet(
-	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
-
 	config.Load,
 
 	sqlc.New,
@@ -90,19 +69,27 @@ var CommonSet = wire.NewSet(
 
 	// other
 	logger.New,
+
+	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 )
 
 var Repositories = wire.NewSet(
-	wire.Bind(new(message.Repository), new(*repositories.MessageRepository)),
-	wire.Bind(new(chat.Repository), new(*repositories.ChatRepository)),
-	wire.Bind(new(chat_participant.Repository), new(*repositories.ChatParticipantRepository)),
+	repository.NewRepository,
+	messagingRepository.NewMessageRepository,
+	messagingRepository.NewChatRepository,
+	messagingRepository.NewChatParticipantRepository,
+	authRepository.NewUserRepository,
+	authRepository.NewSessionRepository,
 
-	repositories.NewMessageRepository,
-	repositories.NewChatRepository,
-	repositories.NewChatParticipantRepository,
+	wire.Bind(new(message.Repository), new(*messagingRepository.MessageRepository)),
+	wire.Bind(new(chat.Repository), new(*messagingRepository.ChatRepository)),
+	wire.Bind(new(chat_participant.Repository), new(*messagingRepository.ChatParticipantRepository)),
+	wire.Bind(new(user.Repository), new(*authRepository.UserRepository)),
+	wire.Bind(new(session.Repository), new(*authRepository.SessionRepository)),
 )
 
 var CommandHandlers = wire.NewSet(
+	register.NewHandler,
 	create_private_chat.NewHandler,
 	send_message.NewHandler,
 )
