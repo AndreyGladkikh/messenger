@@ -16,7 +16,6 @@ import (
 	"messenger/messenger/internal/messaging/application/event/message_sent"
 	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/messaging/infrastructure/outbox_relay"
-	"messenger/messenger/internal/messaging/infrastructure/postgres"
 	"messenger/messenger/internal/messaging/infrastructure/repositories"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
@@ -24,6 +23,7 @@ import (
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
 )
 

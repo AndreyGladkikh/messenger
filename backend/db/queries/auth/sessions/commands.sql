@@ -4,7 +4,7 @@ INSERT INTO auth.sessions (
   user_id,
   refresh_token_hash,
   expires_at,
-  device,
+  user_agent,
   ip
 ) VALUES (
   $1, $2, $3, $4, $5, $6

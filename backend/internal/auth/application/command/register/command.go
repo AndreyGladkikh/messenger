@@ -1,10 +1,14 @@
 package register
 
+import "net/netip"
+
 const CommandName = "RegisterUser"
 
 type Command struct {
 	Login string
 	Password string
+	UserAgent string
+	IP netip.Addr
 }
 
 func (c *Command) IsCommand() {}

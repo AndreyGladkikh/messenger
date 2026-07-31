@@ -9,6 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+const ErrCodeUniqueViolation = 23505
+
 func NewPool(cfg *config.Config) (*pgxpool.Pool, func(), error) {
 	dsn := fmt.Sprintf(
 		"%s://%s:%s@%s:%d/%s",

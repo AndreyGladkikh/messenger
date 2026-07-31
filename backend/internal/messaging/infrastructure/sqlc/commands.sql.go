@@ -107,7 +107,7 @@ INSERT INTO auth.sessions (
   user_id,
   refresh_token_hash,
   expires_at,
-  device,
+  user_agent,
   ip
 ) VALUES (
   $1, $2, $3, $4, $5, $6
@@ -119,7 +119,7 @@ type CreateSessionParams struct {
 	UserID           uuid.UUID
 	RefreshTokenHash string
 	ExpiresAt        pgtype.Timestamptz
-	Device           string
+	UserAgent        string
 	Ip               netip.Addr
 }
 
@@ -129,7 +129,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 		arg.UserID,
 		arg.RefreshTokenHash,
 		arg.ExpiresAt,
-		arg.Device,
+		arg.UserAgent,
 		arg.Ip,
 	)
 	return err

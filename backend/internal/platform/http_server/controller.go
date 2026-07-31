@@ -8,6 +8,9 @@ import (
 	"messenger/messenger/internal/messaging/infrastructure/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"net/http"
+	"net/netip"
+
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Controller struct {
@@ -26,9 +29,19 @@ func (c *Controller) registerUser(w http.ResponseWriter, r *http.Request) {
 	var request RegisterUserRequest
 	json.NewDecoder(r.Body).Decode(&request)
 
+	clientIP := middleware.GetClientIP(r.Context())
+	ip, err := netip.ParseAddr(clientIP)
+	if err != nil {
+		NewResponse(nil, err).WriteTo(w)
+		return
+	}
+	userAgend := r.Header.Get("User-Agent") 
+
 	command := &register.Command{
 		Login:    request.Login,
 		Password: request.Password,
+		IP: ip,
+		UserAgent: userAgend,
 	}
 	response, err := c.commandBus.Dispatch(r.Context(), command)
 

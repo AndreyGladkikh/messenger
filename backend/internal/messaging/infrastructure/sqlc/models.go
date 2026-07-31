@@ -19,7 +19,7 @@ type AuthSession struct {
 	ExpiresAt        pgtype.Timestamptz
 	RevokedAt        pgtype.Timestamptz
 	LastUsedAt       pgtype.Timestamptz
-	Device           string
+	UserAgent        string
 	Ip               netip.Addr
 }
 

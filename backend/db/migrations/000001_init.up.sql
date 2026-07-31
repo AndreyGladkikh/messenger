@@ -18,7 +18,7 @@ CREATE TABLE auth.sessions(
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     revoked_at TIMESTAMP WITH TIME ZONE,
     last_used_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    device TEXT NOT NULL,
+    user_agent TEXT NOT NULL,
     ip INET NOT NULL
 );
 CREATE INDEX session_user_id_index on auth.sessions (user_id);

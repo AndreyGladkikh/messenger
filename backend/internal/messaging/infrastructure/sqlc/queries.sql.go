@@ -86,7 +86,7 @@ func (q *Queries) GetMessage(ctx context.Context, id uuid.UUID) (MessagingMessag
 }
 
 const getSessionByRefreshTokenHash = `-- name: GetSessionByRefreshTokenHash :one
-SELECT id, user_id, refresh_token_hash, created_at, expires_at, revoked_at, last_used_at, device, ip FROM auth.sessions
+SELECT id, user_id, refresh_token_hash, created_at, expires_at, revoked_at, last_used_at, user_agent, ip FROM auth.sessions
 WHERE refresh_token_hash = $1
 `
 
@@ -101,7 +101,7 @@ func (q *Queries) GetSessionByRefreshTokenHash(ctx context.Context, refreshToken
 		&i.ExpiresAt,
 		&i.RevokedAt,
 		&i.LastUsedAt,
-		&i.Device,
+		&i.UserAgent,
 		&i.Ip,
 	)
 	return i, err

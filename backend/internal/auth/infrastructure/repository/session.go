@@ -27,7 +27,7 @@ func (r *SessionRepository) Add(ctx context.Context, s *session.Session) error {
 		UserID:           s.UserID,
 		RefreshTokenHash: s.RefreshTokenHash,
 		ExpiresAt:        db.ToDBTimestamp(s.ExpiresAt),
-		Device:           s.Device,
+		UserAgent:           s.UserAgent,
 		Ip:               s.IP,
 	})
 }
@@ -49,7 +49,7 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 		s.ExpiresAt.Time,
 		s.RevokedAt.Time,
 		s.LastUsedAt.Time,
-		s.Device,
+		s.UserAgent,
 		s.Ip,
 	), nil
 }

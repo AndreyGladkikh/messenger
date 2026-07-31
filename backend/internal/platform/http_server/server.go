@@ -29,6 +29,8 @@ func NewServer(
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.AllowContentType("application/json"))
 	r.Use(AuthMiddleware)
+	r.Use(middleware.ClientIPFromRemoteAddr)
+	// r.Use(middleware.ClientIPFromXFFTrustedProxies(1))
 
 	registerApi(r, controller)
 

@@ -35,6 +35,8 @@ func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
 	session := session.Create(
 		u.ID,
 		refreshTokenHash,
+		cmd.UserAgent,
+		cmd.IP,
 	)
 	if err = h.sessionRepo.Add(ctx, session); err != nil {
 		return nil, err
