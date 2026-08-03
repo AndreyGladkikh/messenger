@@ -7,7 +7,10 @@ import (
 	"messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/user"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
+	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type UserRepository struct {
@@ -26,11 +29,14 @@ func (r *UserRepository) ExistsByLogin(ctx context.Context, login string) (bool,
 
 func (r *UserRepository) Add(ctx context.Context, u *user.User) error {
 	err := r.Queries(ctx).CreateUser(ctx, sqlc.CreateUserParams{
-		ID: u.ID,
-		Login: u.Login,
+		ID:           u.ID,
+		Login:        u.Login,
 		PasswordHash: u.PasswordHash,
 	})
 	if err != nil {
+		if err, ok := errors.AsType[*pgconn.PgError](err); ok && err.Code == postgres.UniqueViolationErrCode && err.ConstraintName == "users_login_key" {
+			return user.ErrLoginAlreadyExists
+		}
 		return err
 	}
 	return nil

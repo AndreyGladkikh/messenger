@@ -2,8 +2,7 @@ package http_server
 
 import (
 	"encoding/json"
-	"errors"
-	"messenger/messenger/internal/messaging/application/aperr"
+	"messenger/messenger/internal/platform/apperr"
 	"net/http"
 )
 
@@ -22,9 +21,7 @@ func NewResponse(response any, err error, opts ...Option) *Response {
 	httpStatus := defaultHttpStatus
 	status := "success"
 	if err != nil {
-		if _, ok := errors.AsType[*aperr.Error](err); !ok {
-			err = aperr.Translate(err)
-		}
+		err = apperr.Translate(err)
 
 		httpStatus = getErrorStatus(err)
 		status = "error"

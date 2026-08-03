@@ -57,7 +57,7 @@ func InitializeApi() (*Api, func(), error) {
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository)
 	bus := BuildCommandBusForApi(manager, loggerLogger, eventService, handler, send_messageHandler, create_private_chatHandler)
 	controller := http_server.NewController(bus)
-	server := http_server.NewServer(configConfig, loggerLogger, controller)
+	server := http_server.NewServer(configConfig, loggerLogger, controller, service)
 	api := NewApi(server, loggerLogger)
 	return api, func() {
 		cleanup()

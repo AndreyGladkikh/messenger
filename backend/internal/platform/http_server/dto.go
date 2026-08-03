@@ -15,7 +15,7 @@ type RegisterUserRequest struct {
 	Credentials
 }
 
-type Login struct {
+type LoginRequest struct {
 	Credentials
 }
 

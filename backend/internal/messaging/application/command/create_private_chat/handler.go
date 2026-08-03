@@ -29,7 +29,7 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 		return nil, err
 	}
 	if exists {
-		return nil, chat.ErrPrivateChatExists
+		return nil, chat.ErrPrivateChatAlreadyExists
 	}
 
 	chat := chat.Create(

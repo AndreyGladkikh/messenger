@@ -3,13 +3,11 @@ package http_server
 import (
 	"context"
 	"errors"
+	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
 	"net/http"
 	"time"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Server struct {
@@ -21,22 +19,13 @@ func NewServer(
 	cfg *config.Config,
 	logger *logger.Logger,
 	controller *Controller,
+	tokenService *token.Service,
 ) *Server {
-	r := chi.NewRouter()
-
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.AllowContentType("application/json"))
-	r.Use(AuthMiddleware)
-	r.Use(middleware.ClientIPFromRemoteAddr)
-	// r.Use(middleware.ClientIPFromXFFTrustedProxies(1))
-
-	registerApi(r, controller)
+	router := router(tokenService, controller)
 
 	server := &http.Server{
 		Addr:    cfg.HttpServer.Addr,
-		Handler: r,
+		Handler: router,
 	}
 
 	return &Server{

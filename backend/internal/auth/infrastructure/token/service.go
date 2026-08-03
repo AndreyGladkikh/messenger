@@ -6,12 +6,15 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/platform/utils"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5/request"
 )
 
 type Service struct {
@@ -77,4 +80,20 @@ func (s *Service) GenerateRefreshToken() string {
 func (s *Service) HashRefreshToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(hash[:])
+}
+
+func (s *Service) ParseAccessTokenFromRequestAndGetClaims(r *http.Request) (*Claims, error) {
+	token, err := request.ParseFromRequest(r, request.OAuth2Extractor, func(token *jwt.Token) (any, error) {
+		return s.jwtVerifyKey, nil
+	}, request.WithClaims(&Claims{}))
+	if err != nil {
+		return nil, fmt.Errorf("Invalid token: %w", err)
+	}
+
+	claims, ok :=  token.Claims.(*Claims)
+	if !ok {
+		return nil, fmt.Errorf("Invalid token: %w", err)
+	}
+
+	return claims, nil
 }

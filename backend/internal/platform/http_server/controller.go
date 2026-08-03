@@ -2,6 +2,7 @@ package http_server
 
 import (
 	"encoding/json"
+	"messenger/messenger/internal/auth/application/command/login"
 	"messenger/messenger/internal/auth/application/command/register"
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
@@ -38,6 +39,29 @@ func (c *Controller) registerUser(w http.ResponseWriter, r *http.Request) {
 	userAgend := r.Header.Get("User-Agent") 
 
 	command := &register.Command{
+		Login:    request.Login,
+		Password: request.Password,
+		IP: ip,
+		UserAgent: userAgend,
+	}
+	response, err := c.commandBus.Dispatch(r.Context(), command)
+
+	NewResponse(response, err).WriteTo(w)
+}
+
+func (c *Controller) loginUser(w http.ResponseWriter, r *http.Request) {
+	var request LoginRequest
+	json.NewDecoder(r.Body).Decode(&request)
+
+	clientIP := middleware.GetClientIP(r.Context())
+	ip, err := netip.ParseAddr(clientIP)
+	if err != nil {
+		NewResponse(nil, err).WriteTo(w)
+		return
+	}
+	userAgend := r.Header.Get("User-Agent") 
+
+	command := &login.Command{
 		Login:    request.Login,
 		Password: request.Password,
 		IP: ip,

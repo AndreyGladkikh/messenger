@@ -43,7 +43,6 @@ func BuildCommandBusForApi(
 	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.Recoverer)
 	bus.Use(loggingMiddlewareContainer.Middleware)
-	bus.Use(middlewares.ErrorTranslator)
 
 	commandbus.RegisterHandler(bus, registerUserHandler)
 	commandbus.RegisterHandler(bus, sendMessageHandler)
