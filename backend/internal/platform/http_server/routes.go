@@ -35,7 +35,7 @@ func registerApi(r chi.Router, tokenService *token.Service, c *Controller) {
 	r.Group(func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", c.registerUser)
-			r.Post("/login", c.registerUser)
+			r.Post("/login", c.loginUser)
 		})
 	})
 

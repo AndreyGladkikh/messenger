@@ -1,6 +1,7 @@
 package di
 
 import (
+	"messenger/messenger/internal/auth/application/command/login"
 	"messenger/messenger/internal/auth/application/command/register"
 	authPasswordPort "messenger/messenger/internal/auth/application/password"
 	authTokenPort "messenger/messenger/internal/auth/application/token"
@@ -90,6 +91,7 @@ var Repositories = wire.NewSet(
 
 var CommandHandlers = wire.NewSet(
 	register.NewHandler,
+	login.NewHandler,
 	create_private_chat.NewHandler,
 	send_message.NewHandler,
 )

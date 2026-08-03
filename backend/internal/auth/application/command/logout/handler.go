@@ -5,9 +5,9 @@ import (
 	"errors"
 	"messenger/messenger/internal/auth/application/password"
 	"messenger/messenger/internal/auth/application/token"
-	"messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/auth/domain/user"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
 type Handler struct {
@@ -19,10 +19,10 @@ type Handler struct {
 
 func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
 	session, err := h.sessionRepo.GetByRefreshTokenHash(ctx, h.tokenService.HashRefreshToken(cmd.RefreshToken))
-	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+	if err != nil && !errors.Is(err, sharedDomain.ErrNotFound) {
 		return nil, err
 	}
-	if errors.Is(err, domain.ErrNotFound) || session.IsExpired() || session.IsRevoked() {
+	if errors.Is(err, sharedDomain.ErrNotFound) || session.IsExpired() || session.IsRevoked() {
 		return nil, nil
 	}
 

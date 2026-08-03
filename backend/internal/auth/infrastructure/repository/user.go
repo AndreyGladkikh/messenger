@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/user"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -48,7 +48,7 @@ func (r *UserRepository) GetByLogin(ctx context.Context, login string) (*user.Us
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrNotFound
+		return nil, sharedDomain.ErrNotFound
 	}
 
 	return user.Rehydrate(

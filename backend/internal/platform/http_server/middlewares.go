@@ -1,6 +1,7 @@
 package http_server
 
 import (
+	"fmt"
 	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/messaging/infrastructure/auth"
 	"net/http"
@@ -13,12 +14,14 @@ func AuthMiddleware(tokenService *token.Service) func(next http.Handler) http.Ha
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims, err := tokenService.ParseAccessTokenFromRequestAndGetClaims(r)
 			if err != nil {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				NewResponse(nil, err).WriteTo(w)
 				return
 			}
+
 			userID, err := uuid.Parse(claims.Subject)
 			if err != nil {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				err = fmt.Errorf("%w: %w", token.ErrInvalidToken, err)
+				NewResponse(nil, err).WriteTo(w)
 				return
 			}
 	

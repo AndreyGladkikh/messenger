@@ -15,6 +15,20 @@ type Handler struct {
 	tokenService token.Service
 }
 
+func NewHandler(
+	userRepo     user.Repository,
+sessionRepo  session.Repository,
+passHasher   password.Hasher,
+tokenService token.Service,
+) *Handler {
+	return &Handler{
+		userRepo: userRepo,
+		sessionRepo: sessionRepo,
+		passHasher: passHasher,
+		tokenService: tokenService,
+	}
+}
+
 func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
 	u, err := h.userRepo.GetByLogin(ctx, cmd.Login)
 	if err != nil {

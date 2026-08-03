@@ -7,6 +7,7 @@
 package di
 
 import (
+	"messenger/messenger/internal/auth/application/command/login"
 	"messenger/messenger/internal/auth/application/command/register"
 	"messenger/messenger/internal/auth/infrastructure/password"
 	repository2 "messenger/messenger/internal/auth/infrastructure/repository"
@@ -50,12 +51,13 @@ func InitializeApi() (*Api, func(), error) {
 		return nil, nil, err
 	}
 	handler := register.NewHandler(userRepository, sessionRepository, hasher, service)
+	loginHandler := login.NewHandler(userRepository, sessionRepository, hasher, service)
 	messageRepository := repositories.NewMessageRepository(queries)
 	chatRepository := repositories.NewChatRepository(queries)
 	send_messageHandler := send_message.NewHandler(messageRepository, chatRepository)
 	chatParticipantRepository := repositories.NewChatParticipantRepository(queries)
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository)
-	bus := BuildCommandBusForApi(manager, loggerLogger, eventService, handler, send_messageHandler, create_private_chatHandler)
+	bus := BuildCommandBusForApi(manager, loggerLogger, eventService, handler, loginHandler, send_messageHandler, create_private_chatHandler)
 	controller := http_server.NewController(bus)
 	server := http_server.NewServer(configConfig, loggerLogger, controller, service)
 	api := NewApi(server, loggerLogger)

@@ -3,13 +3,16 @@ package http_server
 import (
 	"errors"
 	"messenger/messenger/internal/auth/domain/user"
-	sharedDomain "messenger/messenger/internal/messaging/domain"
+	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/messaging/domain/chat"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 	"net/http"
 )
 
 func getErrorStatus(err error) int {
 	switch {
+	case errors.Is(err, token.ErrInvalidToken):
+		return http.StatusUnauthorized
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return http.StatusConflict
 	case errors.Is(err, user.ErrWrongPassword):

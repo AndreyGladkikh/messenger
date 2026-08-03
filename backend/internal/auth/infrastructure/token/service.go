@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/platform/utils"
@@ -16,6 +17,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang-jwt/jwt/v5/request"
 )
+
+var ErrInvalidToken = errors.New("invalid token")
 
 type Service struct {
 	jwtSignKey crypto.PrivateKey
@@ -87,12 +90,12 @@ func (s *Service) ParseAccessTokenFromRequestAndGetClaims(r *http.Request) (*Cla
 		return s.jwtVerifyKey, nil
 	}, request.WithClaims(&Claims{}))
 	if err != nil {
-		return nil, fmt.Errorf("Invalid token: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidToken, err)
 	}
 
 	claims, ok :=  token.Claims.(*Claims)
 	if !ok {
-		return nil, fmt.Errorf("Invalid token: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidToken, err)
 	}
 
 	return claims, nil

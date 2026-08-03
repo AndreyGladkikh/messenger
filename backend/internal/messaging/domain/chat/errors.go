@@ -3,7 +3,7 @@ package chat
 import (
 	"errors"
 	"fmt"
-	sharedDomain "messenger/messenger/internal/messaging/domain"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
 var (

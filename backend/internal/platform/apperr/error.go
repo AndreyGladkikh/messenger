@@ -3,8 +3,9 @@ package apperr
 import (
 	"errors"
 	"messenger/messenger/internal/auth/domain/user"
-	sharedDomain "messenger/messenger/internal/messaging/domain"
+	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/messaging/domain/chat"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
 const (
@@ -37,6 +38,8 @@ func Translate(err error) *Error {
 
 func code(err error) string {
 	switch {
+	case errors.Is(err, token.ErrInvalidToken):
+		return "UNAUTHORIZED"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "LOGIN_ALREADY_EXISTS"
 	case errors.Is(err, user.ErrWrongPassword):
@@ -54,6 +57,8 @@ func code(err error) string {
 
 func message(err error) string {
 	switch {
+	case errors.Is(err, token.ErrInvalidToken):
+		return "Передан невалидный токен авторизации"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "Пользователь с таким логином уже существует"
 	case errors.Is(err, user.ErrWrongPassword):

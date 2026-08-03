@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/repository"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
 type SessionRepository struct {
@@ -38,7 +38,7 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrNotFound
+		return nil, sharedDomain.ErrNotFound
 	}
 
 	return session.Rehydrate(
