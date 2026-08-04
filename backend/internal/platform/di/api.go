@@ -2,6 +2,7 @@ package di
 
 import (
 	"messenger/messenger/internal/auth/application/command/login"
+	"messenger/messenger/internal/auth/application/command/refresh"
 	"messenger/messenger/internal/auth/application/command/register"
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
@@ -28,12 +29,13 @@ func NewApi(
 	}
 }
 
-func BuildCommandBusForApi(
+func BuildCommandBus(
 	txManager *transaction.Manager,
 	logger *logger.Logger,
 	eventService *event.EventService,
 	registerUserHandler *register.Handler,
 	loginHandler *login.Handler,
+	refreshSessionHandler *refresh.Handler,
 	sendMessageHandler *send_message.Handler,
 	createPrivateChatHandler *create_private_chat.Handler,
 ) *commandbus.Bus {
@@ -48,6 +50,7 @@ func BuildCommandBusForApi(
 
 	commandbus.RegisterHandler(bus, registerUserHandler)
 	commandbus.RegisterHandler(bus, loginHandler)
+	commandbus.RegisterHandler(bus, refreshSessionHandler)
 	commandbus.RegisterHandler(bus, sendMessageHandler)
 	commandbus.RegisterHandler(bus, createPrivateChatHandler)
 

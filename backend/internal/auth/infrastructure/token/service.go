@@ -6,8 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
+	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/platform/utils"
 	"net/http"
@@ -18,10 +18,10 @@ import (
 	"github.com/golang-jwt/jwt/v5/request"
 )
 
-var ErrInvalidToken = errors.New("invalid token")
+var ErrInvalidToken = fmt.Errorf("%w: invalid token", authDomain.ErrUnauthorized)
 
 type Service struct {
-	jwtSignKey crypto.PrivateKey
+	jwtSignKey   crypto.PrivateKey
 	jwtVerifyKey crypto.PublicKey
 }
 
@@ -49,7 +49,7 @@ func NewService() (*Service, error) {
 	}
 
 	return &Service{
-		jwtSignKey: signKey,
+		jwtSignKey:   signKey,
 		jwtVerifyKey: verifyKey,
 	}, nil
 }
@@ -64,9 +64,9 @@ func (s *Service) GenerateAccessToken(session *session.Session) (string, error) 
 
 	t.Claims = &Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject: session.UserID.String(),
+			Subject:   session.UserID.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
-			IssuedAt: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 		sid: session.ID.String(),
 	}
@@ -93,7 +93,7 @@ func (s *Service) ParseAccessTokenFromRequestAndGetClaims(r *http.Request) (*Cla
 		return nil, fmt.Errorf("%w: %w", ErrInvalidToken, err)
 	}
 
-	claims, ok :=  token.Claims.(*Claims)
+	claims, ok := token.Claims.(*Claims)
 	if !ok {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidToken, err)
 	}

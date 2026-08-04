@@ -24,14 +24,6 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(ctx context.Context, command *Command) (response any, err error) {
-	// exists, err := h.chatRepository.PrivateChatExists(ctx, command.InitiatorID, command.ChatWithUserID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if exists {
-	// 	return nil, chat.ErrPrivateChatAlreadyExists
-	// }
-
 	privateChatPair, err := chat.NewPrivateChatPair(command.InitiatorID, command.ChatWithUserID)
 	if err != nil {
 		return nil, err
@@ -63,5 +55,5 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 		return nil, err
 	}
 
-	return nil, err
+	return nil, nil
 }

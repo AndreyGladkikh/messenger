@@ -1,23 +1,22 @@
-package repositories
+package repository
 
 import (
 	"context"
 	"messenger/messenger/internal/messaging/domain/chat_participant"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
+	"messenger/messenger/internal/shared/infrastructure/repository"
 )
 
 type ChatParticipantRepository struct {
-	Repository
+	*repository.Repository
 }
 
 func NewChatParticipantRepository(
-	q *sqlc.Queries,
+	repo *repository.Repository,
 ) *ChatParticipantRepository {
 	return &ChatParticipantRepository{
-		Repository: Repository{
-			q: q,
-		},
+		Repository: repo,
 	}
 }
 
@@ -32,7 +31,7 @@ func (r *ChatParticipantRepository) Add(ctx context.Context, participants []*cha
 		})
 		r.RegisterAggregate(ctx, p)
 	}
-	_, err := r.queries(ctx).AddParticipantsToChat(ctx, params)
+	_, err := r.Queries(ctx).AddParticipantsToChat(ctx, params)
 	if err != nil {
 		return err
 	}

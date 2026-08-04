@@ -17,15 +17,15 @@ type Handler struct {
 }
 
 func NewHandler(
-	userRepo     user.Repository,
-	sessionRepo  session.Repository,
-	passHasher   password.Hasher,
+	userRepo user.Repository,
+	sessionRepo session.Repository,
+	passHasher password.Hasher,
 	tokenService token.Service,
 ) *Handler {
 	return &Handler{
-		userRepo: userRepo,
-		sessionRepo: sessionRepo,
-		passHasher: passHasher,
+		userRepo:     userRepo,
+		sessionRepo:  sessionRepo,
+		passHasher:   passHasher,
 		tokenService: tokenService,
 	}
 }

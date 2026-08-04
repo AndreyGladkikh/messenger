@@ -2,8 +2,11 @@ package http_server
 
 import (
 	"encoding/json"
+	"errors"
 	"messenger/messenger/internal/auth/application/command/login"
+	"messenger/messenger/internal/auth/application/command/refresh"
 	"messenger/messenger/internal/auth/application/command/register"
+	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/infrastructure/auth"
@@ -36,12 +39,12 @@ func (c *Controller) registerUser(w http.ResponseWriter, r *http.Request) {
 		NewResponse(nil, err).WriteTo(w)
 		return
 	}
-	userAgend := r.Header.Get("User-Agent") 
+	userAgend := r.Header.Get("User-Agent")
 
 	command := &register.Command{
-		Login:    request.Login,
-		Password: request.Password,
-		IP: ip,
+		Login:     request.Login,
+		Password:  request.Password,
+		IP:        ip,
 		UserAgent: userAgend,
 	}
 	response, err := c.commandBus.Dispatch(r.Context(), command)
@@ -59,13 +62,31 @@ func (c *Controller) loginUser(w http.ResponseWriter, r *http.Request) {
 		NewResponse(nil, err).WriteTo(w)
 		return
 	}
-	userAgend := r.Header.Get("User-Agent") 
+	userAgend := r.Header.Get("User-Agent")
 
 	command := &login.Command{
-		Login:    request.Login,
-		Password: request.Password,
-		IP: ip,
+		Login:     request.Login,
+		Password:  request.Password,
+		IP:        ip,
 		UserAgent: userAgend,
+	}
+	response, err := c.commandBus.Dispatch(r.Context(), command)
+
+	NewResponse(response, err).WriteTo(w)
+}
+
+func (c *Controller) refreshSession(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := r.Cookie("Refresh-Token")
+	if err != nil {
+		if errors.Is(err, http.ErrNoCookie) {
+			err = authDomain.ErrUnauthorized
+		}
+		NewResponse(nil, err).WriteTo(w)
+		return
+	}
+
+	command := &refresh.Command{
+		RefreshToken: refreshToken.Value,
 	}
 	response, err := c.commandBus.Dispatch(r.Context(), command)
 

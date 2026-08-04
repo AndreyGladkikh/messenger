@@ -2,14 +2,11 @@ package apperr
 
 import (
 	"errors"
+	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/user"
 	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/messaging/domain/chat"
 	sharedDomain "messenger/messenger/internal/shared/domain"
-)
-
-const (
-	CodeNotFound = "NOT_FOUND"
 )
 
 type Error struct {
@@ -38,14 +35,10 @@ func Translate(err error) *Error {
 
 func code(err error) string {
 	switch {
-	case errors.Is(err, token.ErrInvalidToken):
-		return "UNAUTHORIZED"
 	case errors.Is(err, user.ErrNotFound):
 		return "USER_NOT_FOUND"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "LOGIN_ALREADY_EXISTS"
-	case errors.Is(err, user.ErrWrongPassword):
-		return "WRONG_PASSWORD"
 	case errors.Is(err, chat.ErrDeleted):
 		return "CHAT_DELETED"
 	case errors.Is(err, chat.ErrPrivateChatAlreadyExists):
@@ -59,14 +52,16 @@ func code(err error) string {
 
 func message(err error) string {
 	switch {
+	case errors.Is(err, authDomain.ErrInvalidCredantials):
+		return "Неверный логин или пароль"
 	case errors.Is(err, token.ErrInvalidToken):
-		return "Передан невалидный токен авторизации"
+		return "Невалидный токен авторизации"
+	case errors.Is(err, authDomain.ErrUnauthorized):
+		return "Аутентификация не удалась"
 	case errors.Is(err, user.ErrNotFound):
 		return "Пользователь не найден"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "Пользователь с таким логином уже существует"
-	case errors.Is(err, user.ErrWrongPassword):
-		return "Неверный пароль"
 	case errors.Is(err, chat.ErrNotFound):
 		return "Чат не найден"
 	case errors.Is(err, chat.ErrDeleted):

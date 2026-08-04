@@ -1,4 +1,4 @@
-package repositories
+package repository
 
 import (
 	"context"
@@ -8,27 +8,26 @@ import (
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/postgres"
+	"messenger/messenger/internal/shared/infrastructure/repository"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type ChatRepository struct {
-	Repository
+	*repository.Repository
 }
 
 func NewChatRepository(
-	q *sqlc.Queries,
+	repo *repository.Repository,
 ) *ChatRepository {
 	return &ChatRepository{
-		Repository: Repository{
-			q: q,
-		},
+		Repository: repo,
 	}
 }
 
 func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
-	err := r.queries(ctx).CreateChat(ctx, sqlc.CreateChatParams{
+	err := r.Queries(ctx).CreateChat(ctx, sqlc.CreateChatParams{
 		ID:   chat.ID(),
 		Kind: string(chat.Type()),
 		Name: db.ToDBText(chat.Name()),
@@ -48,9 +47,9 @@ func (r *ChatRepository) AddPrivate(ctx context.Context, c *chat.Chat, privateCh
 		return err
 	}
 
-	err = r.queries(ctx).CreatePrivateChat(ctx, sqlc.CreatePrivateChatParams{
-		ChatID: c.ID(),
-		FirstParticipantID: privateChatPair.FirstParticipantID(),
+	err = r.Queries(ctx).CreatePrivateChat(ctx, sqlc.CreatePrivateChatParams{
+		ChatID:              c.ID(),
+		FirstParticipantID:  privateChatPair.FirstParticipantID(),
 		SecondParticipantID: privateChatPair.SecondParticipantID(),
 	})
 	if err != nil {
@@ -59,12 +58,12 @@ func (r *ChatRepository) AddPrivate(ctx context.Context, c *chat.Chat, privateCh
 		}
 		return err
 	}
-	
+
 	return err
 }
 
 func (r *ChatRepository) PrivateChatExists(ctx context.Context, participant1, participant2 uuid.UUID) (bool, error) {
-	exists, err := r.queries(ctx).PrivateChatExists(ctx, sqlc.PrivateChatExistsParams{
+	exists, err := r.Queries(ctx).PrivateChatExists(ctx, sqlc.PrivateChatExistsParams{
 		ParticipantID:   participant1,
 		ParticipantID_2: participant2,
 	})
@@ -76,7 +75,7 @@ func (r *ChatRepository) PrivateChatExists(ctx context.Context, participant1, pa
 }
 
 func (r *ChatRepository) Get(ctx context.Context, chatID uuid.UUID) (*chat.Chat, error) {
-	chatRow, err := r.queries(ctx).GetChat(ctx, chatID)
+	chatRow, err := r.Queries(ctx).GetChat(ctx, chatID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}

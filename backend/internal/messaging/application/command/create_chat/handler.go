@@ -28,6 +28,9 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 	)
 
 	err = h.chatRepository.Add(ctx, message)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, err
+	return nil, nil
 }

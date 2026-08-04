@@ -2,6 +2,7 @@ package di
 
 import (
 	"messenger/messenger/internal/auth/application/command/login"
+	"messenger/messenger/internal/auth/application/command/refresh"
 	"messenger/messenger/internal/auth/application/command/register"
 	authPasswordPort "messenger/messenger/internal/auth/application/password"
 	authTokenPort "messenger/messenger/internal/auth/application/token"
@@ -18,7 +19,7 @@ import (
 	"messenger/messenger/internal/messaging/domain/message"
 	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/messaging/infrastructure/outbox_relay"
-	messagingRepository "messenger/messenger/internal/messaging/infrastructure/repositories"
+	messagingRepository "messenger/messenger/internal/messaging/infrastructure/repository"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
@@ -38,7 +39,7 @@ var ApiSet = wire.NewSet(
 	CommonSet,
 	http_server.NewServer,
 	http_server.NewController,
-	BuildCommandBusForApi,
+	BuildCommandBus,
 	authPasswordAdapter.NewHasher,
 	authTokenAdapter.NewService,
 
@@ -92,6 +93,7 @@ var Repositories = wire.NewSet(
 var CommandHandlers = wire.NewSet(
 	register.NewHandler,
 	login.NewHandler,
+	refresh.NewHandler,
 	create_private_chat.NewHandler,
 	send_message.NewHandler,
 )

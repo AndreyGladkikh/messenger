@@ -1,30 +1,29 @@
-package repositories
+package repository
 
 import (
 	"context"
 	"messenger/messenger/internal/messaging/domain/message"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
+	"messenger/messenger/internal/shared/infrastructure/repository"
 
 	"github.com/google/uuid"
 )
 
 type MessageRepository struct {
-	Repository
+	*repository.Repository
 }
 
 func NewMessageRepository(
-	q *sqlc.Queries,
+	repo *repository.Repository,
 ) *MessageRepository {
 	return &MessageRepository{
-		Repository: Repository{
-			q: q,
-		},
+		Repository: repo,
 	}
 }
 
 func (r *MessageRepository) Add(ctx context.Context, m *message.Message) error {
-	err := r.queries(ctx).CreateMessage(ctx, sqlc.CreateMessageParams{
+	err := r.Queries(ctx).CreateMessage(ctx, sqlc.CreateMessageParams{
 		ID:               m.ID(),
 		SenderID:         m.SenderID(),
 		ChatID:           m.ChatID(),
@@ -49,7 +48,7 @@ func (r *MessageRepository) ListForChat(ctx context.Context, chatID uuid.UUID, l
 		offset = 0
 	}
 
-	messageRows, err := r.queries(ctx).ListMessagesForChat(ctx, sqlc.ListMessagesForChatParams{
+	messageRows, err := r.Queries(ctx).ListMessagesForChat(ctx, sqlc.ListMessagesForChatParams{
 		ChatID: chatID,
 		Limit:  int32(limit),
 		Offset: int32(offset),

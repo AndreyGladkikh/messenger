@@ -25,18 +25,15 @@ func Create(
 	userAgent string,
 	ip netip.Addr,
 ) *Session {
-	createdAt := time.Now()
-	expiresAt := createdAt.AddDate(0, 1, 0)
-
-	return &Session{
+	s := &Session{
 		ID:               uuid.New(),
 		UserID:           userID,
-		CreatedAt:        createdAt,
-		ExpiresAt:        expiresAt,
-		RefreshTokenHash: refreshTokenHash,
+		CreatedAt:        time.Now(),
 		UserAgent:        userAgent,
 		IP:               ip,
 	}
+	s.Refresh(refreshTokenHash)
+	return s
 }
 
 func Rehydrate(
@@ -76,4 +73,9 @@ func (s *Session) Revoke() {
 		return
 	}
 	s.RevokedAt = time.Now()
+}
+
+func (s *Session) Refresh(tokenHash string) {
+	s.RefreshTokenHash = tokenHash
+	s.ExpiresAt = time.Now().AddDate(0, 1, 0)
 }

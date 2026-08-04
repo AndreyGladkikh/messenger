@@ -54,7 +54,7 @@ func ToDBText(v string) pgtype.Text {
 
 func ToDBOptionalUUID(id uuid.UUID) uuid.NullUUID {
 	return uuid.NullUUID{
-		UUID: id,
+		UUID:  id,
 		Valid: id != uuid.Nil,
 	}
 }

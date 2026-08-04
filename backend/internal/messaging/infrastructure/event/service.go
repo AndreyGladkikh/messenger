@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	sharedDomain "messenger/messenger/internal/shared/domain"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 	"time"
 
 	"github.com/google/uuid"

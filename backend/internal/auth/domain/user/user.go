@@ -21,15 +21,15 @@ func Register(
 }
 
 func Rehydrate(
-	id           uuid.UUID,
-	login        string,
+	id uuid.UUID,
+	login string,
 	passwordHash string,
-	name         string,
+	name string,
 ) *User {
 	return &User{
-		ID: id,
-		Login: login,
+		ID:           id,
+		Login:        login,
 		PasswordHash: passwordHash,
-		Name: name,
+		Name:         name,
 	}
 }

@@ -20,7 +20,7 @@ func NewPrivateChatPair(firstParticipantID, secondParticipantID uuid.UUID) (*Pri
 	if c == 1 {
 		firstParticipantID, secondParticipantID = secondParticipantID, firstParticipantID
 	}
-	
+
 	return &PrivateChatPair{
 		firstParticipantID:  firstParticipantID,
 		secondParticipantID: secondParticipantID,
@@ -33,4 +33,4 @@ func (p *PrivateChatPair) FirstParticipantID() uuid.UUID {
 
 func (p *PrivateChatPair) SecondParticipantID() uuid.UUID {
 	return p.secondParticipantID
-}	
+}

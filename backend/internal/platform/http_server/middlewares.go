@@ -24,7 +24,7 @@ func AuthMiddleware(tokenService *token.Service) func(next http.Handler) http.Ha
 				NewResponse(nil, err).WriteTo(w)
 				return
 			}
-	
+
 			// userID := r.Header.Get("User")
 			// if userID == "" {
 			// 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -36,9 +36,9 @@ func AuthMiddleware(tokenService *token.Service) func(next http.Handler) http.Ha
 			// 	return
 			// }
 			// userID := "76c5ed7b-0a33-4ae0-bd07-9beff16908f2"
-			
+
 			ctx := auth.NewContextWithUserID(r.Context(), userID)
-	
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

@@ -36,6 +36,7 @@ func registerApi(r chi.Router, tokenService *token.Service, c *Controller) {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", c.registerUser)
 			r.Post("/login", c.loginUser)
+			r.Post("/refresh", c.refreshSession)
 		})
 	})
 
@@ -46,7 +47,7 @@ func registerApi(r chi.Router, tokenService *token.Service, c *Controller) {
 		r.Route("/chats", func(r chi.Router) {
 			r.Post("/private", c.createPrivateChat)
 		})
-	
+
 		r.Route("/messages", func(r chi.Router) {
 			r.Post("/", c.sendMessage)
 		})

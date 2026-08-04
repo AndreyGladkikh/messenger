@@ -3,9 +3,9 @@ package event
 import (
 	"encoding/json"
 	"fmt"
-	sharedDomain "messenger/messenger/internal/shared/domain"
 	"messenger/messenger/internal/messaging/domain/message"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
 type Decoder func([]byte) (sharedDomain.Event, error)

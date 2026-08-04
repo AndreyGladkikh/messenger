@@ -37,7 +37,9 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 		command.ReplyToMessageID,
 	)
 
-	err = h.messageRepository.Add(ctx, message)
+	if err = h.messageRepository.Add(ctx, message); err != nil {
+		return nil, err
+	}
 
-	return nil, err
+	return nil, nil
 }
