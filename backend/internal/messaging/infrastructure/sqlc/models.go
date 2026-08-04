@@ -81,6 +81,12 @@ type MessagingMessageFile struct {
 	Name      pgtype.Text
 }
 
+type MessagingPrivateChat struct {
+	ChatID              uuid.UUID
+	FirstParticipantID  uuid.UUID
+	SecondParticipantID uuid.UUID
+}
+
 type Outbox struct {
 	ID           uuid.UUID
 	EventID      string

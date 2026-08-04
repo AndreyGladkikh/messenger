@@ -24,19 +24,27 @@ func NewHandler(
 }
 
 func (h *Handler) Handle(ctx context.Context, command *Command) (response any, err error) {
-	exists, err := h.chatRepository.PrivateChatExists(ctx, command.InitiatorID, command.ChatWithUserID)
+	// exists, err := h.chatRepository.PrivateChatExists(ctx, command.InitiatorID, command.ChatWithUserID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if exists {
+	// 	return nil, chat.ErrPrivateChatAlreadyExists
+	// }
+
+	privateChatPair, err := chat.NewPrivateChatPair(command.InitiatorID, command.ChatWithUserID)
 	if err != nil {
 		return nil, err
-	}
-	if exists {
-		return nil, chat.ErrPrivateChatAlreadyExists
 	}
 
 	chat := chat.Create(
 		chat.PrivateChat,
 	)
 
-	err = h.chatRepository.Add(ctx, chat)
+	err = h.chatRepository.AddPrivate(ctx, chat, privateChatPair)
+	if err != nil {
+		return nil, err
+	}
 
 	participants := make([]*chat_participant.ChatParticipant, 0, 2)
 	for _, participantID := range []uuid.UUID{
@@ -50,7 +58,10 @@ func (h *Handler) Handle(ctx context.Context, command *Command) (response any, e
 		))
 	}
 
-	h.chatParticipantRepository.Add(ctx, participants)
+	err = h.chatParticipantRepository.Add(ctx, participants)
+	if err != nil {
+		return nil, err
+	}
 
 	return nil, err
 }

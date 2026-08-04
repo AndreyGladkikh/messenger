@@ -19,7 +19,7 @@ func Create(
 	typ ChatType,
 ) *Chat {
 	chat := &Chat{
-		id: uuid.New(),
+		id:  uuid.New(),
 		typ: typ,
 	}
 

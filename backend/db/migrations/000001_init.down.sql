@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS outbox;
 DROP TABLE IF EXISTS messaging.message_files;
 DROP TABLE IF EXISTS messaging.files;
 DROP TABLE IF EXISTS messaging.messages;
+DROP TABLE IF EXISTS messaging.private_chats;
 DROP TABLE IF EXISTS messaging.chat_participants;
 DROP TABLE IF EXISTS messaging.chats;
 

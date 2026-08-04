@@ -7,8 +7,10 @@ import (
 	"messenger/messenger/internal/messaging/domain/chat"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
+	"messenger/messenger/internal/platform/postgres"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type ChatRepository struct {
@@ -37,6 +39,27 @@ func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
 
 	r.RegisterAggregate(ctx, chat)
 
+	return err
+}
+
+func (r *ChatRepository) AddPrivate(ctx context.Context, c *chat.Chat, privateChatPair *chat.PrivateChatPair) error {
+	err := r.Add(ctx, c)
+	if err != nil {
+		return err
+	}
+
+	err = r.queries(ctx).CreatePrivateChat(ctx, sqlc.CreatePrivateChatParams{
+		ChatID: c.ID(),
+		FirstParticipantID: privateChatPair.FirstParticipantID(),
+		SecondParticipantID: privateChatPair.SecondParticipantID(),
+	})
+	if err != nil {
+		if err, ok := errors.AsType[*pgconn.PgError](err); ok && err.Code == postgres.UniqueViolationErrCode && err.ConstraintName == "private_chats_first_participant_id_second_participant_id_key" {
+			return chat.ErrPrivateChatAlreadyExists
+		}
+		return err
+	}
+	
 	return err
 }
 

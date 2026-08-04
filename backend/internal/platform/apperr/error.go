@@ -40,6 +40,8 @@ func code(err error) string {
 	switch {
 	case errors.Is(err, token.ErrInvalidToken):
 		return "UNAUTHORIZED"
+	case errors.Is(err, user.ErrNotFound):
+		return "USER_NOT_FOUND"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "LOGIN_ALREADY_EXISTS"
 	case errors.Is(err, user.ErrWrongPassword):
@@ -59,6 +61,8 @@ func message(err error) string {
 	switch {
 	case errors.Is(err, token.ErrInvalidToken):
 		return "Передан невалидный токен авторизации"
+	case errors.Is(err, user.ErrNotFound):
+		return "Пользователь не найден"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "Пользователь с таким логином уже существует"
 	case errors.Is(err, user.ErrWrongPassword):

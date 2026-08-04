@@ -26,7 +26,7 @@ import (
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
-	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/shared/infrastructure/repository"
 
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"

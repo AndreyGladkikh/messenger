@@ -101,6 +101,27 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) er
 	return err
 }
 
+const createPrivateChat = `-- name: CreatePrivateChat :exec
+INSERT INTO messaging.private_chats (
+    chat_id,
+    first_participant_id,
+    second_participant_id
+) VALUES (
+  $1, $2, $3
+)
+`
+
+type CreatePrivateChatParams struct {
+	ChatID              uuid.UUID
+	FirstParticipantID  uuid.UUID
+	SecondParticipantID uuid.UUID
+}
+
+func (q *Queries) CreatePrivateChat(ctx context.Context, arg CreatePrivateChatParams) error {
+	_, err := q.db.Exec(ctx, createPrivateChat, arg.ChatID, arg.FirstParticipantID, arg.SecondParticipantID)
+	return err
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO auth.sessions (
   id,

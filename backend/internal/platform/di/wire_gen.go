@@ -25,7 +25,7 @@ import (
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
-	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/shared/infrastructure/repository"
 )
 
 // Injectors from wire.go:

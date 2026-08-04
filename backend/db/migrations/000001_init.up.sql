@@ -38,10 +38,17 @@ CREATE TABLE messaging.chat_participants(
     participant_id UUID NOT NULL,
     role TEXT NOT NULL,
     joined_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT unique_chat_participant UNIQUE(chat_id, participant_id)
+    UNIQUE(chat_id, participant_id)
 );
 CREATE INDEX chat_participants_chat_id_index ON messaging.chat_participants (chat_id);
 CREATE INDEX chat_participants_participant_id_index ON messaging.chat_participants (participant_id);
+
+CREATE TABLE messaging.private_chats(
+    chat_id UUID NOT NULL REFERENCES messaging.chats ON DELETE CASCADE,
+    first_participant_id UUID NOT NULL,
+    second_participant_id UUID NOT NULL,
+    UNIQUE(first_participant_id, second_participant_id)
+);
 
 CREATE TABLE messaging.messages(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -89,5 +96,5 @@ CREATE TABLE inbox(
     event_id TEXT NOT NULL,
     handler TEXT NOT NULL,
     executed_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT inbox_unique UNIQUE(event_id, handler)
+    UNIQUE(event_id, handler)
 );

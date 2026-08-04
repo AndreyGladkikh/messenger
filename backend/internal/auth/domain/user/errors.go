@@ -1,8 +1,13 @@
 package user
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	sharedDomain "messenger/messenger/internal/shared/domain"
+)
 
 var (
-	ErrLoginAlreadyExists = errors.New("login already exists")
-	ErrWrongPassword = errors.New("wrong password")
+	ErrNotFound           = fmt.Errorf("user: %w", sharedDomain.ErrNotFound)
+	ErrLoginAlreadyExists = fmt.Errorf("login: %w", sharedDomain.ErrAlreadyExists)
+	ErrWrongPassword      = errors.New("wrong password")
 )
