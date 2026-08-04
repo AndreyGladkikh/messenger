@@ -1,13 +1,13 @@
 package message
 
 import (
-	"messenger/messenger/internal/messaging/domain"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 
 	"github.com/google/uuid"
 )
 
 type Message struct {
-	domain.BaseAggregate
+	sharedDomain.BaseAggregate
 
 	id               uuid.UUID
 	body             string

@@ -1,13 +1,13 @@
 package chat_participant
 
 import (
-	"messenger/messenger/internal/messaging/domain"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 
 	"github.com/google/uuid"
 )
 
 type ChatParticipant struct {
-	domain.BaseAggregate
+	sharedDomain.BaseAggregate
 
 	id            uuid.UUID
 	chatID        uuid.UUID

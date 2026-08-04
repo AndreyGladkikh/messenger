@@ -1,14 +1,14 @@
 package chat
 
 import (
-	"messenger/messenger/internal/messaging/domain"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type Chat struct {
-	domain.BaseAggregate
+	sharedDomain.BaseAggregate
 	id        uuid.UUID
 	typ       ChatType
 	name      string

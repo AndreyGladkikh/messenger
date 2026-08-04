@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/messaging/domain"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -139,7 +139,7 @@ func (r *OutboxRelay) calcNextRetry() time.Time {
 	return time.Now().Add(5 * time.Second)
 }
 
-func (r *OutboxRelay) runHandler(ctx context.Context, eventID string, domainEvent domain.Event, handler event.Handler) error {
+func (r *OutboxRelay) runHandler(ctx context.Context, eventID string, domainEvent sharedDomain.Event, handler event.Handler) error {
 	return r.txManager.WithTransaction(ctx, func(ctx context.Context) error {
 		err := r.eventService.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
 		if err != nil && !errors.Is(err, event.ErrHandlerAlreadyExecuted) {

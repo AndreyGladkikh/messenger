@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/messaging/domain"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
 	"time"
@@ -29,7 +29,7 @@ func NewEventService(
 	}
 }
 
-func (s *EventService) PutEventToOutbox(ctx context.Context, e domain.Event) error {
+func (s *EventService) PutEventToOutbox(ctx context.Context, e sharedDomain.Event) error {
 	buf := new(bytes.Buffer)
 	if err := json.NewEncoder(buf).Encode(e); err != nil {
 		return err

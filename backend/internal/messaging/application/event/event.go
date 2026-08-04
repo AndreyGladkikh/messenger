@@ -2,10 +2,10 @@ package event
 
 import (
 	"context"
-	"messenger/messenger/internal/messaging/domain"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
-type Handler[E domain.Event] interface {
+type Handler[E sharedDomain.Event] interface {
 	Handle(context.Context, E) error
 	Name() string
 }

@@ -2,10 +2,10 @@ package repositories
 
 import (
 	"context"
-	"messenger/messenger/internal/messaging/domain"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/uow"
+	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
 type Repository struct {
@@ -19,7 +19,7 @@ func (r *Repository) queries(ctx context.Context) *sqlc.Queries {
 	return r.q
 }
 
-func (r *Repository) RegisterAggregate(ctx context.Context, aggregate domain.Aggregate) {
+func (r *Repository) RegisterAggregate(ctx context.Context, aggregate sharedDomain.Aggregate) {
 	if uow, ok := uow.FromContext(ctx); ok {
 		uow.RegisterAggregate(aggregate)
 	}
