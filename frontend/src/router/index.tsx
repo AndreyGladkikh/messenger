@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
-import App from "../App";
-import Test from "../Test"
+import App from "@/App";
+import Test from "@/Test"
 
 export default createBrowserRouter([
     {
