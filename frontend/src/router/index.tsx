@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import App from "../App";
+import Test from "../Test"
 
 export default createBrowserRouter([
     {
@@ -8,6 +9,7 @@ export default createBrowserRouter([
             <h1 className="text-3xl font-bold underline">
                 Hello world!
             </h1>
+            <Test />
         </div>,
     },
     {
