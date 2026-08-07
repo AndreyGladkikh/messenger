@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import App from "@/App";
 import Test from "@/Test"
+import SignupPage from "@/app/signup/page";
 
 export default createBrowserRouter([
     {
@@ -17,11 +18,11 @@ export default createBrowserRouter([
         Component: App,
     },
     {
-        path: "/register",
-        element: <div>Hello World</ div >,
+        path: "/signup",
+        Component: SignupPage,
     },
     {
-        path: "/login",
-        element: <div>Hello World</ div >,
+        path: "/signin",
+        Component: SignupPage,
     },
   ]);
