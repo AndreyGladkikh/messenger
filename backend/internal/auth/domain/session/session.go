@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const TTL = 30*24*time.Hour
+
 type Session struct {
 	ID               uuid.UUID
 	UserID           uuid.UUID
@@ -77,5 +79,5 @@ func (s *Session) Revoke() {
 
 func (s *Session) Refresh(tokenHash string) {
 	s.RefreshTokenHash = tokenHash
-	s.ExpiresAt = time.Now().AddDate(0, 1, 0)
+	s.ExpiresAt = time.Now().Add(TTL)
 }

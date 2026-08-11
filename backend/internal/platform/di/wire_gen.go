@@ -16,6 +16,7 @@ import (
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
+	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/messaging/infrastructure/outbox_relay"
 	repository3 "messenger/messenger/internal/messaging/infrastructure/repository"
@@ -26,6 +27,7 @@ import (
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
+	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/shared/infrastructure/repository"
 )
 
@@ -60,7 +62,9 @@ func InitializeApi() (*Api, func(), error) {
 	chatParticipantRepository := repository3.NewChatParticipantRepository(repositoryRepository)
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository)
 	bus := BuildCommandBus(manager, loggerLogger, eventService, handler, loginHandler, refreshHandler, send_messageHandler, create_private_chatHandler)
-	controller := http_server.NewController(bus)
+	get_chat_listHandler := get_chat_list.NewHandler()
+	querybusBus := querybus.InitBus(get_chat_listHandler)
+	controller := http_server.NewController(bus, querybusBus)
 	server := http_server.NewServer(configConfig, loggerLogger, controller, service)
 	api := NewApi(server, loggerLogger)
 	return api, func() {

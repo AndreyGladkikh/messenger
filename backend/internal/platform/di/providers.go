@@ -14,6 +14,7 @@ import (
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
+	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/messaging/domain/chat"
 	"messenger/messenger/internal/messaging/domain/chat_participant"
 	"messenger/messenger/internal/messaging/domain/message"
@@ -27,6 +28,7 @@ import (
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
+	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/shared/infrastructure/repository"
 
 	"github.com/google/wire"
@@ -40,6 +42,7 @@ var ApiSet = wire.NewSet(
 	http_server.NewServer,
 	http_server.NewController,
 	BuildCommandBus,
+	querybus.InitBus,
 	authPasswordAdapter.NewHasher,
 	authTokenAdapter.NewService,
 
@@ -61,6 +64,7 @@ var CommonSet = wire.NewSet(
 	Repositories,
 
 	CommandHandlers,
+	QueryHandlers,
 	EventHandlers,
 
 	// persistence
@@ -96,6 +100,10 @@ var CommandHandlers = wire.NewSet(
 	refresh.NewHandler,
 	create_private_chat.NewHandler,
 	send_message.NewHandler,
+)
+
+var QueryHandlers = wire.NewSet(
+	get_chat_list.NewHandler,
 )
 
 var EventHandlers = wire.NewSet(

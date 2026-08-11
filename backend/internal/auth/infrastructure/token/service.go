@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"messenger/messenger/internal/auth/application/token"
 	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/platform/utils"
@@ -65,7 +66,7 @@ func (s *Service) GenerateAccessToken(session *session.Session) (string, error) 
 	t.Claims = &Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   session.UserID.String(),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 15)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(token.AccessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 		sid: session.ID.String(),
