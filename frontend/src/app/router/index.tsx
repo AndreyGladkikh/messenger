@@ -1,9 +1,9 @@
 import { createBrowserRouter, isRouteErrorResponse, useRouteError } from "react-router";
-import App from "@/App";
 import SignupPage from "@/pages/auth/Signup";
 import ErrorPage from "@/pages/error/GenericError";
 import RouteErrorPage from "@/pages/error/RouteError";
 import ChatPage from "@/pages/chats/Chat";
+import SigninPage from "@/pages/auth/Signin";
 
 export default createBrowserRouter([
     {
@@ -12,7 +12,7 @@ export default createBrowserRouter([
         children: [
             {
                 index: true,
-                Component: App,
+                Component: ChatPage,
             },
             {
                 path: "/signup",
@@ -20,7 +20,7 @@ export default createBrowserRouter([
             },
             {
                 path: "/signin",
-                Component: SignupPage,
+                Component: SigninPage,
             },
             {
                 path: "/chat",

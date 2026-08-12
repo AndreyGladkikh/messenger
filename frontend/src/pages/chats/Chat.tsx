@@ -11,7 +11,7 @@ import { Icon } from '@/components/pouf/Icon'
 import { NavLink } from '@/components/pouf/NavLink'
 import { BottomNav, type NavItem } from '@/components/pouf/BottomNav'
 import { useQuery } from '@tanstack/react-query'
-import api from '@/api'
+import api from '@/shared/api'
 
 const NAV: NavItem[] = [
     { href: '/', label: 'Overview', icon: 'overview', tone: 'purple' },
