@@ -1,16 +1,18 @@
-const API_URL = import.meta.env.VITE_API_URL;
-const JSON_CONTENT_TYPE = "application/json";
+import config from "../config";
+import http from "../constants/http";
+
+const UNEXPECTED_ERROR_MESSAGE = 'Произошла непредвиденная ошибка.'
 
 export class ApiError extends Error {
     status: number;
-    code: string | undefined;
-    details: object | undefined;
+    code?: string;
+    details?: object;
 
     constructor(
         status: number,
-        code: string | undefined,
         message: string,
-        details: object | undefined,
+        code?: string,
+        details?: object,
     ) {
         super(message);
         this.name = "ApiError";
@@ -20,19 +22,71 @@ export class ApiError extends Error {
     }
 }
 
-export async function apiRequest(path: string, options: RequestInit = {}): Promise<any> {
+export class UnauthenticatedError extends ApiError {
+    constructor(
+        message: string,
+        code?: string,
+    ) {
+        super(
+            http.status.unauthorized,
+            message || 'Ошибка авторизации.',
+            code,
+        );
+        this.name = "UnauthenticatedError";
+    }
+}
+
+export class UnexpectedError extends Error {
+    constructor(
+    ) {
+        super(UNEXPECTED_ERROR_MESSAGE);
+        this.name = "UnexpectedError";
+    }
+}
+
+type RequestOptions = Omit<RequestInit, 'body'> & {
+    body?: any,
+}
+
+export async function apiRequest(path: string, options: RequestOptions = {}, isRefreshTokenIfUnauthorized: boolean = true): Promise<any> {
+    const request = await buildRequest(path, options)
+    const response = await fetch(request)
+
+    if (response.ok) {
+        return await parseSuccess(response)
+    }
+
+    if (response.status === http.status.unauthorized && isRefreshTokenIfUnauthorized) {
+        try {
+            await refreshOnce()
+        } catch (e) {
+            window.location.href = '/auth/login'
+            throw e
+        }
+        return await apiRequest(path, options, false)
+    }
+
+    await parseError(response)
+}
+
+async function buildRequest(path: string, options: RequestOptions): Promise<Request> {
     const headers = new Headers({
-        "Content-Type": JSON_CONTENT_TYPE,
+        [http.header.contentType]: http.contentType.json,
         ...options.headers,
     })
 
+    const accessTokenCookie = await cookieStore.get('access_token');
+    if (accessTokenCookie) {
+        headers.append('Authorization', `Bearer ${accessTokenCookie.value}`)
+    }
+
     let body = options.body;
-    if (body && headers.get("Content-Type") === JSON_CONTENT_TYPE) {
+    if (body && headers.get(http.header.contentType) === http.contentType.json) {
         body = JSON.stringify(body);
     }
 
-    const request = new Request(
-        `${API_URL}${path}`,
+    return new Request(
+        `${config.apiUrl}${path}`,
         {
             mode: "cors",
             credentials: "include",
@@ -41,23 +95,69 @@ export async function apiRequest(path: string, options: RequestInit = {}): Promi
             body,
         },
     )
+}
 
-    const response = await fetch(request)
+async function parseSuccess(response: Response): Promise<any> {
+    if (response.status === 204) {
+        return null
+    }
 
-    if (!response.ok) {
-        const responseData = await response.json().catch(() => ({}));
+    const contentType = response.headers.get(http.header.contentType);
+    if (contentType?.includes(http.contentType.json)) {
+        try {
+            const responseData = await response.json()
+            return responseData.data
+        } catch (e) {
+            throw new UnexpectedError()
+        }
+    }
+
+    try {
+        return await response.text()
+    } catch (e) {
+        throw new UnexpectedError()
+    }
+}
+
+async function parseError(response: Response): Promise<any> {
+    const contentType = response.headers.get(http.header.contentType);
+    if (!contentType?.includes(http.contentType.json)) {
+        throw new UnexpectedError()
+    }
+    
+    try {
+        const responseData = await response.json()
+
+        if (response.status === http.status.unauthorized) {
+            throw new UnauthenticatedError(
+                responseData?.error?.message,
+                responseData?.error?.code,
+            )
+        }
+
         throw new ApiError(
             response.status,
-            responseData.error.code,
-            responseData.error.message || "An error occurred",
-            responseData.error.details,
+            responseData?.error?.message || UNEXPECTED_ERROR_MESSAGE,
+            responseData?.error?.code,
+            responseData?.error?.details,
         );
+    } catch (e) {
+        throw new UnexpectedError()
     }
+}
 
-    if (response.status === 204) {
-        return undefined;
+let refreshPromise: Promise<void> | null = null
+
+function refreshOnce(): Promise<void> {
+    if (!refreshPromise) {
+        refreshPromise = refresh().finally(() => { refreshPromise = null })
     }
+    return refreshPromise
+}
 
-    const responseData = await response.json();
-    return new Promise(() => responseData.data);
+async function refresh(): Promise<void> {
+    const response = await fetch(`${config.apiUrl}/auth/refresh`, { method: http.method.post })
+    if (!response.ok) {
+        await parseError(response)
+    }
 }

@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import clsx from 'clsx'
-import { Card, RowCard } from '@/components/pouf/surface'
-import { Shell, Sidebar, Stack, Row, Spacer } from '@/components/pouf/layout'
-import { Heading, Text, Eyebrow } from '@/components/pouf/text'
-import { Avatar } from '@/components/pouf/avatar'
-import { Dot, Badge, Blob } from '@/components/pouf/media'
-import { Input } from '@/components/pouf/Input'
-import { Button } from '@/components/pouf/Button'
-import { Icon } from '@/components/pouf/Icon'
-import { NavLink } from '@/components/pouf/NavLink'
-import { BottomNav, type NavItem } from '@/components/pouf/BottomNav'
+import { Card, RowCard } from '@/shared/ui/pouf/surface'
+import { Shell, Sidebar, Stack, Row, Spacer } from '@/shared/ui/pouf/layout'
+import { Heading, Text, Eyebrow } from '@/shared/ui/pouf/text'
+import { Avatar } from '@/shared/ui/pouf/avatar'
+import { Dot, Badge, Blob } from '@/shared/ui/pouf/media'
+import { Input } from '@/shared/ui/pouf/Input'
+import { Button } from '@/shared/ui/pouf/Button'
+import { Icon } from '@/shared/ui/pouf/Icon'
+import { NavLink } from '@/shared/ui/pouf/NavLink'
+import { BottomNav, type NavItem } from '@/shared/ui/pouf/BottomNav'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/shared/api'
 
@@ -71,9 +71,6 @@ const SEED: Record<string, Message[]> = {
 const PANES =
     'grid [grid-template-columns:minmax(0,280px)_minmax(0,1fr)] min-h-[520px] max-[900px]:[grid-template-columns:minmax(0,1fr)]'
 
-/** An example chat screen: app shell, a conversation list that actually
- * switches threads, message bubbles, and a working composer. Below 900px the
- * list and thread take turns rather than splitting a phone in half. */
 export default function ChatPage() {
     const [threads, setThreads] = useState<Record<string, Message[]>>(SEED)
     const [draft, setDraft] = useState('')
@@ -89,7 +86,7 @@ export default function ChatPage() {
 
     if (error) return 'An error has occurred: ' + error.message
 
-    console.log(1, data);
+    console.log('ChatPage data', data);
     
 
     const convo = CONVOS.find((c) => c.id === active) ?? CONVOS[0]!

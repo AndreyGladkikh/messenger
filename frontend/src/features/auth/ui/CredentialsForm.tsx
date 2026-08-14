@@ -1,17 +1,13 @@
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { Card } from '@/components/pouf/surface'
-import { Stack, Row } from '@/components/pouf/layout'
-import { Heading, Text } from '@/components/pouf/text'
-import { Field, Input } from '@/components/pouf/Input'
-import { Button } from '@/components/pouf/Button'
-import { Separator } from '@/components/pouf/separator'
-import { Blob } from '@/components/pouf/media'
-
-interface Credentials {
-  login: string
-  password: string
-}
+import { Card } from '@/shared/ui/pouf/surface'
+import { Stack, Row } from '@/shared/ui/pouf/layout'
+import { Heading, Text } from '@/shared/ui/pouf/text'
+import { Field, Input } from '@/shared/ui/pouf/Input'
+import { Button } from '@/shared/ui/pouf/Button'
+import { Separator } from '@/shared/ui/pouf/separator'
+import { Blob } from '@/shared/ui/pouf/media'
+import type { Credentials } from '@/features/auth/model/credentials'
 
 const DEFAULT_VALUES: Credentials = { login: '', password: '' }
 
@@ -27,11 +23,6 @@ export function CredentialsForm({ onSubmit }: { onSubmit: (creds: Credentials) =
     reValidateMode: 'onChange',
     shouldFocusError: true,
   })
-
-  // const submit = handleSubmit((values) => {
-  //   console.log(1, values);
-  //   onSubmit(values);
-  // })
 
   return (
     <div style={{ display: 'grid', placeItems: 'center', minHeight: '70vh', padding: 24 }}>
@@ -88,10 +79,10 @@ export function CredentialsForm({ onSubmit }: { onSubmit: (creds: Credentials) =
                           shouldUnregister
                           rules={{
                             required: 'Password is required.',
-                            minLength: {
-                              value: 8,
-                              message: 'Use at least 8 characters.',
-                            },
+                            // minLength: {
+                            //   value: 8,
+                            //   message: 'Use at least 8 characters.',
+                            // },
                           }}
                           render={({ field }) => (
                             <Input

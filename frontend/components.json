@@ -1,21 +1,24 @@
 {
-    "$schema": "https://ui.shadcn.com/schema.json",
-    "style": "base-nova",
-    "rsc": false,
-    "tsx": true,
-    "tailwind": {
-        "config": "",
-        "css": "src/app/assets/styles/globals.css",
-        "baseColor": "neutral",
-        "cssVariables": true,
-        "prefix": ""
-    },
-    "aliases": {
-        "components": "@/shared/ui/components",
-        "utils": "@/shared/lib/utils",
-        "ui": "@/shared/ui",
-        "lib": "@/shared/lib",
-        "hooks": "@/shared/hooks"
-    },
-    "iconLibrary": "lucide"
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/app/assets/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/shared/ui/components",
+    "utils": "@/shared/lib/utils",
+    "ui": "@/shared/ui",
+    "lib": "@/shared/lib",
+    "hooks": "@/shared/hooks"
+  },
+  "iconLibrary": "lucide",
+  "registries": {
+    "@1st-pouf": "https://1st-pouf.worksonmy.dev/r/{name}.json"
+  }
 }

@@ -1,6 +1,6 @@
-import { CredentialsForm } from "@/features/auth/components/CredentialsForm"
+import { CredentialsForm } from "@/features/auth/ui/CredentialsForm"
 
-export default function SignupPage() {
+export default function RegisterPage() {
   const onSubmit = (creds: any) => {
     console.log(1, creds);
   }
