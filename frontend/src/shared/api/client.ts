@@ -48,7 +48,7 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
     body?: any,
 }
 
-export async function apiRequest(path: string, options: RequestOptions = {}, isRefreshTokenIfUnauthorized: boolean = true): Promise<any> {
+export async function apiRequest(path: string, options: RequestOptions = {}, refreshTokenIfUnauthorized: boolean = true): Promise<any> {
     const request = await buildRequest(path, options)
     const response = await fetch(request)
 
@@ -56,7 +56,7 @@ export async function apiRequest(path: string, options: RequestOptions = {}, isR
         return await parseSuccess(response)
     }
 
-    if (response.status === http.status.unauthorized && isRefreshTokenIfUnauthorized) {
+    if (response.status === http.status.unauthorized && refreshTokenIfUnauthorized) {
         try {
             await refreshOnce()
         } catch (e) {
@@ -75,9 +75,9 @@ async function buildRequest(path: string, options: RequestOptions): Promise<Requ
         ...options.headers,
     })
 
-    const accessTokenCookie = await cookieStore.get('access_token');
+    const accessTokenCookie = await cookieStore.get(http.cookie.accessToken);
     if (accessTokenCookie) {
-        headers.append('Authorization', `Bearer ${accessTokenCookie.value}`)
+        headers.append(http.header.authorization, `Bearer ${accessTokenCookie.value}`)
     }
 
     let body = options.body;
@@ -150,7 +150,12 @@ let refreshPromise: Promise<void> | null = null
 
 function refreshOnce(): Promise<void> {
     if (!refreshPromise) {
-        refreshPromise = refresh().finally(() => { refreshPromise = null })
+        refreshPromise = apiRequest(
+            '/auth/refresh',
+            { method: http.method.post },
+            false
+        ).finally(() => { refreshPromise = null })
+        // refreshPromise = refresh().finally(() => { refreshPromise = null })
     }
     return refreshPromise
 }

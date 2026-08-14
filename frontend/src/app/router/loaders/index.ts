@@ -6,7 +6,7 @@ import { UnauthenticatedError } from "@/shared/api/client";
 export async function authLoader({ context }: LoaderFunctionArgs) {
     try {
         const queryClient = context.get(queryClientContext)
-        return await queryClient.ensureQueryData(currentUserQuery)
+        return await queryClient.ensureQueryData(currentUserQuery())
     } catch (e) {
         if (e instanceof UnauthenticatedError) {
             redirect('/auth/login')

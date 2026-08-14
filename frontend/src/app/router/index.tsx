@@ -12,12 +12,7 @@ export default createBrowserRouter([
     {
         path: "/",
         ErrorBoundary: RootErrorBoundary,
-        loader: authLoader,
         children: [
-            {
-                index: true,
-                Component: ChatPage,
-            },
             {
                 path: "auth",
                 children: [
@@ -32,19 +27,23 @@ export default createBrowserRouter([
                 ],
             },
             {
-                path: "chat",
-                Component: ChatPage,
+                loader: authLoader,
+                children: [
+                    {
+                        index: true,
+                        Component: ChatPage,
+                    },
+                ],
             },
         ]
-    },
-  ],
-  {
-    getContext() {
-        const context = new RouterContextProvider();
-        context.set(queryClientContext, queryClient);
-        return context;
-    },
-  }
+    }],
+    {
+        getContext() {
+            const context = new RouterContextProvider();
+            context.set(queryClientContext, queryClient);
+            return context;
+        },
+    }
 );
 
 function RootErrorBoundary() {

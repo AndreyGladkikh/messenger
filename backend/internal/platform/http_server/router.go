@@ -31,12 +31,18 @@ func router(
 	}))
 	// r.Use(middleware.ClientIPFromXFFTrustedProxies(1))
 
-	registerApi(r, tokenService, controller)
+	authMiddleware := AuthMiddleware(tokenService)
+
+	registerApi(r, controller, authMiddleware)
 
 	return r
 }
 
-func registerApi(r chi.Router, tokenService *token.Service, c *Controller) {
+func registerApi(
+	r chi.Router, 
+	c *Controller, 
+	authMiddleware func(http.Handler) http.Handler,
+) {
 	r.Get("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte("pong"))
 	})
@@ -47,12 +53,14 @@ func registerApi(r chi.Router, tokenService *token.Service, c *Controller) {
 			r.Post("/register", c.registerUser)
 			r.Post("/login", c.loginUser)
 			r.Post("/refresh", c.refreshSession)
+
+			r.With(authMiddleware).Get("/me", c.getCurrentUser)
 		})
 	})
 
 	// private
 	r.Group(func(r chi.Router) {
-		r.Use(AuthMiddleware(tokenService))
+		r.Use(authMiddleware)
 
 		r.Route("/me", func(r chi.Router) {
 			r.Get("/chats", c.getChatList)

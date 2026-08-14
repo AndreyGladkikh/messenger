@@ -5,6 +5,7 @@ import (
 	"messenger/messenger/internal/auth/application/command/refresh"
 	"messenger/messenger/internal/auth/application/command/register"
 	authPasswordPort "messenger/messenger/internal/auth/application/password"
+	"messenger/messenger/internal/auth/application/query/get_current_user"
 	authTokenPort "messenger/messenger/internal/auth/application/token"
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/auth/domain/user"
@@ -103,6 +104,7 @@ var CommandHandlers = wire.NewSet(
 )
 
 var QueryHandlers = wire.NewSet(
+	get_current_user.NewHandler,
 	get_chat_list.NewHandler,
 )
 

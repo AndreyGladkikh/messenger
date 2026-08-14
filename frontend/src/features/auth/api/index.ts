@@ -7,8 +7,8 @@ export const login = async (creds: Credentials) => await apiRequest('/auth/login
         login: creds.login,
         password: creds.password,
     },
-})
+}, false)
 
-export const getCurrentUser = async () => await apiRequest('auth/me', {
+export const getCurrentUser = async () => await apiRequest('/auth/me', {
     method: 'GET',
 })

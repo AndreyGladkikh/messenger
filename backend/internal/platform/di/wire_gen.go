@@ -10,6 +10,7 @@ import (
 	"messenger/messenger/internal/auth/application/command/login"
 	"messenger/messenger/internal/auth/application/command/refresh"
 	"messenger/messenger/internal/auth/application/command/register"
+	"messenger/messenger/internal/auth/application/query/get_current_user"
 	"messenger/messenger/internal/auth/infrastructure/password"
 	repository2 "messenger/messenger/internal/auth/infrastructure/repository"
 	"messenger/messenger/internal/auth/infrastructure/token"
@@ -62,8 +63,9 @@ func InitializeApi() (*Api, func(), error) {
 	chatParticipantRepository := repository3.NewChatParticipantRepository(repositoryRepository)
 	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository)
 	bus := BuildCommandBus(manager, loggerLogger, eventService, handler, loginHandler, refreshHandler, send_messageHandler, create_private_chatHandler)
+	get_current_userHandler := get_current_user.NewHandler()
 	get_chat_listHandler := get_chat_list.NewHandler()
-	querybusBus := querybus.InitBus(get_chat_listHandler)
+	querybusBus := querybus.InitBus(get_current_userHandler, get_chat_listHandler)
 	controller := http_server.NewController(bus, querybusBus)
 	server := http_server.NewServer(configConfig, loggerLogger, controller, service)
 	api := NewApi(server, loggerLogger)

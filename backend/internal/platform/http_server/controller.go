@@ -6,6 +6,7 @@ import (
 	"messenger/messenger/internal/auth/application/command/login"
 	"messenger/messenger/internal/auth/application/command/refresh"
 	"messenger/messenger/internal/auth/application/command/register"
+	"messenger/messenger/internal/auth/application/query/get_current_user"
 	"messenger/messenger/internal/auth/application/token"
 	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
@@ -110,6 +111,17 @@ func (c *Controller) refreshSession(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		setAuthCookies(w, response.(*refresh.Response).AccessToken, response.(*refresh.Response).RefreshToken)
 	}
+
+	NewResponse(response, err).WriteTo(w)
+}
+
+func (c *Controller) getCurrentUser(w http.ResponseWriter, r *http.Request) {
+	userID, _ := auth.UserIDFromContext(r.Context())
+
+	q := &get_current_user.Query{
+		UserID: userID,
+	}
+	response, err := c.queryBus.Dispatch(r.Context(), q)
 
 	NewResponse(response, err).WriteTo(w)
 }

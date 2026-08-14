@@ -3,6 +3,7 @@ package querybus
 import (
 	"context"
 	"fmt"
+	"messenger/messenger/internal/auth/application/query/get_current_user"
 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/shared/application/query"
 )
@@ -77,11 +78,13 @@ func (f HandlerFunc) Handle(ctx context.Context, q query.Query) (any, error) {
 type Middleware func(next QueryHandler) QueryHandler
 
 func InitBus(
+	getCurrentUserHandler *get_current_user.Handler,
 	getChatListHandler *get_chat_list.Handler,
 ) *Bus {
 	b := NewBus()
 
 	RegisterHandler(b, getChatListHandler)
+	RegisterHandler(b, getCurrentUserHandler)
 
 	return b
 }
