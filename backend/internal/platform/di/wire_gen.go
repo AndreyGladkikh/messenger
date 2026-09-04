@@ -18,17 +18,19 @@ import (
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
-	"messenger/messenger/internal/messaging/infrastructure/event"
-	"messenger/messenger/internal/messaging/infrastructure/outbox_relay"
+	"messenger/messenger/internal/messaging/infrastructure/message_sent_notifier"
 	repository3 "messenger/messenger/internal/messaging/infrastructure/repository"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
+	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/outbox_relay"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/querybus"
+	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/shared/infrastructure/repository"
 )
 
@@ -67,9 +69,17 @@ func InitializeApi() (*Api, func(), error) {
 	get_chat_listHandler := get_chat_list.NewHandler()
 	querybusBus := querybus.InitBus(get_current_userHandler, get_chat_listHandler)
 	controller := http_server.NewController(bus, querybusBus)
-	server := http_server.NewServer(configConfig, loggerLogger, controller, service)
+	client, cleanup2, err := redis.NewRedis(configConfig)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	redisPubSubHub := redis.NewRedisPubSubHub(client)
+	websocketHandler := http_server.NewWebsocketHandler(redisPubSubHub)
+	server := http_server.NewServer(configConfig, loggerLogger, controller, websocketHandler, service)
 	api := NewApi(server, loggerLogger)
 	return api, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }
@@ -85,11 +95,19 @@ func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 	eventService := event.NewEventService(storage)
 	manager := transaction.NewManager(pool)
 	loggerLogger := logger.New()
-	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler()
+	client, cleanup2, err := redis.NewRedis(configConfig)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	redisPubSubHub := redis.NewRedisPubSubHub(client)
+	messageSentNotifier := message_sent_notifier.NewMessageSentNotifier(redisPubSubHub)
+	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler(messageSentNotifier)
 	rebuildQueryModelHandler := message_sent.NewRebuildQueryModelHandler()
 	handlerRegistry := NewEventHandlerRegistry(notifyChatParticipantsHandler, rebuildQueryModelHandler)
 	outboxRelay := outbox_relay.NewOutboxRelay(eventService, manager, loggerLogger, queries, handlerRegistry)
 	return outboxRelay, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }

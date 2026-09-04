@@ -19,9 +19,14 @@ func NewServer(
 	cfg *config.Config,
 	logger *logger.Logger,
 	controller *Controller,
+	websocketHandler *WebsocketHandler,
 	tokenService *token.Service,
 ) *Server {
-	router := router(tokenService, controller)
+	router := router(
+		tokenService,
+		 controller,
+		 websocketHandler,
+		)
 
 	server := &http.Server{
 		Addr:    cfg.HttpServer.Addr,

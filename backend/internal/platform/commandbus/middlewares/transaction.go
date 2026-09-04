@@ -3,9 +3,9 @@ package middlewares
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/db/transaction"
+	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/uow"
 )
 

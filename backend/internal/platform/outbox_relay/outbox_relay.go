@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/messaging/infrastructure/event"
+	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/logger"

@@ -13,6 +13,15 @@ services:
       - "5432:5432"
     networks:
       - mynet
+  
+  redis:
+    image: redis:8.10.1
+    restart: always
+    shm_size: 128mb
+    ports:
+      - "6379:6379"
+    networks:
+      - mynet
 
 volumes:
   postgres:

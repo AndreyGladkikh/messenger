@@ -6,10 +6,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"messenger/messenger/internal/auth/application/token"
 	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
+	"messenger/messenger/internal/platform/http_server/cookies"
 	"messenger/messenger/internal/platform/utils"
 	"net/http"
 	"os"
@@ -87,7 +89,11 @@ func (s *Service) HashRefreshToken(token string) string {
 }
 
 func (s *Service) ParseAccessTokenFromRequestAndGetClaims(r *http.Request) (*Claims, error) {
-	token, err := request.ParseFromRequest(r, request.OAuth2Extractor, func(token *jwt.Token) (any, error) {
+	extractor := request.MultiExtractor{
+		request.OAuth2Extractor,
+		TokenCookieExtractor{},
+	}
+	token, err := request.ParseFromRequest(r, extractor, func(token *jwt.Token) (any, error) {
 		return s.jwtVerifyKey, nil
 	}, request.WithClaims(&Claims{}))
 	if err != nil {
@@ -100,4 +106,19 @@ func (s *Service) ParseAccessTokenFromRequestAndGetClaims(r *http.Request) (*Cla
 	}
 
 	return claims, nil
+}
+
+type TokenCookieExtractor struct{}
+
+func (c TokenCookieExtractor) ExtractToken(r *http.Request) (string, error) {
+	cookie, err := r.Cookie(cookies.AccessToken)
+	if err != nil {
+		switch {
+		case errors.Is(err, http.ErrNoCookie):
+			return "", request.ErrNoTokenInRequest
+		default:
+			return "", err
+		}
+	}
+	return cookie.Value, nil
 }

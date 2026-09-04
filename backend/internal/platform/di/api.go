@@ -6,10 +6,10 @@ import (
 	"messenger/messenger/internal/auth/application/command/register"
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
-	"messenger/messenger/internal/messaging/infrastructure/event"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/commandbus/middlewares"
 	"messenger/messenger/internal/platform/db/transaction"
+	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
 )

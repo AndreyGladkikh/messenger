@@ -13,6 +13,7 @@ import (
 func router(
 	tokenService *token.Service,
 	controller *Controller,
+	websocketHandler *WebsocketHandler,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -33,7 +34,7 @@ func router(
 
 	authMiddleware := AuthMiddleware(tokenService)
 
-	registerApi(r, controller, authMiddleware)
+	registerApi(r, controller, websocketHandler, authMiddleware)
 
 	return r
 }
@@ -41,6 +42,7 @@ func router(
 func registerApi(
 	r chi.Router, 
 	c *Controller, 
+	ws *WebsocketHandler,
 	authMiddleware func(http.Handler) http.Handler,
 ) {
 	r.Get("/ping", func(w http.ResponseWriter, _ *http.Request) {
@@ -53,14 +55,16 @@ func registerApi(
 			r.Post("/register", c.registerUser)
 			r.Post("/login", c.loginUser)
 			r.Post("/refresh", c.refreshSession)
-
-			r.With(authMiddleware).Get("/me", c.getCurrentUser)
 		})
 	})
 
 	// private
 	r.Group(func(r chi.Router) {
 		r.Use(authMiddleware)
+
+		r.Get("/ws", ws.handlerFunc)
+
+		r.Get("/auth/me", c.getCurrentUser)
 
 		r.Route("/me", func(r chi.Router) {
 			r.Get("/chats", c.getChatList)

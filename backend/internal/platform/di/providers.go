@@ -15,21 +15,24 @@ import (
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
+	"messenger/messenger/internal/messaging/application/notifier"
 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/messaging/domain/chat"
 	"messenger/messenger/internal/messaging/domain/chat_participant"
 	"messenger/messenger/internal/messaging/domain/message"
-	"messenger/messenger/internal/messaging/infrastructure/event"
-	"messenger/messenger/internal/messaging/infrastructure/outbox_relay"
+	"messenger/messenger/internal/messaging/infrastructure/message_sent_notifier"
 	messagingRepository "messenger/messenger/internal/messaging/infrastructure/repository"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
+	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/outbox_relay"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/querybus"
+	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/shared/infrastructure/repository"
 
 	"github.com/google/wire"
@@ -42,6 +45,7 @@ var ApiSet = wire.NewSet(
 	CommonSet,
 	http_server.NewServer,
 	http_server.NewController,
+	http_server.NewWebsocketHandler,
 	BuildCommandBus,
 	querybus.InitBus,
 	authPasswordAdapter.NewHasher,
@@ -68,16 +72,19 @@ var CommonSet = wire.NewSet(
 	QueryHandlers,
 	EventHandlers,
 
-	// persistence
 	postgres.NewPool,
 	transaction.NewManager,
 
+	redis.NewRedis,
+
 	event.NewEventService,
 
-	// other
 	logger.New,
+	message_sent_notifier.NewMessageSentNotifier,
+	redis.NewRedisPubSubHub,
 
 	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
+	wire.Bind(new(notifier.MessageSentNotifier), new(*message_sent_notifier.MessageSentNotifier)),
 )
 
 var Repositories = wire.NewSet(

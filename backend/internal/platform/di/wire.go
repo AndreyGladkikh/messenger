@@ -1,10 +1,9 @@
-//go:build wireinject
 // +build wireinject
 
 package di
 
 import (
-	"messenger/messenger/internal/messaging/infrastructure/outbox_relay"
+	"messenger/messenger/internal/platform/outbox_relay"
 
 	"github.com/google/wire"
 )
