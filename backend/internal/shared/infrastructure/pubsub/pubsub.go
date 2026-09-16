@@ -3,15 +3,10 @@ package pubsub
 import (
 	"context"
 	"errors"
-	"fmt"
 	"messenger/messenger/internal/platform/logger"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
-)
-
-const (
-	MessageTypeMessageSent = "messageSent"
 )
 
 var (
@@ -26,21 +21,17 @@ type PubSub struct {
 	subscriptionsMu sync.Mutex
 	subscriptions   map[string]*Subscription
 
-	topicsMu sync.Mutex
-	topics   map[string]map[string]*Subscription
+	channelsMu sync.Mutex
+	channels   map[string]map[string]*Subscription
 }
 
 func NewPubSub(
-	ctx context.Context,
 	redisClient *redis.Client,
 ) *PubSub {
-	// ps := redisClient.Subscribe(ctx)
-
 	return &PubSub{
 		redisClient:   redisClient,
-		// redisPubSub:   ps,
 		subscriptions: make(map[string]*Subscription),
-		topics: make(map[string]map[string]*Subscription),
+		channels:      make(map[string]map[string]*Subscription),
 	}
 }
 
@@ -87,7 +78,7 @@ func (ps *PubSub) dispatch(m *redis.Message) {
 	// 	}
 	// }
 
-	if subscriptions, exists := ps.topics[m.Channel]; exists {
+	if subscriptions, exists := ps.channels[m.Channel]; exists {
 		for _, subscription := range subscriptions {
 			subscription.ch <- m
 		}
@@ -98,15 +89,16 @@ func (ps *PubSub) Publish(ctx context.Context, channel string, message any) {
 	ps.redisClient.Publish(ctx, channel, message)
 }
 
-func (ps *PubSub) NewSubscription(subscriberName string) (*Subscription, error) {
-	if _, exists := ps.subscriptions[subscriberName]; exists {
-		return nil, fmt.Errorf("failed to instantiate pubsub subscription with name %s: %w", subscriberName, ErrSubscriptionExists)
+func (ps *PubSub) Subscription(subscriberName string) *Subscription {
+	if subscription, exists := ps.subscriptions[subscriberName]; exists {
+		return subscription
 	}
 
 	subscription := &Subscription{
-		pubsub: ps,
+		pubsub:         ps,
 		subscriberName: subscriberName,
 		ch:             make(chan *redis.Message),
+		channels: make(map[string]struct{}),
 	}
 
 	ps.subscriptionsMu.Lock()
@@ -114,7 +106,7 @@ func (ps *PubSub) NewSubscription(subscriberName string) (*Subscription, error) 
 
 	ps.subscriptions[subscriberName] = subscription
 
-	return subscription, nil
+	return subscription
 }
 
 func (ps *PubSub) removeSubscription(ctx context.Context, s *Subscription) {
@@ -122,34 +114,27 @@ func (ps *PubSub) removeSubscription(ctx context.Context, s *Subscription) {
 	delete(ps.subscriptions, s.subscriberName)
 	ps.subscriptionsMu.Unlock()
 
-	var topicsToUnsubscribe []string
-	ps.topicsMu.Lock()
-	for t := range s.topics {
-		if _, exists := ps.topics[t]; exists {
-			delete(ps.topics[t], s.subscriberName)
+	var channelsToUnsubscribe []string
+	ps.channelsMu.Lock()
+	for c := range s.channels {
+		if _, exists := ps.channels[c]; exists {
+			delete(ps.channels[c], s.subscriberName)
 		}
-		if len(ps.topics[t]) == 0 {
-			delete(ps.topics, t)
-			topicsToUnsubscribe = append(topicsToUnsubscribe, t)
+		if len(ps.channels[c]) == 0 {
+			delete(ps.channels, c)
+			channelsToUnsubscribe = append(channelsToUnsubscribe, c)
 		}
 	}
-	ps.topicsMu.Unlock()
+	ps.channelsMu.Unlock()
 
-	if len(topicsToUnsubscribe) > 0 {
-		ps.redisPubSub.Unsubscribe(ctx, topicsToUnsubscribe...)
+	if len(channelsToUnsubscribe) > 0 {
+		ps.redisPubSub.Unsubscribe(ctx, channelsToUnsubscribe...)
 	}
 }
 
-func (ps *PubSub) Subscribe(ctx context.Context, subscriberName string, topic ...string) (*Subscription, error) {
-	if _, exists := ps.subscriptions[subscriberName]; !exists {
-		_, err := ps.NewSubscription(subscriberName)
-		if err != nil {
-			return nil, err
-		}
-	}
-	subscription := ps.subscriptions[subscriberName]
+func (ps *PubSub) Subscribe(ctx context.Context, subscriberName string, channel ...string) *Subscription {
+	subscription := ps.Subscription(subscriberName)
+	subscription.AddChannels(ctx, channel...)
 
-	subscription.AddTopics(ctx, topic...)
-
-	return subscription, nil
+	return subscription
 }

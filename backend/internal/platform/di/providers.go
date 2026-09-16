@@ -33,6 +33,7 @@ import (
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
+	"messenger/messenger/internal/shared/infrastructure/pubsub"
 	"messenger/messenger/internal/shared/infrastructure/repository"
 
 	"github.com/google/wire"
@@ -82,6 +83,8 @@ var CommonSet = wire.NewSet(
 	logger.New,
 	message_sent_notifier.NewMessageSentNotifier,
 	redis.NewRedisPubSubHub,
+	pubsub.NewPubSub,
+	pubsub.NewChatEventsPubSub,
 
 	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 	wire.Bind(new(notifier.MessageSentNotifier), new(*message_sent_notifier.MessageSentNotifier)),

@@ -31,6 +31,7 @@ import (
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
+	"messenger/messenger/internal/shared/infrastructure/pubsub"
 	"messenger/messenger/internal/shared/infrastructure/repository"
 )
 
@@ -74,8 +75,9 @@ func InitializeApi() (*Api, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	redisPubSubHub := redis.NewRedisPubSubHub(client)
-	websocketHandler := http_server.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, redisPubSubHub)
+	pubSub := pubsub.NewPubSub(client)
+	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
+	websocketHandler := http_server.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, chatEventsPubSub)
 	server := http_server.NewServer(configConfig, loggerLogger, controller, websocketHandler, service)
 	api := NewApi(server, loggerLogger)
 	return api, func() {

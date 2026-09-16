@@ -10,14 +10,14 @@ import (
 )
 
 type ChatEventsPubSub struct {
-	*PubSub
+	pubSub *PubSub
 }
 
 func NewChatEventsPubSub(
-	pubsub *PubSub,
+	pubSub *PubSub,
 ) *ChatEventsPubSub {
 	return &ChatEventsPubSub{
-		PubSub: pubsub,
+		pubSub: pubSub,
 	}
 }
 
@@ -27,13 +27,48 @@ func (c *ChatEventsPubSub) Publish(ctx context.Context, chatID uuid.UUID, e even
 		return fmt.Errorf("failed to publish message to chat events pubsub: %w", err)
 	}
 
-	c.PubSub.Publish(ctx, ChannelNameChatEvents(chatID), payload)
+	c.pubSub.Publish(ctx, ChannelNameChatEvents(chatID), payload)
 
 	return nil
 }
 
-func (c *ChatEventsPubSub) Subscribe(ctx context.Context, subscriberName string, chatIDs ...uuid.UUID) {
+func (c *ChatEventsPubSub) Subscription(ctx context.Context, subscriberName string, chatIDs ...uuid.UUID) (*ChatEventsSubscription, error) {
+	subscription := c.pubSub.Subscription(subscriberName)
 
+	return &ChatEventsSubscription{subscription}, nil
+}
+
+type ChatEventsSubscription struct {
+	subscription *Subscription
+}
+
+func (s *ChatEventsSubscription) Read(ctx context.Context) (event.Envelope, error) {
+	var envelope event.Envelope
+
+	m, err := s.subscription.Read(ctx)
+	if err != nil {
+		return envelope, err
+	}
+
+	// todo unmarshal RawEnvelope
+	err = json.Unmarshal(json.RawMessage(m.Payload), &envelope)
+	if err != nil {
+		return envelope, err
+	}
+
+	return envelope, nil
+}
+
+func (s *ChatEventsSubscription) Cancel(ctx context.Context) {
+	s.Cancel(ctx)
+}
+
+func (s *ChatEventsSubscription) AddChats(ctx context.Context, chatIDs ...uuid.UUID) {
+	var channels []string
+	for _, cid := range chatIDs {
+		channels = append(channels, ChannelNameChatEvents(cid))
+	}
+	s.subscription.AddChannels(ctx, channels...)
 }
 
 func ChannelNameChatEvents(chatID uuid.UUID) string {

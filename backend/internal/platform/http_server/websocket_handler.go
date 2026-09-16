@@ -6,13 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"messenger/messenger/internal/messaging/application/command/send_message"
+	"messenger/messenger/internal/messaging/domain/message"
 	"messenger/messenger/internal/platform/apperr"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/http_server/auth"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/querybus"
-	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/shared/infrastructure/pubsub"
 	"net/http"
 	"sync"
@@ -25,7 +25,7 @@ import (
 var (
 	errReadWSMessage  = errors.New("websocket handler: failed to read message")
 	errParseWSMessage = errors.New("websocket handler: failed to parse message")
-	errConnTooSlow    = errors.New("connection too slow to keep up with messages")
+	errConnTooSlow    = errors.New("websocket connection too slow to keep up with messages")
 )
 
 type WebsocketHandler struct {
@@ -33,8 +33,7 @@ type WebsocketHandler struct {
 	commandBus *commandbus.Bus
 	queryBus   *querybus.Bus
 	storage    *db.Storage
-	pubsub *pubsub.PubSub
-	// pubSubHub  *redis.RedisPubSubHub
+	pubsub *pubsub.ChatEventsPubSub
 }
 
 func NewWebsocketHandler(
@@ -42,8 +41,7 @@ func NewWebsocketHandler(
 	commandBus *commandbus.Bus,
 	queryBus *querybus.Bus,
 	storage *db.Storage,
-	pubsub *pubsub.PubSub,
-	// pubSubHub *redis.RedisPubSubHub,
+	pubsub *pubsub.ChatEventsPubSub,
 ) *WebsocketHandler {
 	return &WebsocketHandler{
 		logger:     logger,
@@ -51,7 +49,6 @@ func NewWebsocketHandler(
 		queryBus:   queryBus,
 		storage:    storage,
 		pubsub: pubsub,
-		// pubSubHub:  pubSubHub,
 	}
 }
 
@@ -71,11 +68,8 @@ func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.CloseNow()
 
-	chatEventsSubscriber := h.subscribeToChatEvents(ctx)
-
-	err = h.subscribeToChatEvents(ctx)
+	chatEventsSubscription, err := h.subscribeToChatEvents(ctx)
 	if err != nil {
-		h.logger.ErrorContext(ctx, "websocket handler: failed to subscribe to pubsub channels")
 		c.Close(websocket.StatusInternalError, "internal error")
 		return
 	}
@@ -114,7 +108,7 @@ func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	})
 
 	wg.Go(func() {
-		if err := h.readPubSubLoop(ctx, c); err != nil {
+		if err := h.readChatEventsLoop(ctx, chatEventsSubscription, c); err != nil {
 			h.logger.ErrorContext(ctx, "websocket handler: pub/sub read loop failed", "error", err.Error())
 			if errCause == nil {
 				errCause = err
@@ -192,33 +186,29 @@ func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	// }
 }
 
-func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.Subscription, error) {
+func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.ChatEventsSubscription, error) {
 	userID, _ := auth.UserIDFromContext(ctx)
 	sessionID, _ := auth.SessionIDFromContext(ctx)
 
-	subscription := h.pubsub.Subscribe(
+	subscription, err := h.pubsub.Subscription(
 		ctx,
-		fmt.Sprintf("%s:init", sessionID),
+		fmt.Sprintf("%s:chat_events", sessionID),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to subscribe to chat events: %w", err)
+	}
 
+	// todo refactor to app query
 	userChatIDs, err := h.storage.Queries(ctx).ListChatIDsForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	channelsToSubscribe := make([]string, 0, len(userChatIDs))
-	for _, cid := range userChatIDs {
-		channelsToSubscribe = append(channelsToSubscribe, pubsub.ChannelNameChatEvents(cid))
+	if len(userChatIDs) > 0 {
+		subscription.AddChats(ctx, userChatIDs...)
 	}
-
-	if len(channelsToSubscribe) > 0 {
-		subscription := h.pubsub.Subscribe(
-			ctx,
-			fmt.Sprintf("%s:init", sessionID),
-			channelsToSubscribe...,
-		)
-	}
-	return nil
+	
+	return subscription, nil
 }
 
 // func (h *WebsocketHandler) listenWSInbound(ctx context.Context, c *websocket.Conn) error {
@@ -631,43 +621,30 @@ func (h *WebsocketHandler) writeLoop(ctx context.Context, c *wsConnn) error {
 	}
 }
 
-func (h *WebsocketHandler) readPubSubLoop(ctx context.Context, c *wsConnn) error {
+func (h *WebsocketHandler) readChatEventsLoop(ctx context.Context, chatEventsSubscription *pubsub.ChatEventsSubscription, c *wsConnn) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			for _, s := range h.pubSubHub.Subscriptions() {
-				for _, msg := range s.Messages(0) {
-					m, ok := msg.Payload.(map[string]any)
-					if !ok {
-						continue
-					}
-					mType, ok := m["type"]
-					if !ok {
-						continue
-					}
-					mData, ok := m["data"]
-					if !ok {
-						continue
-					}
+			eventEnvelope, err := chatEventsSubscription.Read(ctx)
+			if err != nil {
+				return err
+			}
 
-					switch mType {
-					case pubsub.MessageTypeMessageSent:
-						// write(ctx, c, NewWSMessage(wsMessageTypeMessageSent, mData))
-						m, err := NewWSMessage(wsMessageTypeMessageSent, withData(mData))
-						if err != nil {
-							return err
-						}
-						err = c.enqueueWrite(ctx, m)
-						if err != nil {
-							return err
-						}
-						continue
-					default:
-						continue
-					}
+			switch eventEnvelope.Event.(type) {
+			case message.MessageSent:
+				m, err := NewWSMessage(wsMessageTypeMessageSent, withData(eventEnvelope))
+				if err != nil {
+					return err
 				}
+				err = c.enqueueWrite(ctx, m)
+				if err != nil {
+					return err
+				}
+				continue
+			default:
+				continue
 			}
 		}
 	}

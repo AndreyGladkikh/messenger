@@ -7,57 +7,51 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type SubscriptionIface[M any] interface {
-	Read(ctx context.Context) (M, error)
-	Cancel(ctx context.Context)
-	AddTopics(ctx context.Context, topics ...string)
-}
-
 type Subscription struct {
-	pubsub *PubSub
+	pubsub         *PubSub
 	subscriberName string
-	ch             chan  *redis.Message
+	ch             chan *redis.Message
 
-	topicsMu sync.Mutex
-	topics map[string]struct{}
+	channelsMu sync.Mutex
+	channels   map[string]struct{}
 }
 
-func (s *Subscription) Read(ctx context.Context) (Message, error) {
+func (s *Subscription) Read(ctx context.Context) (*redis.Message, error) {
 	for {
 		select {
 		case <-ctx.Done():
-			return Message{}, ctx.Err()
+			return nil, ctx.Err()
 		case m := <-s.ch:
 			return m, nil
 		}
 	}
 }
 
-func (s *Subscription) AddTopics(ctx context.Context, topics ...string) {
-	s.topicsMu.Lock()
-	s.pubsub.topicsMu.Lock()
+func (s *Subscription) AddChannels(ctx context.Context, channels ...string) {
+	s.channelsMu.Lock()
+	s.pubsub.channelsMu.Lock()
 
-	var newTopics []string
-	for _, t := range topics {
-		if _, exists := s.pubsub.topics[t]; !exists {
-			s.pubsub.topics[t] = make(map[string]*Subscription)
+	var newChannels []string
+	for _, c := range channels {
+		if _, exists := s.pubsub.channels[c]; !exists {
+			s.pubsub.channels[c] = make(map[string]*Subscription)
 		}
-		if len(s.pubsub.topics[t]) == 0 {
-			newTopics = append(newTopics, t)
+		if len(s.pubsub.channels[c]) == 0 {
+			newChannels = append(newChannels, c)
 		}
-		s.pubsub.topics[t][s.subscriberName] = s
-		s.topics[t] = struct{}{}
+		s.pubsub.channels[c][s.subscriberName] = s
+		s.channels[c] = struct{}{}
 	}
 
-	s.topicsMu.Unlock()
-	s.pubsub.topicsMu.Unlock()
+	s.channelsMu.Unlock()
+	s.pubsub.channelsMu.Unlock()
 
-	if len(newTopics) > 0 {
-		s.pubsub.redisPubSub.Subscribe(ctx, newTopics...)
+	if len(newChannels) > 0 {
+		s.pubsub.redisPubSub.Subscribe(ctx, newChannels...)
 	}
 }
 
 func (s *Subscription) Cancel(ctx context.Context) {
 	close(s.ch)
-	s.pubsub.removeSubscription(ctx,s)
+	s.pubsub.removeSubscription(ctx, s)
 }
