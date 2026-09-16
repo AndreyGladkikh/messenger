@@ -126,6 +126,35 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (AuthUser, e
 	return i, err
 }
 
+const listChatIDsForUser = `-- name: ListChatIDsForUser :many
+SELECT id FROM messaging.chats
+WHERE id = ANY(
+    SELECT chat_id
+    FROM messaging.chat_participants
+    WHERE participant_id = $1
+)
+`
+
+func (q *Queries) ListChatIDsForUser(ctx context.Context, participantID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listChatIDsForUser, participantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listChatsForUser = `-- name: ListChatsForUser :many
 SELECT id, kind, name, created_at, deleted_at FROM messaging.chats
 WHERE id = ANY(

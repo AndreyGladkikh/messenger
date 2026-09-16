@@ -59,7 +59,7 @@ func NewService() (*Service, error) {
 
 type Claims struct {
 	jwt.RegisteredClaims
-	sid string
+	SID string
 }
 
 func (s *Service) GenerateAccessToken(session *session.Session) (string, error) {
@@ -71,7 +71,7 @@ func (s *Service) GenerateAccessToken(session *session.Session) (string, error) 
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(token.AccessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
-		sid: session.ID.String(),
+		SID: session.ID.String(),
 	}
 
 	return t.SignedString(s.jwtSignKey)

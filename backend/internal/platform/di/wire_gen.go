@@ -75,7 +75,7 @@ func InitializeApi() (*Api, func(), error) {
 		return nil, nil, err
 	}
 	redisPubSubHub := redis.NewRedisPubSubHub(client)
-	websocketHandler := http_server.NewWebsocketHandler(redisPubSubHub)
+	websocketHandler := http_server.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, redisPubSubHub)
 	server := http_server.NewServer(configConfig, loggerLogger, controller, websocketHandler, service)
 	api := NewApi(server, loggerLogger)
 	return api, func() {

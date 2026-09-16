@@ -13,6 +13,14 @@ ORDER BY created_at DESC
 LIMIT $2 
 OFFSET $3;
 
+-- name: ListChatIDsForUser :many
+SELECT id FROM messaging.chats
+WHERE id = ANY(
+    SELECT chat_id
+    FROM messaging.chat_participants
+    WHERE participant_id = $1
+);
+
 -- name: PrivateChatExists :one
 SELECT EXISTS(
     SELECT 1 

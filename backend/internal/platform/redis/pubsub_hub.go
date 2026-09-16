@@ -1,6 +1,5 @@
 package redis
 
-
 import (
 	"context"
 	"encoding/json"
@@ -11,8 +10,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
+
+func ChannelNameChatEvents(chatID uuid.UUID) string {
+	return fmt.Sprintf("chats:%s:events", chatID.String())
+}
 
 // errEmptyTargets is returned when a subscription is registered with
 // no channels or patterns.

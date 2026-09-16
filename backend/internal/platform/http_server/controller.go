@@ -13,8 +13,8 @@ import (
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
-	"messenger/messenger/internal/messaging/infrastructure/auth"
 	"messenger/messenger/internal/platform/commandbus"
+	"messenger/messenger/internal/platform/http_server/auth"
 	"messenger/messenger/internal/platform/http_server/cookies"
 	"messenger/messenger/internal/platform/querybus"
 	"net/http"
@@ -26,7 +26,7 @@ import (
 
 type Controller struct {
 	commandBus *commandbus.Bus
-	queryBus *querybus.Bus
+	queryBus   *querybus.Bus
 }
 
 func NewController(
@@ -35,7 +35,7 @@ func NewController(
 ) *Controller {
 	return &Controller{
 		commandBus: commandBus,
-		queryBus: queryBus,
+		queryBus:   queryBus,
 	}
 }
 
