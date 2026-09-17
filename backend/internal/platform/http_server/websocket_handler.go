@@ -197,6 +197,7 @@ func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.C
 	if err != nil {
 		return nil, fmt.Errorf("failed to subscribe to chat events: %w", err)
 	}
+	defer subscription.Cancel(ctx)
 
 	// todo refactor to app query
 	userChatIDs, err := h.storage.Queries(ctx).ListChatIDsForUser(ctx, userID)
@@ -437,11 +438,17 @@ func NewWSMessage(typ WSMessageType, opts ...wsMessageOption) (WSMessage, error)
 }
 
 func newResponse(id string, data any, err error) (WSMessage, error) {
+	opts := []wsMessageOption{withID(id)}
+	if data != nil {
+		opts = append(opts, withData(data))
+	}
+	if err != nil {
+		opts = append(opts, withError(err))
+	}
+
 	return NewWSMessage(
 		wsMessageTypeResponse,
-		withID(id),
-		withData(data),
-		withError(err),
+		opts...
 	)
 }
 
@@ -456,10 +463,6 @@ func withID(id string) wsMessageOption {
 
 func withData(data any) wsMessageOption {
 	return func(m *WSMessage) error {
-		if data == nil {
-			return nil
-		}
-
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			return err
@@ -472,10 +475,6 @@ func withData(data any) wsMessageOption {
 
 func withError(err error) wsMessageOption {
 	return func(m *WSMessage) error {
-		if err == nil {
-			return nil
-		}
-
 		errData := apperr.Translate(err)
 
 		jsonErrorData, err := json.Marshal(errData)

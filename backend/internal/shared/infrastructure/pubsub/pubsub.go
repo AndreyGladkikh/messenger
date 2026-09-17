@@ -27,33 +27,38 @@ type PubSub struct {
 
 func NewPubSub(
 	redisClient *redis.Client,
-) *PubSub {
-	return &PubSub{
+) (*PubSub, func()) {
+	redisPS := redisClient.Subscribe(context.Background())
+
+	ps := &PubSub{
 		redisClient:   redisClient,
+		redisPubSub: redisPS,
 		subscriptions: make(map[string]*Subscription),
 		channels:      make(map[string]map[string]*Subscription),
 	}
+
+	go ps.run()
+
+	return ps, func() {
+		redisPS.Close()
+	}
 }
 
-func (ps *PubSub) Run(ctx context.Context) error {
-	if ps.redisPubSub != nil {
-		return errors.New("pubsub is already running")
+func (ps *PubSub) run() {
+	defer ps.redisPubSub.Close()
+
+	for m := range ps.redisPubSub.Channel() {
+		ps.dispatch(m)
 	}
 
-	ps.redisPubSub = ps.redisClient.Subscribe(ctx)
-	defer func() {
-		ps.redisPubSub.Close()
-		ps.redisPubSub = nil
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case m := <-ps.redisPubSub.Channel():
-			ps.dispatch(m)
-		}
-	}
+	// for {
+	// 	select {
+	// 	case <-ctx.Done():
+	// 		return ctx.Err()
+	// 	case m := <-ps.redisPubSub.Channel():
+	// 		ps.dispatch(m)
+	// 	}
+	// }
 }
 
 func (ps *PubSub) dispatch(m *redis.Message) {

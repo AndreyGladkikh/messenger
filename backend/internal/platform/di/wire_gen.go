@@ -75,12 +75,13 @@ func InitializeApi() (*Api, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	pubSub := pubsub.NewPubSub(client)
+	pubSub, cleanup3 := pubsub.NewPubSub(client)
 	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
 	websocketHandler := http_server.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, chatEventsPubSub)
 	server := http_server.NewServer(configConfig, loggerLogger, controller, websocketHandler, service)
 	api := NewApi(server, loggerLogger)
 	return api, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil
