@@ -54,7 +54,7 @@ RETURNING id, event_id, handler, executed_at
 `
 
 type CreateInboxParams struct {
-	EventID string
+	EventID uuid.UUID
 	Handler string
 }
 
@@ -253,7 +253,7 @@ INSERT INTO outbox (
 
 type PutToOutboxParams struct {
 	ID           uuid.UUID
-	EventID      string
+	EventID      uuid.UUID
 	EventType    string
 	EventPayload []byte
 }

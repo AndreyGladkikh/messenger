@@ -8,7 +8,7 @@ import (
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/postgres"
-	"messenger/messenger/internal/shared/infrastructure/repository"
+	"messenger/messenger/internal/platform/repository"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"

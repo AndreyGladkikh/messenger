@@ -34,7 +34,7 @@ type AuthUser struct {
 
 type Inbox struct {
 	ID         uuid.UUID
-	EventID    string
+	EventID    uuid.UUID
 	Handler    string
 	ExecutedAt pgtype.Timestamptz
 }
@@ -89,7 +89,7 @@ type MessagingPrivateChat struct {
 
 type Outbox struct {
 	ID           uuid.UUID
-	EventID      string
+	EventID      uuid.UUID
 	EventType    string
 	EventPayload []byte
 	OccurredAt   pgtype.Timestamptz

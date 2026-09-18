@@ -37,7 +37,7 @@ func (s *EventService) PutEventToOutbox(ctx context.Context, e sharedDomain.Even
 
 	err := s.Queries(ctx).PutToOutbox(ctx, sqlc.PutToOutboxParams{
 		ID:           uuid.New(),
-		EventID:      uuid.New().String(),
+		EventID:      uuid.New(),
 		EventType:    e.Name(),
 		EventPayload: buf.Bytes(),
 	})
@@ -74,7 +74,7 @@ func (s *EventService) UpdateEvent(
 	return nil
 }
 
-func (s *EventService) RegisterEventHandlerExecution(ctx context.Context, eventID, handler string) error {
+func (s *EventService) RegisterEventHandlerExecution(ctx context.Context, eventID uuid.UUID, handler string) error {
 	_, err := s.Queries(ctx).CreateInbox(ctx, sqlc.CreateInboxParams{
 		EventID: eventID,
 		Handler: handler,

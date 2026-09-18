@@ -15,12 +15,10 @@ import (
 	"messenger/messenger/internal/messaging/application/command/create_private_chat"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
-	"messenger/messenger/internal/messaging/application/notifier"
 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/messaging/domain/chat"
 	"messenger/messenger/internal/messaging/domain/chat_participant"
 	"messenger/messenger/internal/messaging/domain/message"
-	"messenger/messenger/internal/messaging/infrastructure/message_sent_notifier"
 	messagingRepository "messenger/messenger/internal/messaging/infrastructure/repository"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
@@ -31,10 +29,11 @@ import (
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/outbox_relay"
 	"messenger/messenger/internal/platform/postgres"
+	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
-	"messenger/messenger/internal/shared/infrastructure/pubsub"
-	"messenger/messenger/internal/shared/infrastructure/repository"
+	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/shared/application/chateventspublisher"
 
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -81,13 +80,12 @@ var CommonSet = wire.NewSet(
 	event.NewEventService,
 
 	logger.New,
-	message_sent_notifier.NewMessageSentNotifier,
-	redis.NewRedisPubSubHub,
+	// redis.NewRedisPubSubHub,
 	pubsub.NewPubSub,
 	pubsub.NewChatEventsPubSub,
 
 	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
-	wire.Bind(new(notifier.MessageSentNotifier), new(*message_sent_notifier.MessageSentNotifier)),
+	wire.Bind(new(chateventspublisher.ChatEventsPublisher), new(*pubsub.ChatEventsPubSub)),
 )
 
 var Repositories = wire.NewSet(

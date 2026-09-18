@@ -5,7 +5,7 @@ import (
 	"messenger/messenger/internal/messaging/domain/message"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
-	"messenger/messenger/internal/shared/infrastructure/repository"
+	"messenger/messenger/internal/platform/repository"
 
 	"github.com/google/uuid"
 )

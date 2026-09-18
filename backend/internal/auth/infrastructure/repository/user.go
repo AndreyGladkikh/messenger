@@ -7,7 +7,7 @@ import (
 	"messenger/messenger/internal/auth/domain/user"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/postgres"
-	"messenger/messenger/internal/shared/infrastructure/repository"
+	"messenger/messenger/internal/platform/repository"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )

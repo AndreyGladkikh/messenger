@@ -7,8 +7,8 @@ import (
 	"messenger/messenger/internal/auth/domain/session"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
+	"messenger/messenger/internal/platform/repository"
 	sharedDomain "messenger/messenger/internal/shared/domain"
-	"messenger/messenger/internal/shared/infrastructure/repository"
 )
 
 type SessionRepository struct {

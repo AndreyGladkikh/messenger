@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"messenger/messenger/internal/platform/event"
+	"messenger/messenger/internal/shared/application/event"
+	"messenger/messenger/internal/shared/domain"
 
 	"github.com/google/uuid"
 )
@@ -21,7 +22,7 @@ func NewChatEventsPubSub(
 	}
 }
 
-func (c *ChatEventsPubSub) Publish(ctx context.Context, chatID uuid.UUID, e event.Envelope) error {
+func (c *ChatEventsPubSub) Publish(ctx context.Context, chatID uuid.UUID, e event.Envelope[domain.Event]) error {
 	payload, err := json.Marshal(e)
 	if err != nil {
 		return fmt.Errorf("failed to publish message to chat events pubsub: %w", err)
@@ -42,8 +43,8 @@ type ChatEventsSubscription struct {
 	subscription *Subscription
 }
 
-func (s *ChatEventsSubscription) Read(ctx context.Context) (event.Envelope, error) {
-	var envelope event.Envelope
+func (s *ChatEventsSubscription) Read(ctx context.Context) (event.Envelope[domain.Event], error) {
+	var envelope event.Envelope[domain.Event]
 
 	m, err := s.subscription.Read(ctx)
 	if err != nil {

@@ -32,7 +32,7 @@ func NewPubSub(
 
 	ps := &PubSub{
 		redisClient:   redisClient,
-		redisPubSub: redisPS,
+		redisPubSub:   redisPS,
 		subscriptions: make(map[string]*Subscription),
 		channels:      make(map[string]map[string]*Subscription),
 	}
@@ -103,7 +103,7 @@ func (ps *PubSub) Subscription(subscriberName string) *Subscription {
 		pubsub:         ps,
 		subscriberName: subscriberName,
 		ch:             make(chan *redis.Message),
-		channels: make(map[string]struct{}),
+		channels:       make(map[string]struct{}),
 	}
 
 	ps.subscriptionsMu.Lock()

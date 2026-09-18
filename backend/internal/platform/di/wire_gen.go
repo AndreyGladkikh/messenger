@@ -18,7 +18,6 @@ import (
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/event/message_sent"
 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
-	"messenger/messenger/internal/messaging/infrastructure/message_sent_notifier"
 	repository3 "messenger/messenger/internal/messaging/infrastructure/repository"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
@@ -29,10 +28,10 @@ import (
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/outbox_relay"
 	"messenger/messenger/internal/platform/postgres"
+	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
-	"messenger/messenger/internal/shared/infrastructure/pubsub"
-	"messenger/messenger/internal/shared/infrastructure/repository"
+	"messenger/messenger/internal/platform/repository"
 )
 
 // Injectors from wire.go:
@@ -103,13 +102,14 @@ func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	redisPubSubHub := redis.NewRedisPubSubHub(client)
-	messageSentNotifier := message_sent_notifier.NewMessageSentNotifier(redisPubSubHub)
-	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler(messageSentNotifier)
+	pubSub, cleanup3 := pubsub.NewPubSub(client)
+	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
+	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler(chatEventsPubSub)
 	rebuildQueryModelHandler := message_sent.NewRebuildQueryModelHandler()
 	handlerRegistry := NewEventHandlerRegistry(notifyChatParticipantsHandler, rebuildQueryModelHandler)
 	outboxRelay := outbox_relay.NewOutboxRelay(eventService, manager, loggerLogger, queries, handlerRegistry)
 	return outboxRelay, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil

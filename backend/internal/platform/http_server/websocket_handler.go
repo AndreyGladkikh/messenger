@@ -12,8 +12,8 @@ import (
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/http_server/auth"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
-	"messenger/messenger/internal/shared/infrastructure/pubsub"
 	"net/http"
 	"sync"
 	"time"
@@ -33,7 +33,7 @@ type WebsocketHandler struct {
 	commandBus *commandbus.Bus
 	queryBus   *querybus.Bus
 	storage    *db.Storage
-	pubsub *pubsub.ChatEventsPubSub
+	pubsub     *pubsub.ChatEventsPubSub
 }
 
 func NewWebsocketHandler(
@@ -48,7 +48,7 @@ func NewWebsocketHandler(
 		commandBus: commandBus,
 		queryBus:   queryBus,
 		storage:    storage,
-		pubsub: pubsub,
+		pubsub:     pubsub,
 	}
 }
 
@@ -208,7 +208,7 @@ func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.C
 	if len(userChatIDs) > 0 {
 		subscription.AddChats(ctx, userChatIDs...)
 	}
-	
+
 	return subscription, nil
 }
 
@@ -448,7 +448,7 @@ func newResponse(id string, data any, err error) (WSMessage, error) {
 
 	return NewWSMessage(
 		wsMessageTypeResponse,
-		opts...
+		opts...,
 	)
 }
 

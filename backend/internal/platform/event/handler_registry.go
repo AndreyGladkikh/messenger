@@ -3,8 +3,8 @@ package event
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/messaging/application/event"
-	sharedDomain "messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/shared/application/event"
+	"messenger/messenger/internal/shared/domain"
 	"slices"
 )
 
@@ -18,21 +18,22 @@ func NewRegistry() *HandlerRegistry {
 	}
 }
 
-func (r *HandlerRegistry) HandlersForEvent(event sharedDomain.Event) []Handler {
+func (r *HandlerRegistry) HandlersForEvent(event domain.Event) []Handler {
 	return slices.Clone(r.handlers[event.Name()])
 }
 
-func RegisterEventHandler[E sharedDomain.Event](r *HandlerRegistry, eventName string, handler event.Handler[E]) {
+func RegisterEventHandler[E domain.Event](r *HandlerRegistry, handler event.Handler[E]) {
+	e := *new(E)
 	adaptedHandler := &ApEventHandlerAdapter[E]{handler}
-	r.handlers[eventName] = append(r.handlers[eventName], adaptedHandler)
+	r.handlers[e.Name()] = append(r.handlers[e.Name()], adaptedHandler)
 }
 
 type Handler interface {
 	Name() string
-	Handle(context.Context, sharedDomain.Event) error
+	Handle(context.Context, event.Envelope[domain.Event]) error
 }
 
-type ApEventHandlerAdapter[E sharedDomain.Event] struct {
+type ApEventHandlerAdapter[E domain.Event] struct {
 	handler event.Handler[E]
 }
 
@@ -40,10 +41,16 @@ func (h *ApEventHandlerAdapter[E]) Name() string {
 	return h.handler.Name()
 }
 
-func (h *ApEventHandlerAdapter[E]) Handle(ctx context.Context, event sharedDomain.Event) error {
-	typedEvent, ok := event.(E)
+func (h *ApEventHandlerAdapter[E]) Handle(ctx context.Context, e event.Envelope[domain.Event]) error {
+	typedEvent, ok := e.Event.(E)
 	if !ok {
-		return fmt.Errorf("handler %s expected event of type %T, got %T", h.handler.Name(), new(E), event)
+		return fmt.Errorf("handler %s expected event of type %T, got %T", h.handler.Name(), new(E), e.Event)
 	}
-	return h.handler.Handle(ctx, typedEvent)
+
+	typedEnvelope := event.Envelope[E]{
+		ID: e.ID,
+		OccurredAt: e.OccurredAt,
+		Event: typedEvent,
+	}
+	return h.handler.Handle(ctx, typedEnvelope)
 }

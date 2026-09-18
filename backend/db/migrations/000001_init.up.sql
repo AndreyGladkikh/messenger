@@ -78,7 +78,7 @@ CREATE TABLE messaging.message_files(
 
 CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id TEXT NOT NULL,
+    event_id UUID NOT NULL,
     event_type TEXT NOT NULL,
     event_payload JSONB,
     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -93,7 +93,7 @@ CREATE INDEX outbox_next_retry_at_occurred_at_index ON outbox(next_retry_at, occ
 
 CREATE TABLE inbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id TEXT NOT NULL,
+    event_id UUID NOT NULL,
     handler TEXT NOT NULL,
     executed_at TIMESTAMP WITH TIME ZONE,
     UNIQUE(event_id, handler)

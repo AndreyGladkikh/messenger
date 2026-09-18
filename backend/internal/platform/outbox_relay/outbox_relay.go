@@ -5,14 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db/transaction"
+	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
-	sharedDomain "messenger/messenger/internal/shared/domain"
+	apevent "messenger/messenger/internal/shared/application/event"
+	"messenger/messenger/internal/shared/domain"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var ErrFatal = errors.New("fatal error")
@@ -66,8 +69,8 @@ func (r *OutboxRelay) Run(ctx context.Context) error {
 			return ctx.Err()
 		default:
 			if err := r.processEvent(); err != nil {
-				r.logger.Error("outbox relay error", "error", err)
-				return err
+				r.logger.Error("outbox relay process failed", "error", err)
+				return fmt.Errorf("outbox relay process failed: %w", err)
 			}
 		}
 	}
@@ -112,18 +115,18 @@ func (r *OutboxRelay) processEvent() error {
 }
 
 func (r *OutboxRelay) executeEventHandlers(ctx context.Context, outboxEvent sqlc.Outbox) error {
-	domainEvent, err := translateStoredEventToDomainEvent(outboxEvent)
+	eventEnvelope, err := event.TranslateOutboxMsgToEventEnvelope(outboxEvent)
 	if err != nil {
 		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)
 	}
 
-	eventHandlers := r.eventHandlerRegistry.HandlersForEvent(domainEvent)
+	eventHandlers := r.eventHandlerRegistry.HandlersForEvent(eventEnvelope.Event)
 
 	var errs []error
 	var wg sync.WaitGroup
 	for _, handler := range eventHandlers {
 		wg.Go(func() {
-			if err := r.runHandler(ctx, outboxEvent.EventID, domainEvent, handler); err != nil {
+			if err := r.runHandler(ctx, outboxEvent.EventID, eventEnvelope, handler); err != nil {
 				errs = append(errs, fmt.Errorf("failed to execute handler %q: %w", handler.Name(), err))
 			}
 		})
@@ -139,7 +142,7 @@ func (r *OutboxRelay) calcNextRetry() time.Time {
 	return time.Now().Add(5 * time.Second)
 }
 
-func (r *OutboxRelay) runHandler(ctx context.Context, eventID string, domainEvent sharedDomain.Event, handler event.Handler) error {
+func (r *OutboxRelay) runHandler(ctx context.Context, eventID uuid.UUID, envelope apevent.Envelope[domain.Event], handler event.Handler) error {
 	return r.txManager.WithTransaction(ctx, func(ctx context.Context) error {
 		err := r.eventService.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
 		if err != nil && !errors.Is(err, event.ErrHandlerAlreadyExecuted) {
@@ -148,6 +151,6 @@ func (r *OutboxRelay) runHandler(ctx context.Context, eventID string, domainEven
 		if errors.Is(err, event.ErrHandlerAlreadyExecuted) {
 			return nil
 		}
-		return handler.Handle(ctx, domainEvent)
+		return handler.Handle(ctx, envelope)
 	})
 }

@@ -2,7 +2,6 @@ package di
 
 import (
 	"messenger/messenger/internal/messaging/application/event/message_sent"
-	"messenger/messenger/internal/messaging/domain/message"
 	"messenger/messenger/internal/platform/event"
 )
 
@@ -12,8 +11,8 @@ func NewEventHandlerRegistry(
 ) *event.HandlerRegistry {
 	r := event.NewRegistry()
 
-	event.RegisterEventHandler(r, message.MessageSentEventName, notifyChatParticipantsHandler)
-	event.RegisterEventHandler(r, message.MessageSentEventName, rebuildQueryModelHandler)
+	event.RegisterEventHandler(r, notifyChatParticipantsHandler)
+	event.RegisterEventHandler(r, rebuildQueryModelHandler)
 
 	return r
 }
