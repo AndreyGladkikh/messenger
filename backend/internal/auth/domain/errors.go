@@ -6,6 +6,6 @@ import (
 )
 
 var (
-	ErrUnauthorized = errors.New("unauthorized")
+	ErrUnauthorized       = errors.New("unauthorized")
 	ErrInvalidCredantials = fmt.Errorf("%w: invalid credentials", ErrUnauthorized)
 )

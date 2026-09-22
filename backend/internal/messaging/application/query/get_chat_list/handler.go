@@ -8,7 +8,6 @@ import (
 )
 
 type Handler struct {
-
 }
 
 func NewHandler() *Handler {
@@ -19,22 +18,22 @@ func (h *Handler) Handle(ctx context.Context, query *Query) (*ChatListView, erro
 	return &ChatListView{
 		Chats: []*ChatListItemView{
 			{
-				ID: uuid.New(),
+				ID:   uuid.New(),
 				Name: "Chat 1",
 				LastMessage: &LastMessage{
-					Body: "Hello, how are you?",
+					Body:   "Hello, how are you?",
 					SentAt: time.Now(),
 				},
 				UnreadCount: 2,
 			},
 			{
-				ID: uuid.New(),
+				ID:   uuid.New(),
 				Name: "Chat 2",
 				LastMessage: &LastMessage{
-					Body: "Hey, what's up?",
+					Body:   "Hey, what's up?",
 					SentAt: time.Now(),
 				},
-				UnreadCount: 0,		
+				UnreadCount: 0,
 			},
 		},
 	}, nil

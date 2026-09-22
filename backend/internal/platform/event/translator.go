@@ -46,8 +46,8 @@ func TranslateOutboxMsgToEventEnvelope(outboxMsg sqlc.Outbox) (event.Envelope[do
 	}
 
 	return event.Envelope[domain.Event]{
-		ID: outboxMsg.EventID,
+		ID:         outboxMsg.EventID,
 		OccurredAt: outboxMsg.OccurredAt.Time,
-		Event: e,
+		Event:      e,
 	}, nil
 }

@@ -24,9 +24,9 @@ func NewServer(
 ) *Server {
 	router := router(
 		tokenService,
-		 controller,
-		 websocketHandler,
-		)
+		controller,
+		websocketHandler,
+	)
 
 	server := &http.Server{
 		Addr:    cfg.HttpServer.Addr,

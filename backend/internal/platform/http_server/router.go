@@ -28,7 +28,7 @@ func router(
 		AllowedHeaders:   []string{headers.Accept, headers.Authorization, headers.ContentType, headers.XCSRFToken},
 		ExposedHeaders:   []string{headers.Link},
 		AllowCredentials: true,
-		MaxAge: 300,
+		MaxAge:           300,
 	}))
 	// r.Use(middleware.ClientIPFromXFFTrustedProxies(1))
 
@@ -40,8 +40,8 @@ func router(
 }
 
 func registerApi(
-	r chi.Router, 
-	c *Controller, 
+	r chi.Router,
+	c *Controller,
 	ws *WebsocketHandler,
 	authMiddleware func(http.Handler) http.Handler,
 ) {

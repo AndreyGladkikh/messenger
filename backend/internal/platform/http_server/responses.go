@@ -24,12 +24,12 @@ type ResponseStatus string
 
 const (
 	ResponseStatusSuccess ResponseStatus = "success"
-	ResponseStatusError ResponseStatus = "error"
+	ResponseStatusError   ResponseStatus = "error"
 )
 
 type ResponseBody struct {
 	Status ResponseStatus `json:"status"`
-	Data   any    `json:"data,omitempty"`
+	Data   any            `json:"data,omitempty"`
 	Error  *apperr.Error  `json:"error,omitempty"`
 }
 
@@ -95,7 +95,7 @@ func WithContentType(contentType string) Option {
 
 type ResponseNew struct {
 	Status ResponseStatus `json:"status"`
-	Data   any    `json:"data,omitempty"`
+	Data   any            `json:"data,omitempty"`
 	Error  *apperr.Error  `json:"error,omitempty"`
 }
 
@@ -118,16 +118,16 @@ func NewResponseNew(data any, err error) ResponseNew {
 }
 
 type HTTPResponse struct {
-	response ResponseNew
+	response    ResponseNew
 	contentType string
-	status  int
+	status      int
 }
 
 func NewHTTPResponse(data any, err error, opts ...OptionNew) *HTTPResponse {
 	response := NewResponseNew(data, err)
 
 	httpResponse := &HTTPResponse{
-		response: response,
+		response:    response,
 		contentType: defaultContentType,
 	}
 
@@ -171,16 +171,16 @@ func WithContentTypeNew(contentType string) OptionNew {
 // == ws
 
 type WSResponse struct {
-	response ResponseNew
+	response    ResponseNew
 	contentType string
-	timeout time.Duration
+	timeout     time.Duration
 }
 
 func NewWSResponse(data any, err error, opts ...WSResponseOption) *WSResponse {
 	response := NewResponseNew(data, err)
 
 	httpResponse := &WSResponse{
-		response: response,
+		response:    response,
 		contentType: defaultContentType,
 	}
 

@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const AccessTokenTTL = 15*time.Minute
+const AccessTokenTTL = 15 * time.Minute
 
 type Service interface {
 	GenerateAccessToken(*session.Session) (string, error)

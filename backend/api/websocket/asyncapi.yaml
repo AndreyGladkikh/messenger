@@ -1,0 +1,101 @@
+asyncapi: 3.1.0
+info:
+  title: Chatique WebSocket API
+  version: 1.0.0
+  description: |-
+    The Smartylighting Streetlights API allows you to remotely manage the city
+    lights.
+    ### Check out its awesome features:
+
+    * Turn a specific streetlight on/off 🌃  
+    * Dim a specific streetlight 😎
+    * Receive real-time information about environmental lighting conditions 📈
+defaultContentType: application/json
+servers:
+  production:
+    host: chatique.ru
+    pathname: /ws
+    protocol: wss
+channels:
+  root:
+    address: /
+    messages:
+      sendMessage:
+        $ref: '#/components/messages/sendMessage'
+      messageSent:
+        $ref: '#/components/messages/messageSent'
+operations:
+  receiveSendMessage:
+    action: receive
+    channel:
+      $ref: '#/channels/root'
+    messages:
+      - $ref: '#/channels/root/messages/sendMessage'
+  sendMessageSent:
+    action: send
+    channel:
+      $ref: '#/channels/root'
+    messages:
+      - $ref: '#/channels/root/messages/sendMessage'
+components:
+  messages:
+    sendMessage:
+      name: sendMessage
+      title: Send Message
+      payload:
+        $ref: '#/components/schemas/sendMessagePayload'
+    messageSent:
+      name: messageSent
+      title: Message Sent
+      payload:
+        $ref: '#/components/schemas/messageSentPayload'
+  schemas:
+    sendMessagePayload:
+      type: object
+      properties:
+        body:
+          type: string
+        chatId:
+          type: string
+        replyToMessageId:
+          type: string
+    messageSentPayload:
+      type: object
+      properties:
+        body:
+          type: string
+        chatId:
+          type: string
+        replyToMessageId:
+          type: string
+    sentAt:
+      type: string
+      format: date-time
+      description: Date and time when the message was sent.
+  securitySchemes:
+    saslScram:
+      type: scramSha256
+      description: Provide your username and password for SASL/SCRAM authentication
+    certs:
+      type: X509
+      description: Download the certificate files from service provider
+  parameters:
+    streetlightId:
+      description: The ID of the streetlight.
+  messageTraits:
+    commonHeaders:
+      headers:
+        type: object
+        properties:
+          my-app-header:
+            type: integer
+            minimum: 0
+            maximum: 100
+  operationTraits:
+    kafka:
+      bindings:
+        kafka:
+          clientId:
+            type: string
+            enum:
+              - my-app-id

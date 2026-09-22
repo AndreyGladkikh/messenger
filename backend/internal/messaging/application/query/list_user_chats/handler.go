@@ -5,7 +5,6 @@ import (
 )
 
 type Handler struct {
-
 }
 
 func NewHandler() *Handler {

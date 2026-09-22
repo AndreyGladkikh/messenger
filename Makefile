@@ -1,10 +1,24 @@
 .DEFAULT_GOAL := all
 .PHONY: *
 
-all: up_prod
-
 help:
 	@echo "help"
+
+all: up_prod
+
+init:
+	cd backend && \
+	go mod download && \
+	migrate
+
+generate: queries wire
+
+beautify:
+	cd backend && \
+	go mod tidy && \
+	go fmt ./...
+
+ci: lint test build
 
 up:
 	docker compose -f compose.yaml up -d --build
@@ -53,8 +67,10 @@ migration_down:
 migration_force:
 	docker run -v $(shell pwd)/backend/db/migrations:/migrations --network host migrate/migrate -path=/migrations/ -database postgres://app:secret@localhost:5432/app?sslmode=disable force $(MIGRATION_VERSION)
 
+# queries:
+# 	cd ./backend && sqlc generate
 queries:
-	cd ./backend && sqlc generate
+	cd ./backend && go tool sqlc generate
 
-di:
+wire:
 	cd ./backend && wire ./internal/platform/di

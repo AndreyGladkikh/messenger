@@ -7,7 +7,6 @@ import (
 )
 
 type Handler struct {
-
 }
 
 func NewHandler() *Handler {
@@ -16,7 +15,7 @@ func NewHandler() *Handler {
 
 func (h *Handler) Handle(ctx context.Context, q *Query) (*AuthView, error) {
 	return &AuthView{
-		ID: uuid.New(),
+		ID:   uuid.New(),
 		Name: "YoungTalent",
 	}, nil
 }

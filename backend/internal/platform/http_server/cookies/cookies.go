@@ -1,6 +1,6 @@
 package cookies
 
 const (
-	AccessToken = "access_token"
+	AccessToken  = "access_token"
 	RefreshToken = "refresh_token"
 )

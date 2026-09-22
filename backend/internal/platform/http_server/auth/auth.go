@@ -9,7 +9,7 @@ import (
 type key int
 
 const (
-	userIDKey key = 0
+	userIDKey    key = 0
 	sessionIDKey key = 1
 )
 

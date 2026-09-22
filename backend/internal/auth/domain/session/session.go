@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const TTL = 30*24*time.Hour
+const TTL = 30 * 24 * time.Hour
 
 type Session struct {
 	ID               uuid.UUID
@@ -28,11 +28,11 @@ func Create(
 	ip netip.Addr,
 ) *Session {
 	s := &Session{
-		ID:               uuid.New(),
-		UserID:           userID,
-		CreatedAt:        time.Now(),
-		UserAgent:        userAgent,
-		IP:               ip,
+		ID:        uuid.New(),
+		UserID:    userID,
+		CreatedAt: time.Now(),
+		UserAgent: userAgent,
+		IP:        ip,
 	}
 	s.Refresh(refreshTokenHash)
 	return s

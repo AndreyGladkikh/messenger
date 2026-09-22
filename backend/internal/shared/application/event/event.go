@@ -14,15 +14,15 @@ type Handler[E domain.Event] interface {
 }
 
 type Envelope[E domain.Event] struct {
-	ID uuid.UUID `json:"id"`
+	ID         uuid.UUID `json:"id"`
 	OccurredAt time.Time `json:"occurredAt"`
-	Event E `json:"event"`
+	Event      E         `json:"event"`
 }
 
 func AsEnvelopeWithDomainEvent[E domain.Event](e Envelope[E]) Envelope[domain.Event] {
 	return Envelope[domain.Event]{
-		ID: e.ID,
+		ID:         e.ID,
 		OccurredAt: e.OccurredAt,
-		Event: e.Event,
+		Event:      e.Event,
 	}
 }

@@ -48,9 +48,9 @@ func (h *ApEventHandlerAdapter[E]) Handle(ctx context.Context, e event.Envelope[
 	}
 
 	typedEnvelope := event.Envelope[E]{
-		ID: e.ID,
+		ID:         e.ID,
 		OccurredAt: e.OccurredAt,
-		Event: typedEvent,
+		Event:      typedEvent,
 	}
 	return h.handler.Handle(ctx, typedEnvelope)
 }
