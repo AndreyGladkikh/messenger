@@ -6,16 +6,21 @@ help:
 
 all: up_prod
 
+init: create_keys generate
+	cd backend && \
+	go mod download && \
+	migrate
+
+create_keys:
+	cd backend && \
+	openssl genpkey -algorithm Ed25519 -out ./keys/backend/private.pem && \
+	openssl pkey -in ./keys/backend/private.pem -pubout -out ./keys/backend/public.pem
+
 generate:
 	cd backend && \
 	go generate ./... && \
 	go tool sqlc generate && \
 	go tool wire ./internal/platform/di
-
-init: generate
-	cd backend && \
-	go mod download && \
-	migrate
 
 beautify:
 	cd backend && \
