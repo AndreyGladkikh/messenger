@@ -20,11 +20,10 @@ generate:
 	cd backend && \
 	go generate ./... && \
 	go tool sqlc generate && \
-	go tool wire ./internal/platform/di
+	go mod tidy
 
 beautify:
 	cd backend && \
-	go mod tidy && \
 	go fmt ./...
 
 ci: lint test build

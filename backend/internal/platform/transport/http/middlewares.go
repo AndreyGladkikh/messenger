@@ -1,9 +1,9 @@
-package http_server
+package http
 
 import (
 	"fmt"
 	"messenger/messenger/internal/auth/infrastructure/token"
-	"messenger/messenger/internal/platform/http_server/auth"
+	"messenger/messenger/internal/platform/transport/http/auth"
 	"net/http"
 
 	"github.com/google/uuid"

@@ -1,4 +1,4 @@
-package http_server
+package http
 
 import (
 	"context"
@@ -10,10 +10,10 @@ import (
 	"messenger/messenger/internal/platform/apperr"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/db"
-	"messenger/messenger/internal/platform/http_server/auth"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
+	"messenger/messenger/internal/platform/transport/http/auth"
 	"net/http"
 	"sync"
 	"time"

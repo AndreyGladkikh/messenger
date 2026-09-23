@@ -24,7 +24,6 @@ import (
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
-	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/outbox_relay"
 	"messenger/messenger/internal/platform/postgres"
@@ -32,6 +31,7 @@ import (
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/platform/transport/http"
 )
 
 // Injectors from wire.go:
@@ -68,7 +68,7 @@ func InitializeApi() (*Api, func(), error) {
 	get_current_userHandler := get_current_user.NewHandler()
 	get_chat_listHandler := get_chat_list.NewHandler()
 	querybusBus := querybus.InitBus(get_current_userHandler, get_chat_listHandler)
-	controller := http_server.NewController(bus, querybusBus)
+	controller := http.NewController(bus, querybusBus)
 	client, cleanup2, err := redis.NewRedis(configConfig)
 	if err != nil {
 		cleanup()
@@ -76,8 +76,8 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(client)
 	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
-	websocketHandler := http_server.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, chatEventsPubSub)
-	server := http_server.NewServer(configConfig, loggerLogger, controller, websocketHandler, service)
+	websocketHandler := http.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, chatEventsPubSub)
+	server := http.NewServer(configConfig, loggerLogger, controller, websocketHandler, service)
 	api := NewApi(server, loggerLogger)
 	return api, func() {
 		cleanup3()

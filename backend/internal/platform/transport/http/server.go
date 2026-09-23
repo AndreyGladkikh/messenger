@@ -1,4 +1,4 @@
-package http_server
+package http
 
 import (
 	"context"
@@ -6,8 +6,11 @@ import (
 	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
+	// "messenger/messenger/internal/platform/transport/http/api"
 	"net/http"
 	"time"
+
+	// "github.com/go-chi/chi/v5"
 )
 
 type Server struct {
@@ -21,6 +24,8 @@ func NewServer(
 	controller *Controller,
 	websocketHandler *WebsocketHandler,
 	tokenService *token.Service,
+
+	// apiServer *api.Server,
 ) *Server {
 	router := router(
 		tokenService,
@@ -28,9 +33,12 @@ func NewServer(
 		websocketHandler,
 	)
 
+	// h := api.HandlerFromMux(api.NewStrictHandler(apiServer, nil), chi.NewMux())
+
 	server := &http.Server{
 		Addr:    cfg.HttpServer.Addr,
 		Handler: router,
+		// Handler: h,
 	}
 
 	return &Server{

@@ -21,7 +21,7 @@ paths:
         - auth
       summary: Register a new user.
       description: Register a new user.
-      operationId: registerUser
+      operationId: register
       requestBody:
         description: Create a new user
         content:
@@ -58,7 +58,7 @@ paths:
         - auth
       summary: Log in.
       description: Log in.
-      operationId: loginUser
+      operationId: login
       requestBody:
         description: log in
         content:
@@ -177,7 +177,7 @@ paths:
         - me
       summary: Get current user chat list.
       description: Get current chat list for main page.
-      operationId: getCurrentUserChatList
+      operationId: getMyChatList
       responses:
         '200':
           description: Successful operation

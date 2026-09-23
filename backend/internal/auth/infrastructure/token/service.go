@@ -11,7 +11,7 @@ import (
 	"messenger/messenger/internal/auth/application/token"
 	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
-	"messenger/messenger/internal/platform/http_server/cookies"
+	"messenger/messenger/internal/platform/transport/http/cookies"
 	"messenger/messenger/internal/platform/utils"
 	"net/http"
 	"os"

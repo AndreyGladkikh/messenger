@@ -10,17 +10,17 @@ import (
 	"messenger/messenger/internal/platform/commandbus/middlewares"
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
-	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/transport/http"
 )
 
 type Api struct {
 	Logger     *logger.Logger
-	HttpServer *http_server.Server
+	HttpServer *http.Server
 }
 
 func NewApi(
-	httpServer *http_server.Server,
+	httpServer *http.Server,
 	logger *logger.Logger,
 ) *Api {
 	return &Api{

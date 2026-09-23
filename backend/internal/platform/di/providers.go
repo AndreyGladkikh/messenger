@@ -25,7 +25,6 @@ import (
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
-	"messenger/messenger/internal/platform/http_server"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/outbox_relay"
 	"messenger/messenger/internal/platform/postgres"
@@ -33,6 +32,7 @@ import (
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/platform/transport/http"
 	"messenger/messenger/internal/shared/application/chateventspublisher"
 
 	"github.com/google/wire"
@@ -43,9 +43,9 @@ var ApiSet = wire.NewSet(
 	NewApi,
 
 	CommonSet,
-	http_server.NewServer,
-	http_server.NewController,
-	http_server.NewWebsocketHandler,
+	http.NewServer,
+	http.NewController,
+	http.NewWebsocketHandler,
 	BuildCommandBus,
 	querybus.InitBus,
 	authPasswordAdapter.NewHasher,

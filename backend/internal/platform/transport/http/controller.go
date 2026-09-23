@@ -1,4 +1,4 @@
-package http_server
+package http
 
 import (
 	"encoding/json"
@@ -14,9 +14,9 @@ import (
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/platform/commandbus"
-	"messenger/messenger/internal/platform/http_server/auth"
-	"messenger/messenger/internal/platform/http_server/cookies"
 	"messenger/messenger/internal/platform/querybus"
+	"messenger/messenger/internal/platform/transport/http/auth"
+	"messenger/messenger/internal/platform/transport/http/cookies"
 	"net/http"
 	"net/netip"
 	"time"

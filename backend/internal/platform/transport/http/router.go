@@ -1,8 +1,8 @@
-package http_server
+package http
 
 import (
 	"messenger/messenger/internal/auth/infrastructure/token"
-	"messenger/messenger/internal/platform/http_server/headers"
+	"messenger/messenger/internal/platform/transport/http/headers"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
