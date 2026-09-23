@@ -6,12 +6,16 @@ help:
 
 all: up_prod
 
-init:
+generate:
+	cd backend && \
+	go generate ./... && \
+	go tool sqlc generate && \
+	go tool wire ./internal/platform/di
+
+init: generate
 	cd backend && \
 	go mod download && \
 	migrate
-
-generate: queries wire
 
 beautify:
 	cd backend && \
@@ -68,9 +72,7 @@ migration_force:
 	docker run -v $(shell pwd)/backend/db/migrations:/migrations --network host migrate/migrate -path=/migrations/ -database postgres://app:secret@localhost:5432/app?sslmode=disable force $(MIGRATION_VERSION)
 
 # queries:
-# 	cd ./backend && sqlc generate
-queries:
-	cd ./backend && go tool sqlc generate
+# 	cd ./backend && go tool sqlc generate
 
-wire:
-	cd ./backend && wire ./internal/platform/di
+# wire:
+# 	cd ./backend && go tool wire ./internal/platform/di
