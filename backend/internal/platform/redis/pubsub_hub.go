@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -35,10 +36,10 @@ func errDuplicateName(name string) error {
 // shape is `"pattern": null` — the demo UI uses this to label messages
 // delivered via PSUBSCRIBE.
 type ReceivedMessage struct {
-	Channel      string      `json:"channel"`
-	Pattern      *string     `json:"pattern"`
-	Payload      interface{} `json:"payload"`
-	ReceivedAtMs int64       `json:"received_at_ms"`
+	Channel      string  `json:"channel"`
+	Pattern      *string `json:"pattern"`
+	Payload      any     `json:"payload"`
+	ReceivedAtMs int64   `json:"received_at_ms"`
 }
 
 // Stats is the snapshot returned by RedisPubSubHub.Stats().
@@ -70,7 +71,7 @@ type Subscription struct {
 	mu       sync.Mutex
 	buffer   []*ReceivedMessage // newest first, capped at bufferSize
 	bufSize  int
-	received int64
+	received atomic.Int64
 
 	closed atomic.Bool
 	done   chan struct{}
@@ -97,7 +98,7 @@ func (s *Subscription) IsPattern() bool { return s.isPattern }
 // subscription has received since it was created (or since the last
 // ResetReceived).
 func (s *Subscription) ReceivedTotal() int64 {
-	return atomic.LoadInt64(&s.received)
+	return s.received.Load()
 }
 
 // Messages returns the most recent messages, newest first. If limit is
@@ -121,7 +122,7 @@ func (s *Subscription) ResetReceived() {
 	s.mu.Lock()
 	s.buffer = s.buffer[:0]
 	s.mu.Unlock()
-	atomic.StoreInt64(&s.received, 0)
+	s.received.Store(0)
 }
 
 // Close stops the dispatch goroutine and releases the underlying Redis
@@ -160,7 +161,7 @@ func (s *Subscription) dispatch(msg *redis.Message) {
 	}
 	// Try to decode the payload as JSON so the UI sees structured data;
 	// fall back to the raw string if it doesn't parse.
-	var payload interface{}
+	var payload any
 	if err := json.Unmarshal([]byte(msg.Payload), &payload); err != nil {
 		payload = msg.Payload
 	}
@@ -178,7 +179,7 @@ func (s *Subscription) dispatch(msg *redis.Message) {
 	}
 	s.buffer = append([]*ReceivedMessage{wrapped}, s.buffer...)
 	s.mu.Unlock()
-	atomic.AddInt64(&s.received, 1)
+	s.received.Add(1)
 }
 
 // RedisPubSubHub is the top-level helper. Construct one per process and
@@ -221,7 +222,7 @@ func NewRedisPubSubHub(client *redis.Client) *RedisPubSubHub {
 // returned integer is the count Redis itself reported — the number of
 // clients that were subscribed (directly or via pattern) at the moment
 // the message was fanned out.
-func (h *RedisPubSubHub) Publish(ctx context.Context, channel string, message interface{}) (int64, error) {
+func (h *RedisPubSubHub) Publish(ctx context.Context, channel string, message any) (int64, error) {
 	payload, err := json.Marshal(message)
 	if err != nil {
 		return 0, err
@@ -374,9 +375,7 @@ func (h *RedisPubSubHub) Stats(ctx context.Context) Stats {
 	published := h.publishedTotal
 	delivered := h.deliveredTotal
 	perChannel := make(map[string]int, len(h.channelPublished))
-	for k, v := range h.channelPublished {
-		perChannel[k] = v
-	}
+	maps.Copy(perChannel, h.channelPublished)
 	h.statsMu.Unlock()
 
 	subs := h.Subscriptions()

@@ -66,12 +66,10 @@ func (s *Service) GenerateAccessToken(session *session.Session) (string, error) 
 	t := jwt.New(jwt.GetSigningMethod("EdDSA"))
 
 	t.Claims = &Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   session.UserID.String(),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(token.AccessTokenTTL)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-		SID: session.ID.String(),
+		Subject:   session.UserID.String(),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(token.AccessTokenTTL)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		SID:       session.ID.String(),
 	}
 
 	return t.SignedString(s.jwtSignKey)
