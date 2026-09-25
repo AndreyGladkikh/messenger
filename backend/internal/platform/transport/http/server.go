@@ -3,48 +3,29 @@ package http
 import (
 	"context"
 	"errors"
-	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
-	// "messenger/messenger/internal/platform/transport/http/api"
 	"net/http"
 	"time"
-
-	// "github.com/go-chi/chi/v5"
 )
 
 type Server struct {
-	server *http.Server
+	httpServer *http.Server
 	logger *logger.Logger
 }
 
 func NewServer(
 	cfg *config.Config,
 	logger *logger.Logger,
-	controller *Controller,
-	websocketHandler *WebsocketHandler,
-	tokenService *token.Service,
-
-	// apiServer *api.Server,
-) *Server {
-	router := router(
-		tokenService,
-		controller,
-		websocketHandler,
-	)
-
-	// h := api.HandlerFromMux(api.NewStrictHandler(apiServer, nil), chi.NewMux())
-
-	server := &http.Server{
-		Addr:    cfg.HttpServer.Addr,
-		Handler: router,
-		// Handler: h,
-	}
-
+	router http.Handler,
+) (*Server, error) {
 	return &Server{
-		server: server,
 		logger: logger,
-	}
+		httpServer: &http.Server{
+			Addr:    cfg.HttpServer.Addr,
+			Handler: router,
+		},
+	}, nil
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -55,11 +36,11 @@ func (s *Server) Run(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		s.server.Shutdown(ctx)
+		s.httpServer.Shutdown(ctx)
 	}()
 
 	s.logger.Info("http server started")
-	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 

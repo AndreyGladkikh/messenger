@@ -68,7 +68,8 @@ func InitializeApi() (*Api, func(), error) {
 	get_current_userHandler := get_current_user.NewHandler()
 	get_chat_listHandler := get_chat_list.NewHandler()
 	querybusBus := querybus.InitBus(get_current_userHandler, get_chat_listHandler)
-	controller := http.NewController(bus, querybusBus)
+	apiHandler := http.NewApiHandler(bus, querybusBus)
+	errorHandler := http.NewErrorHandler(configConfig, loggerLogger)
 	client, cleanup2, err := redis.NewRedis(configConfig)
 	if err != nil {
 		cleanup()
@@ -77,7 +78,20 @@ func InitializeApi() (*Api, func(), error) {
 	pubSub, cleanup3 := pubsub.NewPubSub(client)
 	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
 	websocketHandler := http.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, chatEventsPubSub)
-	server := http.NewServer(configConfig, loggerLogger, controller, websocketHandler, service)
+	httpHandler, err := http.NewRouter(apiHandler, errorHandler, service, websocketHandler)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	server, err := http.NewServer(configConfig, loggerLogger, httpHandler)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	api := NewApi(server, loggerLogger)
 	return api, func() {
 		cleanup3()

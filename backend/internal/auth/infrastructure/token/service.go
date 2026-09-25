@@ -19,6 +19,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang-jwt/jwt/v5/request"
+	"github.com/google/uuid"
 )
 
 var ErrInvalidToken = fmt.Errorf("%w: invalid token", authDomain.ErrUnauthorized)
@@ -59,7 +60,8 @@ func NewService() (*Service, error) {
 
 type Claims struct {
 	jwt.RegisteredClaims
-	SID string
+	SID uuid.UUID
+	Scopes []string
 }
 
 func (s *Service) GenerateAccessToken(session *session.Session) (string, error) {
@@ -69,7 +71,7 @@ func (s *Service) GenerateAccessToken(session *session.Session) (string, error) 
 		Subject:   session.UserID.String(),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(token.AccessTokenTTL)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		SID:       session.ID.String(),
+		SID:       session.ID,
 	}
 
 	return t.SignedString(s.jwtSignKey)

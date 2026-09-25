@@ -47,6 +47,7 @@ func BuildCommandBus(
 	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.Recoverer)
 	bus.Use(loggingMiddlewareContainer.Middleware)
+	bus.Use(middlewares.ErrorMapping)
 
 	commandbus.RegisterHandler(bus, registerUserHandler)
 	commandbus.RegisterHandler(bus, loginHandler)

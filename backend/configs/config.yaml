@@ -1,5 +1,5 @@
 Auth:
-  JWT:
+  Jwt:
     PrivateKey: /etc/app/keys/jwt-private.pem
     PublicKey: /etc/app/keys/jwt-public.pem
 
@@ -14,3 +14,5 @@ Database:
 
 HttpServer:
   Addr: :3000
+
+FrontendUrl: http://localhost:3000

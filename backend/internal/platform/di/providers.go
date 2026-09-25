@@ -44,8 +44,10 @@ var ApiSet = wire.NewSet(
 
 	CommonSet,
 	http.NewServer,
-	http.NewController,
 	http.NewWebsocketHandler,
+	http.NewErrorHandler,
+	http.NewRouter,
+	http.NewApiHandler,
 	BuildCommandBus,
 	querybus.InitBus,
 	authPasswordAdapter.NewHasher,
@@ -53,6 +55,7 @@ var ApiSet = wire.NewSet(
 
 	wire.Bind(new(authPasswordPort.Hasher), new(*authPasswordAdapter.Hasher)),
 	wire.Bind(new(authTokenPort.Service), new(*authTokenAdapter.Service)),
+	wire.Bind(new(http.StrictServerInterface), new(*http.ApiHandler)),
 )
 
 var OutboxRelaySet = wire.NewSet(
@@ -80,7 +83,6 @@ var CommonSet = wire.NewSet(
 	event.NewEventService,
 
 	logger.New,
-	// redis.NewRedisPubSubHub,
 	pubsub.NewPubSub,
 	pubsub.NewChatEventsPubSub,
 

@@ -6,18 +6,18 @@ import (
 	"github.com/google/uuid"
 )
 
-type Credentials struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
+// type Credentials struct {
+// 	Login    string `json:"login"`
+// 	Password string `json:"password"`
+// }
 
-type RegisterUserRequest struct {
-	Credentials
-}
+// type RegisterUserRequest struct {
+// 	Credentials
+// }
 
-type LoginRequest struct {
-	Credentials
-}
+// type LoginRequest struct {
+// 	Credentials
+// }
 
 type Chat struct {
 	Kind string `json:"kind"`

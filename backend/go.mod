@@ -4,6 +4,7 @@ go 1.27.1
 
 require (
 	github.com/coder/websocket v1.8.15
+	github.com/getkin/kin-openapi v0.149.0
 	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-chi/cors v1.2.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -14,9 +15,10 @@ require (
 	github.com/knadh/koanf/parsers/yaml v1.1.0
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/knadh/koanf/v2 v2.3.5
+	github.com/oapi-codegen/nethttp-middleware v1.2.0
 	github.com/oapi-codegen/runtime v1.7.0
 	github.com/redis/go-redis/v9 v9.21.0
-	golang.org/x/crypto v0.54.0
+	golang.org/x/crypto v0.55.0
 )
 
 require (
@@ -31,13 +33,12 @@ require (
 	github.com/dprotaso/go-yit v0.0.0-20220510233725-9ba8df137936 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
-	github.com/getkin/kin-openapi v0.142.0 // indirect
-	github.com/go-openapi/jsonpointer v0.23.1 // indirect
-	github.com/go-openapi/swag/jsonname v0.26.0 // indirect
+	github.com/go-openapi/jsonpointer v1.0.1 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/cel-go v0.28.0 // indirect
 	github.com/google/subcommands v1.2.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -59,7 +60,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/riza-io/grpc-go v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.15.0 // indirect
-	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
 	github.com/speakeasy-api/jsonpath v0.6.3 // indirect
 	github.com/speakeasy-api/openapi v1.24.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
@@ -75,12 +76,12 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/mod v0.38.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
-	golang.org/x/tools v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260120221211-b8f7ae30c516 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
 	google.golang.org/grpc v1.80.0 // indirect

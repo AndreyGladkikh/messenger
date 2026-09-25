@@ -14,6 +14,7 @@ import (
 
 type Config struct {
 	Env        string
+	FrontendUrl string
 	Database   *DatabaseConfig
 	Cache      *CacheConfig
 	HttpServer *HttpServerConfig

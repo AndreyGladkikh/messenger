@@ -2,7 +2,8 @@ package http
 
 import (
 	"encoding/json"
-	"messenger/messenger/internal/platform/apperr"
+	"messenger/messenger/internal/platform/transport/http/headers"
+	"messenger/messenger/internal/shared/application/apperr"
 	"net/http"
 	"time"
 
@@ -59,7 +60,7 @@ func NewResponse(response any, err error, opts ...Option) *Response {
 }
 
 func (r *Response) WriteTo(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", r.contentType)
+	w.Header().Set(headers.ContentType, r.contentType)
 	w.WriteHeader(r.httpStatus)
 
 	response := map[string]any{
@@ -145,7 +146,7 @@ func NewHTTPResponse(data any, err error, opts ...OptionNew) *HTTPResponse {
 }
 
 func (r *HTTPResponse) WriteTo(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", r.contentType)
+	w.Header().Set(headers.ContentType, r.contentType)
 	w.WriteHeader(r.status)
 
 	err := json.NewEncoder(w).Encode(r.response)

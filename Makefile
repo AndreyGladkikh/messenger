@@ -1,6 +1,11 @@
 .DEFAULT_GOAL := all
 .PHONY: *
 
+api_port := 8080
+api_url := localhost:$(api_port)
+front_port := 3000
+front_url := localhost:$(front_port)
+
 help:
 	@echo "help"
 
@@ -22,8 +27,9 @@ generate:
 	go tool sqlc generate && \
 	go mod tidy
 
-beautify:
+lint:
 	cd backend && \
+	go vet ./... && \
 	go fmt ./...
 
 ci: lint test build
