@@ -166,6 +166,9 @@ paths:
                     type: string
                   name:
                     type: string
+                required:
+                  - id
+                  - name
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

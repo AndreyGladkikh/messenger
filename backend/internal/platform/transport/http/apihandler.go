@@ -49,14 +49,14 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 	q := &get_current_user.Query{
 		UserID: a.Principal.Subject.ID,
 	}
-	response, err := h.queryBus.Dispatch(ctx, q)
+	response, err := querybus.Dispatch[get_current_user.AuthView](ctx, h.queryBus, q)
 	if err != nil {
 		return nil, err
 	}
 
-	_ = response
 	return GetMe200JSONResponse{
-		
+		Id: response.ID.String(),
+		Name: response.Name,
 	}, nil
 }
 

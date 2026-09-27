@@ -39,20 +39,6 @@ type SubjectType string
 
 type key int
 
-// const principalKey key = 0
-
-// func NewContextWithPrincipal(ctx context.Context, p Principal) context.Context {
-// 	return context.WithValue(ctx, principalKey, p)
-// }
-
-// func PrincipalFromContext(ctx context.Context) (Principal, error) {
-// 	p, ok := ctx.Value(principalKey).(Principal)
-// 	if !ok {
-// 		return Principal{}, errors.New("no principal in context")
-// 	}
-// 	return p, nil
-// }
-
 const authKey key = 0
 
 func NewContextWithAuth(ctx context.Context, a Auth) context.Context {

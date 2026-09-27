@@ -29,6 +29,27 @@ func (b *Bus) Dispatch(ctx context.Context, q query.Query) (any, error) {
 	return handler.Handle(ctx, q)
 }
 
+func Dispatch[R any](ctx context.Context, b *Bus, q query.Query) (R, error) {
+	var zero R
+
+	handler, ok := b.handlers[q.Name()]
+	if !ok {
+		return zero, fmt.Errorf("не найден обработчик запроса '%s'", q.Name())
+	}
+
+	response, err := handler.Handle(ctx, q)
+	if err != nil {
+		return zero, err
+	}
+
+	typedResponse, ok := response.(R)
+	if !ok {
+		return zero, fmt.Errorf("query bus: handler of dispatched command responded with unexpected type: expected %T, got %T", new(R), response)
+	}
+
+	return typedResponse, nil
+}
+
 func (b *Bus) Use(middleware Middleware) {
 	for c, h := range b.handlers {
 		b.handlers[c] = middleware(h)
@@ -40,7 +61,7 @@ func (b *Bus) Use(middleware Middleware) {
 func RegisterHandler[Q query.Query, R any](b *Bus, handler query.Handler[Q, R]) error {
 	q := *new(Q)
 
-	var adapted QueryHandler = ApQueryHandlerAdapter[Q, R]{handler: handler}
+	var adapted QueryHandler = AppQueryHandlerAdapter[Q, R]{handler: handler}
 	
 	if _, ok := b.handlers[q.Name()]; ok {
 		return fmt.Errorf("для запроса '%s' уже зарегистрирован обработчик", q.Name())
@@ -52,15 +73,15 @@ func RegisterHandler[Q query.Query, R any](b *Bus, handler query.Handler[Q, R]) 
 	return nil
 }
 
-type QueryHandler interface {
-	Handle(context.Context, query.Query) (any, error)
-}
+type QueryHandler query.Handler[query.Query, any]
 
-type ApQueryHandlerAdapter[Q query.Query, R any] struct {
+var _ QueryHandler = AppQueryHandlerAdapter[query.Query, any]{}
+
+type AppQueryHandlerAdapter[Q query.Query, R any] struct {
 	handler query.Handler[Q, R]
 }
 
-func (a ApQueryHandlerAdapter[Q, R]) Handle(ctx context.Context, q query.Query) (any, error) {
+func (a AppQueryHandlerAdapter[Q, R]) Handle(ctx context.Context, q query.Query) (any, error) {
 	typedQuery, ok := q.(Q)
 	if !ok {
 		return nil, fmt.Errorf("query handler expected query of type %T, got %T", new(Q), q)
@@ -68,6 +89,8 @@ func (a ApQueryHandlerAdapter[Q, R]) Handle(ctx context.Context, q query.Query) 
 
 	return a.handler.Handle(ctx, typedQuery)
 }
+
+var _ QueryHandler = HandlerFunc(nil)
 
 type HandlerFunc func(ctx context.Context, q query.Query) (any, error)
 

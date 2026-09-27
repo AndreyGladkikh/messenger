@@ -27,7 +27,7 @@ func NewRouter(
 
 	mux.Use(middleware.Logger)
 	mux.Use(AuthMiddleware(tokenService))
-	mux.Use(FirewallMiddleware(oas))
+	mux.Use(FirewallMiddleware(oas, errorHandler))
 	mux.Use(middleware.AllowContentType(contenttype.ApplicationJson))
 	mux.Use(middleware.ClientIPFromRemoteAddr)
 	mux.Use(middleware.RequestID)

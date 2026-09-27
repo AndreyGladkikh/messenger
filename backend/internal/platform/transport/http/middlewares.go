@@ -3,9 +3,11 @@ package http
 import (
 	"context"
 	"fmt"
+	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/transport/http/headers"
+	"messenger/messenger/internal/shared/application/apperr"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -62,14 +64,15 @@ func isHeaderPresentInRequest(r *http.Request, header string) bool {
 	return h != ""
 }
 
-func FirewallMiddleware(oas *openapi3.T) func(next http.Handler) http.Handler {
+func FirewallMiddleware(oas *openapi3.T, errHandler *ErrorHandler) func(next http.Handler) http.Handler {
 	validator := oapimiddleware.OapiRequestValidatorWithOptions(oas,
 		&oapimiddleware.Options{
 			Options: openapi3filter.Options{
 				AuthenticationFunc: func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 					a, err := auth.AuthFromContext(ctx)
 					if err != nil {
-						return err
+						err = fmt.Errorf("%w: %w", authDomain.ErrUnauthorized, err)
+						return apperr.Map(err)
 					}
 
 					if input.SecuritySchemeName != string(a.Method) {
@@ -83,6 +86,9 @@ func FirewallMiddleware(oas *openapi3.T) func(next http.Handler) http.Handler {
 				
 					return nil
 				},
+			},
+			ErrorHandlerWithOpts: func(ctx context.Context, err error, w http.ResponseWriter, r *http.Request, opts oapimiddleware.ErrorHandlerOpts) {
+				errHandler.Handle(w, r, err)
 			},
 		})
 
