@@ -24,13 +24,15 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
+func (h *Handler) Handle(ctx context.Context, cmd *Command) (Response, error) {
+	var zero Response
+	
 	ses, err := h.sessionRepo.GetByRefreshTokenHash(ctx, h.tokenService.HashRefreshToken(cmd.RefreshToken))
 	if err != nil && !errors.Is(err, sharedDomain.ErrNotFound) {
-		return nil, err
+		return zero, err
 	}
 	if errors.Is(err, sharedDomain.ErrNotFound) {
-		return nil, domain.ErrUnauthorized
+		return zero, domain.ErrUnauthorized
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()
@@ -39,15 +41,15 @@ func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
 	ses.Refresh(refreshTokenHash)
 
 	if err = h.sessionRepo.Save(ctx, ses); err != nil {
-		return nil, err
+		return zero, err
 	}
 
 	accessToken, err := h.tokenService.GenerateAccessToken(ses)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 
-	return &Response{
+	return Response{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil

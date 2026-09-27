@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"messenger/messenger/internal/platform/commandbus"
+	"messenger/messenger/internal/shared/application/command"
 	"runtime/debug"
 )
 
@@ -17,7 +18,7 @@ func (e *PanicError) Error() string {
 }
 
 func Recoverer(next commandbus.CommandHandler) commandbus.CommandHandler {
-	fn := func(ctx context.Context, command commandbus.Command) (response any, err error) {
+	fn := func(ctx context.Context, command command.Command) (response any, err error) {
 		defer func() {
 			if r := recover(); r != nil {
 				err = &PanicError{

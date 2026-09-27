@@ -93,26 +93,30 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 		IP:        ip,
 		UserAgent: request.Params.UserAgent,
 	}
-	response, err := h.commandBus.Dispatch(ctx, command)
+	response, err := commandbus.Dispatch[login.Response](ctx, h.commandBus, command)
 	if err != nil {
 		return nil, err
 	}
 
-	_ = response
-	return Login200JSONResponseCustom{}, nil
+	return Login200JSONResponseCustom{
+		AccessToken: response.AccessToken,
+		RefreshToken: response.RefreshToken,
+	}, nil
 }
 
 func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error) {
 	command := &refresh.Command{
 		RefreshToken: request.Params.RefreshToken,
 	}
-	response, err := h.commandBus.Dispatch(ctx, command)
+	response, err := commandbus.Dispatch[refresh.Response](ctx, h.commandBus, command)
 	if err != nil {
 		return nil, err
 	}
 
-	_ = response
-	return RefreshTokens200JSONResponseCustom{}, nil
+	return RefreshTokens200JSONResponseCustom{
+		AccessToken: response.AccessToken,
+		RefreshToken: response.RefreshToken,
+	}, nil
 }
 
 func (h *ApiHandler) Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error) {
@@ -128,14 +132,14 @@ func (h *ApiHandler) Register(ctx context.Context, request RegisterRequestObject
 		IP:        ip,
 		UserAgent: request.Params.UserAgent,
 	}
-	response, err := h.commandBus.Dispatch(ctx, command)
+	response, err := commandbus.Dispatch[register.Response](ctx, h.commandBus, command)
 	if err != nil {
 		return nil, err
 	}
 
 	return Register200JSONResponseCustom{
-		AccessToken: response.(*register.Response).AccessToken,
-		RefreshToken: response.(*register.Response).RefreshToken,
+		AccessToken: response.AccessToken,
+		RefreshToken: response.RefreshToken,
 	}, nil
 }
 

@@ -14,8 +14,8 @@ func NewHandler() *Handler {
 	return &Handler{}
 }
 
-func (h *Handler) Handle(ctx context.Context, query *Query) (*ChatListView, error) {
-	return &ChatListView{
+func (h *Handler) Handle(ctx context.Context, query *Query) (ChatListView, error) {
+	return ChatListView{
 		Chats: []*ChatListItemView{
 			{
 				ID:   uuid.New(),

@@ -30,18 +30,20 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
+func (h *Handler) Handle(ctx context.Context, cmd *Command) (Response, error) {
+	var zero Response
+
 	exists, err := h.userRepo.ExistsByLogin(ctx, cmd.Login)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 	if exists {
-		return nil, user.ErrLoginAlreadyExists
+		return zero, user.ErrLoginAlreadyExists
 	}
 
 	passHash, err := h.passHasher.Hash(cmd.Password)
 	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
+		return zero, fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	user := user.Register(
@@ -51,7 +53,7 @@ func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
 
 	err = h.userRepo.Add(ctx, user)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()
@@ -64,15 +66,15 @@ func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
 		cmd.IP,
 	)
 	if err = h.sessionRepo.Add(ctx, session); err != nil {
-		return nil, err
+		return zero, err
 	}
 
 	accessToken, err := h.tokenService.GenerateAccessToken(session)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 
-	return &Response{
+	return Response{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil

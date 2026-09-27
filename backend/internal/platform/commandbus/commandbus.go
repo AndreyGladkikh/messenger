@@ -3,6 +3,7 @@ package commandbus
 import (
 	"context"
 	"fmt"
+	"messenger/messenger/internal/shared/application/command"
 )
 
 type Bus struct {
@@ -16,14 +17,35 @@ func NewBus() *Bus {
 	}
 }
 
-func (b *Bus) Dispatch(ctx context.Context, command Command) (any, error) {
-	handler, ok := b.handlers[command.Name()]
+func (b *Bus) Dispatch(ctx context.Context, c command.Command) (any, error) {
+	handler, ok := b.handlers[c.Name()]
 	if !ok {
 		var zero any
-		return zero, fmt.Errorf("не найден обработчик команды '%s'", command.Name())
+		return zero, fmt.Errorf("не найден обработчик команды '%s'", c.Name())
 	}
 
-	return handler.Handle(ctx, command)
+	return handler.Handle(ctx, c)
+}
+
+func Dispatch[R any](ctx context.Context, b *Bus, c command.Command) (R, error) {
+	var zero R
+
+	handler, ok := b.handlers[c.Name()]
+	if !ok {
+		return zero, fmt.Errorf("не найден обработчик команды '%s'", c.Name())
+	}
+
+	response, err := handler.Handle(ctx, c)
+	if err != nil {
+		return zero, err
+	}
+
+	typedResponse, ok := response.(R)
+	if !ok {
+		return zero, fmt.Errorf("command bus: handler of dispatched command responded with unexpected type: expected %T, got %T", new(R), response)
+	}
+
+	return typedResponse, nil
 }
 
 func (b *Bus) Use(middleware Middleware) {
@@ -34,39 +56,30 @@ func (b *Bus) Use(middleware Middleware) {
 	b.middlewares = append(b.middlewares, middleware)
 }
 
-func RegisterHandler[C Command](b *Bus, handler ApCommandHandler[C]) error {
+func RegisterHandler[C command.Command, R any](b *Bus, handler command.Handler[C, R]) error {
 	c := *new(C)
 
-	var adapted CommandHandler = ApHandlerAdapter[C]{handler: handler}
+	var adapted CommandHandler = &AppCommandHandlerAdapter[C, R]{handler: handler}
 
-	for _, m := range b.middlewares {
-		adapted = m(adapted)
-	}
 	if _, ok := b.handlers[c.Name()]; ok {
 		return fmt.Errorf("для команды '%s' уже зарегистрирован обработчик", c.Name())
+	}
+	for _, m := range b.middlewares {
+		adapted = m(adapted)
 	}
 	b.handlers[c.Name()] = adapted
 	return nil
 }
 
-type Command interface {
-	IsCommand()
-	Name() string
+type CommandHandler command.Handler[command.Command, any]
+
+var _ CommandHandler = (*AppCommandHandlerAdapter[command.Command, any])(nil)
+
+type AppCommandHandlerAdapter[C command.Command, R any] struct {
+	handler command.Handler[C, R]
 }
 
-type CommandHandler interface {
-	Handle(context.Context, Command) (any, error)
-}
-
-type ApCommandHandler[C Command] interface {
-	Handle(context.Context, C) (any, error)
-}
-
-type ApHandlerAdapter[C Command] struct {
-	handler ApCommandHandler[C]
-}
-
-func (a ApHandlerAdapter[C]) Handle(ctx context.Context, c Command) (any, error) {
+func (a *AppCommandHandlerAdapter[C, R]) Handle(ctx context.Context, c command.Command) (any, error) {
 	typedCommand, ok := c.(C)
 	if !ok {
 		return nil, fmt.Errorf("command handler expected command of type %T, got %T", new(C), c)
@@ -75,9 +88,11 @@ func (a ApHandlerAdapter[C]) Handle(ctx context.Context, c Command) (any, error)
 	return a.handler.Handle(ctx, typedCommand)
 }
 
-type HandlerFunc func(ctx context.Context, command Command) (any, error)
+var _ CommandHandler = HandlerFunc(nil)
 
-func (f HandlerFunc) Handle(ctx context.Context, command Command) (any, error) {
+type HandlerFunc func(ctx context.Context, command command.Command) (any, error)
+
+func (f HandlerFunc) Handle(ctx context.Context, command command.Command) (any, error) {
 	return f(ctx, command)
 }
 

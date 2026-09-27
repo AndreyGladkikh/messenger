@@ -2,10 +2,7 @@ package query
 
 import (
 	"context"
-	"errors"
 )
-
-var ErrValidation = errors.New("validation error")
 
 type Query interface {
 	IsQuery()

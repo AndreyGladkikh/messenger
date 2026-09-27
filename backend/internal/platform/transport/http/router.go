@@ -26,8 +26,8 @@ func NewRouter(
 	mux := chi.NewMux()
 
 	mux.Use(middleware.Logger)
-	mux.Use(FirewallMiddleware(oas))
 	mux.Use(AuthMiddleware(tokenService))
+	mux.Use(FirewallMiddleware(oas))
 	mux.Use(middleware.AllowContentType(contenttype.ApplicationJson))
 	mux.Use(middleware.ClientIPFromRemoteAddr)
 	mux.Use(middleware.RequestID)

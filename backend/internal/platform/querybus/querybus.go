@@ -41,12 +41,12 @@ func RegisterHandler[Q query.Query, R any](b *Bus, handler query.Handler[Q, R]) 
 	q := *new(Q)
 
 	var adapted QueryHandler = ApQueryHandlerAdapter[Q, R]{handler: handler}
-
-	for _, m := range b.middlewares {
-		adapted = m(adapted)
-	}
+	
 	if _, ok := b.handlers[q.Name()]; ok {
 		return fmt.Errorf("для запроса '%s' уже зарегистрирован обработчик", q.Name())
+	}
+	for _, m := range b.middlewares {
+		adapted = m(adapted)
 	}
 	b.handlers[q.Name()] = adapted
 	return nil

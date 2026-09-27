@@ -31,21 +31,23 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
+func (h *Handler) Handle(ctx context.Context, cmd *Command) (Response, error) {
+	var zero Response
+
 	u, err := h.userRepo.GetByLogin(ctx, cmd.Login)
 	if err != nil && !errors.Is(err, user.ErrNotFound) {
-		return nil, err
+		return zero, err
 	}
 	if errors.Is(err, user.ErrNotFound) {
-		return nil, domain.ErrInvalidCredantials
+		return zero, domain.ErrInvalidCredantials
 	}
 
 	eq, err := h.passHasher.Compare(cmd.Password, u.PasswordHash)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 	if !eq {
-		return nil, domain.ErrInvalidCredantials
+		return zero, domain.ErrInvalidCredantials
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()
@@ -58,15 +60,15 @@ func (h *Handler) Handle(ctx context.Context, cmd *Command) (any, error) {
 		cmd.IP,
 	)
 	if err = h.sessionRepo.Add(ctx, session); err != nil {
-		return nil, err
+		return zero, err
 	}
 
 	accessToken, err := h.tokenService.GenerateAccessToken(session)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 
-	return &Response{
+	return Response{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil

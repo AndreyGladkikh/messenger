@@ -5,6 +5,7 @@ import (
 	"errors"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/shared/application/command"
 )
 
 type LoggerMiddlewareContainer struct {
@@ -20,7 +21,7 @@ func NewLoggerMiddlewareContainer(
 }
 
 func (c *LoggerMiddlewareContainer) Middleware(next commandbus.CommandHandler) commandbus.CommandHandler {
-	fn := func(ctx context.Context, command commandbus.Command) (any, error) {
+	fn := func(ctx context.Context, command command.Command) (any, error) {
 		response, err := next.Handle(ctx, command)
 		if err != nil {
 			logArgs := []any{

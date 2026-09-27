@@ -7,6 +7,7 @@ import (
 	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/uow"
+	"messenger/messenger/internal/shared/application/command"
 )
 
 type TransactionMiddlewareContainer struct {
@@ -25,7 +26,7 @@ func NewTransactionMiddlewareContainer(
 }
 
 func (c *TransactionMiddlewareContainer) Middleware(next commandbus.CommandHandler) commandbus.CommandHandler {
-	f := func(ctx context.Context, command commandbus.Command) (response any, err error) {
+	f := func(ctx context.Context, command command.Command) (response any, err error) {
 		ctx = uow.NewContext(ctx, uow.New())
 
 		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
