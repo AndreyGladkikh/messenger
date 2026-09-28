@@ -32,11 +32,11 @@ type ApiHandler struct {
 
 func NewApiHandler(
 	commandBus *commandbus.Bus,
-	queryBus   *querybus.Bus,
+	queryBus *querybus.Bus,
 ) *ApiHandler {
 	return &ApiHandler{
 		commandBus: commandBus,
-		queryBus: queryBus,
+		queryBus:   queryBus,
 	}
 }
 
@@ -55,7 +55,7 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 	}
 
 	return GetMe200JSONResponse{
-		Id: response.ID.String(),
+		Id:   response.ID.String(),
 		Name: response.Name,
 	}, nil
 }
@@ -69,15 +69,12 @@ func (h *ApiHandler) GetMyChatList(ctx context.Context, request GetMyChatListReq
 	query := &get_chat_list.Query{
 		UserID: a.Principal.Subject.ID,
 	}
-	response, err := h.queryBus.Dispatch(ctx, query)
+	response, err := querybus.Dispatch[get_chat_list.ChatListView](ctx, h.queryBus, query)
 	if err != nil {
 		return nil, err
 	}
 
-	_ = response
-	return GetMyChatList200JSONResponse{
-		
-	}, nil
+	return GetMyChatList200JSONResponse(mapChatList(response)), nil
 }
 
 func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error) {
@@ -99,7 +96,7 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 	}
 
 	return Login200JSONResponseCustom{
-		AccessToken: response.AccessToken,
+		AccessToken:  response.AccessToken,
 		RefreshToken: response.RefreshToken,
 	}, nil
 }
@@ -114,7 +111,7 @@ func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensReq
 	}
 
 	return RefreshTokens200JSONResponseCustom{
-		AccessToken: response.AccessToken,
+		AccessToken:  response.AccessToken,
 		RefreshToken: response.RefreshToken,
 	}, nil
 }
@@ -138,7 +135,7 @@ func (h *ApiHandler) Register(ctx context.Context, request RegisterRequestObject
 	}
 
 	return Register200JSONResponseCustom{
-		AccessToken: response.AccessToken,
+		AccessToken:  response.AccessToken,
 		RefreshToken: response.RefreshToken,
 	}, nil
 }

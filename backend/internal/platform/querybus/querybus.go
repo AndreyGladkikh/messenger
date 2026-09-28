@@ -23,7 +23,7 @@ func (b *Bus) Dispatch(ctx context.Context, q query.Query) (any, error) {
 	handler, ok := b.handlers[q.Name()]
 	if !ok {
 		var zero any
-		return zero, fmt.Errorf("не найден обработчик запроса '%s'", q.Name())
+		return zero, fmt.Errorf("query bus: not found handler for query '%s'", q.Name())
 	}
 
 	return handler.Handle(ctx, q)
@@ -34,7 +34,7 @@ func Dispatch[R any](ctx context.Context, b *Bus, q query.Query) (R, error) {
 
 	handler, ok := b.handlers[q.Name()]
 	if !ok {
-		return zero, fmt.Errorf("не найден обработчик запроса '%s'", q.Name())
+		return zero, fmt.Errorf("query bus: not found handler for query '%s'", q.Name())
 	}
 
 	response, err := handler.Handle(ctx, q)
@@ -64,7 +64,7 @@ func RegisterHandler[Q query.Query, R any](b *Bus, handler query.Handler[Q, R]) 
 	var adapted QueryHandler = AppQueryHandlerAdapter[Q, R]{handler: handler}
 	
 	if _, ok := b.handlers[q.Name()]; ok {
-		return fmt.Errorf("для запроса '%s' уже зарегистрирован обработчик", q.Name())
+		return fmt.Errorf("query bus: already has handler for query '%s'", q.Name())
 	}
 	for _, m := range b.middlewares {
 		adapted = m(adapted)

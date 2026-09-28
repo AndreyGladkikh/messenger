@@ -200,26 +200,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  chats:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        unreadCount:
-                          type: integer
-                        lastMessage:
-                          type: object
-                          properties:
-                            body:
-                              type: string
-                            sentAt:
-                              type: string
+                $ref: '#/components/schemas/ChatListView'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -263,18 +244,40 @@ components:
         refreshToken:
           type: string
 
-    Error:
+    ChatListView:
       type: object
-      properties:
-        code:
-          type: string
-        message:
-          type: string
-        details:
-          type: object
       required:
-        - code
-        - message
+        - chats
+      properties:
+        chats:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatListViewItem'
+
+    ChatListViewItem:
+      type: object
+      required:
+        - id
+        - name
+        - unreadCount
+        - lastMessage
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        unreadCount:
+          type: integer
+        lastMessage:
+          type: object
+          required:
+            - body
+            - sentAt
+          properties:
+            body:
+              type: string
+            sentAt:
+              type: string
 
     ProblemDetails:
       type: object
