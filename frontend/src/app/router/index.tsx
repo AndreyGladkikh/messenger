@@ -14,6 +14,15 @@ export default createBrowserRouter([
         ErrorBoundary: RootErrorBoundary,
         children: [
             {
+                loader: authLoader,
+                children: [
+                    {
+                        index: true,
+                        Component: ChatPage,
+                    },
+                ],
+            },
+            {
                 path: "auth",
                 children: [
                     {
@@ -23,15 +32,6 @@ export default createBrowserRouter([
                     {
                         path: "login",
                         Component: LoginPage,
-                    },
-                ],
-            },
-            {
-                loader: authLoader,
-                children: [
-                    {
-                        index: true,
-                        Component: ChatPage,
                     },
                 ],
             },

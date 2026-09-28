@@ -25,13 +25,6 @@ func NewRouter(
 
 	mux := chi.NewMux()
 
-	mux.Use(middleware.Logger)
-	mux.Use(AuthMiddleware(tokenService))
-	mux.Use(FirewallMiddleware(oas, errorHandler))
-	mux.Use(middleware.AllowContentType(contenttype.ApplicationJson))
-	mux.Use(middleware.ClientIPFromRemoteAddr)
-	mux.Use(middleware.RequestID)
-	mux.Use(middleware.Recoverer)
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://localhost:5173", "http://localhost:5173"},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
@@ -40,6 +33,13 @@ func NewRouter(
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+	mux.Use(middleware.Logger)
+	mux.Use(AuthMiddleware(tokenService))
+	mux.Use(FirewallMiddleware(oas, errorHandler))
+	mux.Use(middleware.AllowContentType(contenttype.ApplicationJson))
+	mux.Use(middleware.ClientIPFromRemoteAddr)
+	mux.Use(middleware.RequestID)
+	mux.Use(middleware.Recoverer)
 
 	mux.Get("/ws", wsHandler.handlerFunc)
 	

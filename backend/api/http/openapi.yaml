@@ -116,13 +116,6 @@ paths:
       summary: Refresh access tokens.
       description: Refresh access tokens.
       operationId: refreshTokens
-      requestBody:
-        description: refresh tokens
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Credentials'
-        required: true
       responses:
         '200':
           description: Successful operation
