@@ -6,6 +6,7 @@ import (
 	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/platform/auth"
+	"messenger/messenger/internal/platform/transport/http/cookies"
 	"messenger/messenger/internal/platform/transport/http/headers"
 	"messenger/messenger/internal/shared/application/apperr"
 	"net/http"
@@ -23,7 +24,8 @@ func AuthMiddleware(tokenService *token.Service) func(next http.Handler) http.Ha
 			ctx := r.Context()
 
 			switch {
-			case isHeaderPresentInRequest(r, headers.Authorization):
+			case isHeaderPresentInRequest(r, headers.Authorization),
+			isCookiePresentInRequest(r, cookies.AccessToken):
 				claims, err := tokenService.ParseAccessTokenFromRequestAndGetClaims(r)
 				if err != nil {
 					next.ServeHTTP(w, r)
@@ -62,6 +64,11 @@ func AuthMiddleware(tokenService *token.Service) func(next http.Handler) http.Ha
 func isHeaderPresentInRequest(r *http.Request, header string) bool {
 	h := r.Header.Get(header)
 	return h != ""
+}
+
+func isCookiePresentInRequest(r *http.Request, cookieName string) bool {
+	_, err := r.Cookie(cookieName)
+	return err == nil
 }
 
 func FirewallMiddleware(oas *openapi3.T, errHandler *ErrorHandler) func(next http.Handler) http.Handler {

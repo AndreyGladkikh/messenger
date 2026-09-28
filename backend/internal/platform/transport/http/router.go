@@ -26,7 +26,7 @@ func NewRouter(
 	mux := chi.NewMux()
 
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://localhost:5173", "http://localhost:5173"},
+		AllowedOrigins:   []string{"https://localhost:5173", "http://localhost:5173", "localhost:5173"},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
 		AllowedHeaders:   []string{headers.Accept, headers.Authorization, headers.ContentType, headers.XCSRFToken},
 		ExposedHeaders:   []string{headers.Link},
@@ -35,24 +35,36 @@ func NewRouter(
 	}))
 	mux.Use(middleware.Logger)
 	mux.Use(AuthMiddleware(tokenService))
-	mux.Use(FirewallMiddleware(oas, errorHandler))
+	// mux.Use(FirewallMiddleware(oas, errorHandler))
 	mux.Use(middleware.AllowContentType(contenttype.ApplicationJson))
 	mux.Use(middleware.ClientIPFromRemoteAddr)
 	mux.Use(middleware.RequestID)
 	mux.Use(middleware.Recoverer)
 
+	mux.Group(func(r chi.Router) {
+		r.Use(FirewallMiddleware(oas, errorHandler))
+		HandlerFromMux(NewStrictHandlerWithOptions(
+			apiHandler, 
+			nil, 
+			StrictHTTPServerOptions{
+				RequestErrorHandlerFunc: errorHandler.Handle,
+				ResponseErrorHandlerFunc: errorHandler.Handle,
+			},
+		), r)
+	})
+
 	mux.Get("/ws", wsHandler.handlerFunc)
 	
-	strictServer := NewStrictHandlerWithOptions(
-		apiHandler, 
-		nil, 
-		StrictHTTPServerOptions{
-			RequestErrorHandlerFunc: errorHandler.Handle,
-			ResponseErrorHandlerFunc: errorHandler.Handle,
-		},
-	)
+	// strictServer := NewStrictHandlerWithOptions(
+	// 	apiHandler, 
+	// 	nil, 
+	// 	StrictHTTPServerOptions{
+	// 		RequestErrorHandlerFunc: errorHandler.Handle,
+	// 		ResponseErrorHandlerFunc: errorHandler.Handle,
+	// 	},
+	// )
 
-	return HandlerFromMux(strictServer, mux), nil
+	return mux, nil
 }
 
 // import (

@@ -52,6 +52,5 @@ func (s *Subscription) AddChannels(ctx context.Context, channels ...string) {
 }
 
 func (s *Subscription) Cancel(ctx context.Context) {
-	close(s.ch)
 	s.pubsub.removeSubscription(ctx, s)
 }

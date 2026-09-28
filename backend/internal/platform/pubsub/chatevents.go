@@ -61,7 +61,7 @@ func (s *ChatEventsSubscription) Read(ctx context.Context) (event.Envelope[domai
 }
 
 func (s *ChatEventsSubscription) Cancel(ctx context.Context) {
-	s.Cancel(ctx)
+	s.subscription.Cancel(ctx)
 }
 
 func (s *ChatEventsSubscription) AddChats(ctx context.Context, chatIDs ...uuid.UUID) {

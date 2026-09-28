@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/messaging/domain/message"
+	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
-	"messenger/messenger/internal/platform/transport/http/auth"
 	"messenger/messenger/internal/shared/application/apperr"
 	"net/http"
 	"sync"
@@ -53,13 +54,16 @@ func NewWebsocketHandler(
 }
 
 func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
-	userID, _ := auth.UserIDFromContext(r.Context())
-	sessionID, _ := auth.SessionIDFromContext(r.Context())
+	a, err := auth.AuthFromContext(r.Context())
+	if err != nil {
+		err = fmt.Errorf("%w: %w", authDomain.ErrUnauthorized, err)
+		http.Error(w, "failed to accept websocket connection: unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ctx = auth.NewContextWithUserID(ctx, userID)
-	ctx = auth.NewContextWithSessionID(ctx, sessionID)
+	ctx = auth.NewContextWithAuth(ctx, a)
 
 	c, err := newWSConnection(w, r)
 	if err != nil {
@@ -78,14 +82,6 @@ func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
 		wg       sync.WaitGroup
 		errCause error // an error that causes the ws connection to close
 	)
-
-	// wg.Go(func() {
-	// 	// todo rename listenWS
-	// 	if err := h.listenWSInbound(ctx, c); err != nil {
-	// 		h.logger.ErrorContext(ctx, "websocket handler: ws inbound listener failed", "error", err.Error())
-	// 	}
-	// 	cancel()
-	// })
 
 	wg.Go(func() {
 		if err := h.readLoop(ctx, c); err != nil {
@@ -117,14 +113,6 @@ func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
 		cancel()
 	})
 
-	// wg.Go(func() {
-	// 	// todo rename listenEvents
-	// 	if err := h.listenSubscribers(ctx, c); err != nil {
-	// 		h.logger.ErrorContext(ctx, "websocket handler: pubsub listener failed", "error", err.Error())
-	// 	}
-	// 	cancel()
-	// })
-
 	wg.Wait()
 
 	if errors.Is(err, errConnTooSlow) {
@@ -133,66 +121,14 @@ func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.Close(websocket.StatusInternalError, "internal error")
-
-	// for {
-	// 	// for _, msg := range h.pubSubHub.Subscriptions() {
-
-	// 	// }
-
-	// 	var inbound WSMessage
-
-	// 	err = wsjson.Read(context.Background(), c, &inbound)
-	// 	if err != nil {
-	// 		write(c, newResponse(inbound.ID, nil, err))
-	// 		continue
-	// 	}
-
-	// 	var command command.Command
-	// 	var query query.Query
-
-	// 	switch inbound.Type {
-	// 	case wsMessageTypeSendMessage:
-	// 		// todo handle data type
-	// 		mData := inbound.Data.(map[string]any)
-
-	// 		chatID := uuid.MustParse(mData["chatId"].(string))
-	// 		var replyToMessageID uuid.UUID
-	// 		if v, ok := mData["replyToMessageId"].(string); ok {
-	// 			replyToMessageID = uuid.MustParse(v)
-	// 		}
-
-	// 		command = &send_message.Command{
-	// 			SenderID:         userID,
-	// 			ChatID:           chatID,
-	// 			MessageBody:      mData["body"].(string),
-	// 			ReplyToMessageID: replyToMessageID,
-	// 		}
-	// 	default:
-	// 		write(c, newResponse(inbound.ID, nil, errors.New("unknown message type")))
-	// 		continue
-	// 	}
-
-	// 	if command != nil {
-	// 		response, err := h.commandBus.Dispatch(context.Background(), command)
-	// 		write(c, newResponse(inbound.ID, response, err))
-	// 		continue
-	// 	}
-
-	// 	if query != nil {
-	// 		response, err := h.queryBus.Dispatch(context.Background(), query)
-	// 		write(c, newResponse(inbound.ID, response, err))
-	// 		continue
-	// 	}
-	// }
 }
 
 func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.ChatEventsSubscription, error) {
-	userID, _ := auth.UserIDFromContext(ctx)
-	sessionID, _ := auth.SessionIDFromContext(ctx)
+	a, _ := auth.AuthFromContext(ctx)
 
 	subscription, err := h.pubsub.Subscription(
 		ctx,
-		fmt.Sprintf("%s:chat_events", sessionID),
+		fmt.Sprintf("%s:chat_events", a.SessionID),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to subscribe to chat events: %w", err)
@@ -200,7 +136,7 @@ func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.C
 	defer subscription.Cancel(ctx)
 
 	// todo refactor to app query
-	userChatIDs, err := h.storage.Queries(ctx).ListChatIDsForUser(ctx, userID)
+	userChatIDs, err := h.storage.Queries(ctx).ListChatIDsForUser(ctx, a.Principal.Subject.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -212,44 +148,10 @@ func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.C
 	return subscription, nil
 }
 
-// func (h *WebsocketHandler) listenWSInbound(ctx context.Context, c *websocket.Conn) error {
-// 	for {
-// 		select {
-// 		case <-ctx.Done():
-// 			return nil
-// 		default:
-// 			m, err := read(ctx, c)
-// 			if err != nil {
-// 				if errors.Is(err, context.Canceled) ||
-// 					websocket.CloseStatus(err) == websocket.StatusNormalClosure ||
-// 					websocket.CloseStatus(err) == websocket.StatusGoingAway {
-// 					return nil
-// 				}
-// 				h.logger.ErrorContext(ctx, "websocket handler: failed to read message", "error", err.Error())
-// 				if errors.Is(err, errReadWSMessage) {
-// 					return err
-// 				}
-// 				if errors.Is(err, errParseWSMessage) {
-// 					write(ctx, c, newResponse(m.ID, nil, errors.New("invalid message format")))
-// 					continue
-// 				}
-// 				write(ctx, c, newResponse(m.ID, nil, errors.New("internal error")))
-// 				continue
-// 			}
-// 			response, err := h.processWSMessage(ctx, m)
-// 			if err != nil {
-// 				h.logger.ErrorContext(ctx, "websocket handler: failed to process message", "error", err.Error())
-// 				write(ctx, c, newResponse(m.ID, nil, err))
-// 				continue
-// 			}
-// 			write(ctx, c, newResponse(m.ID, response, nil))
-// 		}
-// 	}
-// }
-
 // todo renemae to processClientMessage
 func (h *WebsocketHandler) processWSMessage(ctx context.Context, m WSMessage) (any, error) {
-	userID, _ := auth.UserIDFromContext(ctx)
+	a, _ := auth.AuthFromContext(ctx)
+	// userID, _ := auth.UserIDFromContext(ctx)
 
 	switch m.Type {
 	case wsMessageTypeSendMessage:
@@ -259,12 +161,12 @@ func (h *WebsocketHandler) processWSMessage(ctx context.Context, m WSMessage) (a
 		}
 
 		command := &send_message.Command{
-			SenderID:         userID,
+			SenderID:         a.Principal.Subject.ID,
 			ChatID:           data.ChatID,
 			MessageBody:      data.Body,
 			ReplyToMessageID: data.ReplyToMessageID,
 		}
-		return h.commandBus.Dispatch(ctx, command)
+		return commandbus.Dispatch[any](ctx, h.commandBus, command)
 	// case wsMessageTypeAddSubscription:
 	// 	data, err := decodeWSMessageDataAsType[map[string]any](m.Data)
 	// 	if err != nil {
@@ -282,93 +184,6 @@ func (h *WebsocketHandler) processWSMessage(ctx context.Context, m WSMessage) (a
 	}
 }
 
-// func (h *WebsocketHandler) listenWSInboundV1(ctx context.Context, c *websocket.Conn, userID, sessionID uuid.UUID) error {
-// 	for {
-// 		var inbound WSMessage
-
-// 		err := wsjson.Read(ctx, c, &inbound)
-// 		if err != nil {
-// 			write(c, newResponse(inbound.ID, nil, err))
-// 			continue
-// 		}
-
-// 		var command command.Command
-// 		var query query.Query
-
-// 		switch inbound.Type {
-// 		case wsMessageTypeSendMessage:
-// 			// todo handle data type
-// 			mData := inbound.Data.(map[string]any)
-
-// 			chatID := uuid.MustParse(mData["chatId"].(string))
-// 			var replyToMessageID uuid.UUID
-// 			if v, ok := mData["replyToMessageId"].(string); ok {
-// 				replyToMessageID = uuid.MustParse(v)
-// 			}
-
-// 			command = &send_message.Command{
-// 				SenderID:         userID,
-// 				ChatID:           chatID,
-// 				MessageBody:      mData["body"].(string),
-// 				ReplyToMessageID: replyToMessageID,
-// 			}
-// 		case wsMessageTypeAddSubscription:
-// 			// todo handle data type
-// 			mData := inbound.Data.(map[string]any)
-// 			sub := mData["sub"].(string)
-
-// 			_, err = h.pubSubHub.Subscribe(ctx, fmt.Sprintf("%s:%s:%s", userID, sessionID, sub), []string{sub})
-// 			if err != nil {
-// 				return err
-// 			}
-// 		default:
-// 			write(c, newResponse(inbound.ID, nil, errors.New("unknown message type")))
-// 			continue
-// 		}
-
-// 		if command != nil {
-// 			response, err := h.commandBus.Dispatch(ctx, command)
-// 			write(c, newResponse(inbound.ID, response, err))
-// 			continue
-// 		}
-
-// 		if query != nil {
-// 			response, err := h.queryBus.Dispatch(ctx, query)
-// 			write(c, newResponse(inbound.ID, response, err))
-// 			continue
-// 		}
-// 	}
-// }
-
-// func (h *WebsocketHandler) listenSubscribers(ctx context.Context, c *websocket.Conn) error {
-// 	for {
-// 		for _, s := range h.pubSubHub.Subscriptions() {
-// 			for _, msg := range s.Messages(0) {
-// 				m, ok := msg.Payload.(map[string]any)
-// 				if !ok {
-// 					continue
-// 				}
-// 				mType, ok := m["type"]
-// 				if !ok {
-// 					continue
-// 				}
-// 				mData, ok := m["data"]
-// 				if !ok {
-// 					continue
-// 				}
-
-// 				switch mType {
-// 				case pubsub.MessageTypeMessageSent:
-// 					write(ctx, c, NewWSMessage(wsMessageTypeMessageSent, mData))
-// 					continue
-// 				default:
-// 					continue
-// 				}
-// 			}
-// 		}
-// 	}
-// }
-
 func decodeWSMessageDataAsType[T any](data json.RawMessage) (T, error) {
 	var result T
 	err := json.Unmarshal(data, &result)
@@ -377,32 +192,6 @@ func decodeWSMessageDataAsType[T any](data json.RawMessage) (T, error) {
 	}
 	return result, nil
 }
-
-// func read(ctx context.Context, c *wsConnn) (WSMessage, error) {
-// 	var wsm WSMessage
-
-// 	mt, m, err := c.Read(ctx)
-// 	if err != nil {
-// 		return wsm, fmt.Errorf("%w: %w", errReadWSMessage, err)
-// 	}
-
-// 	_=mt
-
-// 	err = json.Unmarshal(m, &wsm)
-// 	if err != nil {
-// 		return wsm, fmt.Errorf("%w: failed to unmarshal JSON: %w", errParseWSMessage, err)
-// 	}
-
-// 	return wsm, nil
-// }
-
-// func write(ctx context.Context, c *wsConnn, msg any) error {
-// 	// todo test timeout
-// 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-// 	defer cancel()
-
-// 	return wsjson.Write(ctx, c.Conn, msg)
-// }
 
 type WSMessageType string
 
@@ -487,22 +276,6 @@ func withError(err error) wsMessageOption {
 	}
 }
 
-// conn, loops
-
-// type wsConnn struct {
-// 	c *websocket.Conn
-// 	send chan WSMessage
-// }
-
-// func newWSConnection(
-// 	conn *websocket.Conn,
-// ) *wsConnn {
-// 	return &wsConnn{
-// 		c: conn,
-// 		send: make(chan WSMessage, 256),
-// 	}
-// }
-
 type wsConnn struct {
 	*websocket.Conn
 	send chan WSMessage
@@ -512,7 +285,9 @@ func newWSConnection(
 	w http.ResponseWriter,
 	r *http.Request,
 ) (*wsConnn, error) {
-	c, err := websocket.Accept(w, r, nil)
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		OriginPatterns: []string{"localhost:5173"},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -551,10 +326,6 @@ func (c *wsConnn) write(ctx context.Context, msg any) error {
 
 	return wsjson.Write(ctx, c.Conn, msg)
 }
-
-// func (c *wsConnn) closeSlow() {
-// 	c.Close(websocket.StatusPolicyViolation, "connection too slow to keep up with messages")
-// }
 
 func (c *wsConnn) enqueueWrite(ctx context.Context, m WSMessage) error {
 	select {

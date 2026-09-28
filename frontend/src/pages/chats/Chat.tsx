@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { Card, RowCard } from '@/shared/ui/pouf/surface'
 import { Shell, Sidebar, Stack, Row, Spacer } from '@/shared/ui/pouf/layout'
@@ -12,6 +12,7 @@ import { NavLink } from '@/shared/ui/pouf/NavLink'
 import { BottomNav, type NavItem } from '@/shared/ui/pouf/BottomNav'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/shared/api'
+import config from '@/shared/config'
 
 const NAV: NavItem[] = [
     { href: '/', label: 'Overview', icon: 'overview', tone: 'purple' },
@@ -72,6 +73,25 @@ const PANES =
     'grid [grid-template-columns:minmax(0,280px)_minmax(0,1fr)] min-h-[520px] max-[900px]:[grid-template-columns:minmax(0,1fr)]'
 
 export default function ChatPage() {
+    useEffect(() => {
+        console.log('eff');
+
+        const ws = new WebSocket(config.wsUrl);
+
+        ws.onopen = () => {
+            console.log('ws opened');
+        }
+
+        ws.onmessage = (event) => console.log('Новое сообщение:', event.data)
+
+        return () => {
+            console.log('eff unmount');
+
+            ws.close()
+            console.log('ws closed');
+        }
+    }, [])
+
     const [threads, setThreads] = useState<Record<string, Message[]>>(SEED)
     const [draft, setDraft] = useState('')
     const [active, setActive] = useState('maya')
