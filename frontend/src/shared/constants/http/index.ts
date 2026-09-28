@@ -17,6 +17,7 @@ const header = {
 
 const contentType = {
     json: 'application/json',
+    problemPlusJson: 'application/problem+json',
 }
 
 const cookie = {

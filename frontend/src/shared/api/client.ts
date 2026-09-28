@@ -105,8 +105,7 @@ async function parseSuccess(response: Response): Promise<any> {
     const contentType = response.headers.get(http.header.contentType);
     if (contentType?.includes(http.contentType.json)) {
         try {
-            const responseData = await response.json()
-            return responseData.data
+            return await response.json()
         } catch (e) {
             throw new UnexpectedError()
         }
@@ -121,7 +120,7 @@ async function parseSuccess(response: Response): Promise<any> {
 
 async function parseError(response: Response): Promise<any> {
     const contentType = response.headers.get(http.header.contentType);
-    if (!contentType?.includes(http.contentType.json)) {
+    if (!contentType?.includes(http.contentType.problemPlusJson)) {
         throw new UnexpectedError()
     }
     
@@ -130,16 +129,16 @@ async function parseError(response: Response): Promise<any> {
 
         if (response.status === http.status.unauthorized) {
             throw new UnauthenticatedError(
-                responseData?.error?.message,
-                responseData?.error?.code,
+                responseData.title,
+                responseData.code,
             )
         }
 
         throw new ApiError(
             response.status,
-            responseData?.error?.message || UNEXPECTED_ERROR_MESSAGE,
-            responseData?.error?.code,
-            responseData?.error?.details,
+            responseData.title || UNEXPECTED_ERROR_MESSAGE,
+            responseData.code,
+            responseData.errors,
         );
     } catch (e) {
         throw new UnexpectedError()
