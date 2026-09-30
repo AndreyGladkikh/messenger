@@ -54,6 +54,6 @@ func (r *UserRepository) GetByLogin(ctx context.Context, login string) (*user.Us
 		u.ID,
 		u.Login,
 		u.PasswordHash,
-		u.Name.String,
+		u.DisplayName,
 	), nil
 }

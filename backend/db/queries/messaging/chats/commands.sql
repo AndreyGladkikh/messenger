@@ -1,7 +1,7 @@
 -- name: CreateChat :exec
 INSERT INTO messaging.chats (
     id,
-    kind,
+    type,
     name
 ) VALUES (
   $1, $2, $3

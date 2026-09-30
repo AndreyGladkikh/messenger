@@ -12,7 +12,7 @@ import (
 )
 
 const getChat = `-- name: GetChat :one
-SELECT id, kind, name, created_at, deleted_at FROM messaging.chats
+SELECT id, type, name, created_at, deleted_at FROM messaging.chats
 WHERE id = $1
 `
 
@@ -21,7 +21,7 @@ func (q *Queries) GetChat(ctx context.Context, id uuid.UUID) (MessagingChat, err
 	var i MessagingChat
 	err := row.Scan(
 		&i.ID,
-		&i.Kind,
+		&i.Type,
 		&i.Name,
 		&i.CreatedAt,
 		&i.DeletedAt,
@@ -108,7 +108,7 @@ func (q *Queries) GetSessionByRefreshTokenHash(ctx context.Context, refreshToken
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT id, login, password_hash, name, created_at, deleted_at FROM auth.users
+SELECT id, login, password_hash, display_name, username, created_at, deleted_at FROM auth.users
 WHERE login = $1
 `
 
@@ -119,7 +119,8 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (AuthUser, e
 		&i.ID,
 		&i.Login,
 		&i.PasswordHash,
-		&i.Name,
+		&i.DisplayName,
+		&i.Username,
 		&i.CreatedAt,
 		&i.DeletedAt,
 	)
@@ -156,7 +157,7 @@ func (q *Queries) ListChatIDsForUser(ctx context.Context, participantID uuid.UUI
 }
 
 const listChatsForUser = `-- name: ListChatsForUser :many
-SELECT id, kind, name, created_at, deleted_at FROM messaging.chats
+SELECT id, type, name, created_at, deleted_at FROM messaging.chats
 WHERE id = ANY(
     SELECT chat_id
     FROM messaging.chat_participants
@@ -184,7 +185,7 @@ func (q *Queries) ListChatsForUser(ctx context.Context, arg ListChatsForUserPara
 		var i MessagingChat
 		if err := rows.Scan(
 			&i.ID,
-			&i.Kind,
+			&i.Type,
 			&i.Name,
 			&i.CreatedAt,
 			&i.DeletedAt,
@@ -246,7 +247,7 @@ const privateChatExists = `-- name: PrivateChatExists :one
 SELECT EXISTS(
     SELECT 1 
     FROM messaging.chats c
-    WHERE c.kind = 'private_chat'
+    WHERE c.type = 'private_chat'
     AND EXISTS(SELECT 1 FROM messaging.chat_participants cp WHERE cp.chat_id = c.id AND cp.participant_id = $1)
     AND EXISTS(SELECT 1 FROM messaging.chat_participants cp WHERE cp.chat_id = c.id AND cp.participant_id = $2)
 )

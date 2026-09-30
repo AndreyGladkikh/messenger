@@ -25,7 +25,7 @@ WHERE id = ANY(
 SELECT EXISTS(
     SELECT 1 
     FROM messaging.chats c
-    WHERE c.kind = 'private_chat'
+    WHERE c.type = 'private_chat'
     AND EXISTS(SELECT 1 FROM messaging.chat_participants cp WHERE cp.chat_id = c.id AND cp.participant_id = $1)
     AND EXISTS(SELECT 1 FROM messaging.chat_participants cp WHERE cp.chat_id = c.id AND cp.participant_id = $2)
 );

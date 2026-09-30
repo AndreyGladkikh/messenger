@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AuthBot struct {
+	ID          uuid.UUID
+	OwnerID     uuid.UUID
+	DisplayName string
+	Username    string
+	CreatedAt   pgtype.Timestamptz
+	DeletedAt   pgtype.Timestamptz
+}
+
+type AuthBotToken struct {
+	ID        uuid.UUID
+	BotID     uuid.UUID
+	TokenHash string
+	RevokedAt pgtype.Timestamptz
+}
+
 type AuthSession struct {
 	ID               uuid.UUID
 	UserID           uuid.UUID
@@ -27,7 +43,8 @@ type AuthUser struct {
 	ID           uuid.UUID
 	Login        string
 	PasswordHash string
-	Name         pgtype.Text
+	DisplayName  string
+	Username     string
 	CreatedAt    pgtype.Timestamptz
 	DeletedAt    pgtype.Timestamptz
 }
@@ -39,9 +56,17 @@ type Inbox struct {
 	ExecutedAt pgtype.Timestamptz
 }
 
+type MessagingChannel struct {
+	ID        uuid.UUID
+	OwnerID   uuid.UUID
+	Name      pgtype.Text
+	CreatedAt pgtype.Timestamptz
+	DeletedAt pgtype.Timestamptz
+}
+
 type MessagingChat struct {
 	ID        uuid.UUID
-	Kind      string
+	Type      string
 	Name      pgtype.Text
 	CreatedAt pgtype.Timestamptz
 	DeletedAt pgtype.Timestamptz

@@ -29,7 +29,7 @@ func NewChatRepository(
 func (r *ChatRepository) Add(ctx context.Context, chat *chat.Chat) error {
 	err := r.Queries(ctx).CreateChat(ctx, sqlc.CreateChatParams{
 		ID:   chat.ID(),
-		Kind: string(chat.Type()),
+		Type: string(chat.Type()),
 		Name: db.ToDBText(chat.Name()),
 	})
 	if err != nil {
@@ -85,7 +85,7 @@ func (r *ChatRepository) Get(ctx context.Context, chatID uuid.UUID) (*chat.Chat,
 
 	chat := chat.Rehydrate(
 		chatRow.ID,
-		chat.ChatType(chatRow.Kind),
+		chat.ChatType(chatRow.Type),
 		chatRow.Name.String,
 	)
 

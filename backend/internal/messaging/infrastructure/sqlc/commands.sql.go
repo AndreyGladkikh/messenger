@@ -23,7 +23,7 @@ type AddParticipantsToChatParams struct {
 const createChat = `-- name: CreateChat :exec
 INSERT INTO messaging.chats (
     id,
-    kind,
+    type,
     name
 ) VALUES (
   $1, $2, $3
@@ -32,12 +32,12 @@ INSERT INTO messaging.chats (
 
 type CreateChatParams struct {
 	ID   uuid.UUID
-	Kind string
+	Type string
 	Name pgtype.Text
 }
 
 func (q *Queries) CreateChat(ctx context.Context, arg CreateChatParams) error {
-	_, err := q.db.Exec(ctx, createChat, arg.ID, arg.Kind, arg.Name)
+	_, err := q.db.Exec(ctx, createChat, arg.ID, arg.Type, arg.Name)
 	return err
 }
 
