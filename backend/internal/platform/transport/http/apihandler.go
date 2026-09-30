@@ -49,7 +49,7 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 	q := &get_current_user.Query{
 		UserID: a.Principal.Subject.ID,
 	}
-	response, err := querybus.Dispatch[get_current_user.AuthView](ctx, h.queryBus, q)
+	response, err := h.queryBus.Dispatch[get_current_user.AuthView](ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (h *ApiHandler) GetMyChatList(ctx context.Context, request GetMyChatListReq
 	query := &get_chat_list.Query{
 		UserID: a.Principal.Subject.ID,
 	}
-	response, err := querybus.Dispatch[get_chat_list.ChatListView](ctx, h.queryBus, query)
+	response, err := h.queryBus.Dispatch[get_chat_list.ChatListView](ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 		IP:        ip,
 		UserAgent: request.Params.UserAgent,
 	}
-	response, err := commandbus.Dispatch[login.Response](ctx, h.commandBus, command)
+	response, err := h.commandBus.Dispatch[login.Response](ctx, command)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensReq
 	command := &refresh.Command{
 		RefreshToken: request.Params.RefreshToken,
 	}
-	response, err := commandbus.Dispatch[refresh.Response](ctx, h.commandBus, command)
+	response, err := h.commandBus.Dispatch[refresh.Response](ctx, command)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (h *ApiHandler) Register(ctx context.Context, request RegisterRequestObject
 		IP:        ip,
 		UserAgent: request.Params.UserAgent,
 	}
-	response, err := commandbus.Dispatch[register.Response](ctx, h.commandBus, command)
+	response, err := h.commandBus.Dispatch[register.Response](ctx, command)
 	if err != nil {
 		return nil, err
 	}

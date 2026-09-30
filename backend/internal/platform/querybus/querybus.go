@@ -19,17 +19,7 @@ func NewBus() *Bus {
 	}
 }
 
-func (b *Bus) Dispatch(ctx context.Context, q query.Query) (any, error) {
-	handler, ok := b.handlers[q.Name()]
-	if !ok {
-		var zero any
-		return zero, fmt.Errorf("query bus: not found handler for query '%s'", q.Name())
-	}
-
-	return handler.Handle(ctx, q)
-}
-
-func Dispatch[R any](ctx context.Context, b *Bus, q query.Query) (R, error) {
+func (b *Bus) Dispatch[R any](ctx context.Context, q query.Query) (R, error) {
 	var zero R
 
 	handler, ok := b.handlers[q.Name()]
@@ -50,15 +40,7 @@ func Dispatch[R any](ctx context.Context, b *Bus, q query.Query) (R, error) {
 	return typedResponse, nil
 }
 
-func (b *Bus) Use(middleware Middleware) {
-	for c, h := range b.handlers {
-		b.handlers[c] = middleware(h)
-	}
-
-	b.middlewares = append(b.middlewares, middleware)
-}
-
-func RegisterHandler[Q query.Query, R any](b *Bus, handler query.Handler[Q, R]) error {
+func (b *Bus) RegisterHandler[Q query.Query, R any](handler query.Handler[Q, R]) error {
 	q := *new(Q)
 
 	var adapted QueryHandler = AppQueryHandlerAdapter[Q, R]{handler: handler}
@@ -71,6 +53,14 @@ func RegisterHandler[Q query.Query, R any](b *Bus, handler query.Handler[Q, R]) 
 	}
 	b.handlers[q.Name()] = adapted
 	return nil
+}
+
+func (b *Bus) Use(middleware Middleware) {
+	for c, h := range b.handlers {
+		b.handlers[c] = middleware(h)
+	}
+
+	b.middlewares = append(b.middlewares, middleware)
 }
 
 type QueryHandler query.Handler[query.Query, any]
@@ -106,8 +96,8 @@ func InitBus(
 ) *Bus {
 	b := NewBus()
 
-	RegisterHandler(b, getChatListHandler)
-	RegisterHandler(b, getCurrentUserHandler)
+	b.RegisterHandler(getChatListHandler)
+	b.RegisterHandler(getCurrentUserHandler)
 
 	return b
 }

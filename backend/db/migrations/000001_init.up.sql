@@ -5,9 +5,26 @@ CREATE TABLE auth.users(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    name TEXT,
+    display_name TEXT NOT NULL,
+    username TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE auth.bots(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL REFERENCES auth.users,
+    display_name TEXT NOT NULL,
+    username TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE auth.bot_tokens(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bot_id UUID NOT NULL REFERENCES auth.bots ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    revoked_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE auth.sessions(
@@ -26,7 +43,15 @@ CREATE INDEX session_refresh_token_index on auth.sessions (refresh_token_hash);
 
 CREATE TABLE messaging.chats(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    kind TEXT NOT NULL,
+    type TEXT NOT NULL,
+    name TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE messaging.channels(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL,
     name TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     deleted_at TIMESTAMP WITH TIME ZONE

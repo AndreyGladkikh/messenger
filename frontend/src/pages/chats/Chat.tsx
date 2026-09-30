@@ -73,24 +73,24 @@ const PANES =
     'grid [grid-template-columns:minmax(0,280px)_minmax(0,1fr)] min-h-[520px] max-[900px]:[grid-template-columns:minmax(0,1fr)]'
 
 export default function ChatPage() {
-    useEffect(() => {
-        console.log('eff');
+    // useEffect(() => {
+    //     console.log('eff');
 
-        const ws = new WebSocket(config.wsUrl);
+    //     const ws = new WebSocket(config.wsUrl);
 
-        ws.onopen = () => {
-            console.log('ws opened');
-        }
+    //     ws.onopen = () => {
+    //         console.log('ws opened');
+    //     }
 
-        ws.onmessage = (event) => console.log('Новое сообщение:', event.data)
+    //     ws.onmessage = (event) => console.log('Новое сообщение:', event.data)
 
-        return () => {
-            console.log('eff unmount');
+    //     return () => {
+    //         console.log('eff unmount');
 
-            ws.close()
-            console.log('ws closed');
-        }
-    }, [])
+    //         ws.close()
+    //         console.log('ws closed');
+    //     }
+    // }, [])
 
     const [threads, setThreads] = useState<Record<string, Message[]>>(SEED)
     const [draft, setDraft] = useState('')

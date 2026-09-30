@@ -6,9 +6,12 @@ DROP TABLE IF EXISTS messaging.files;
 DROP TABLE IF EXISTS messaging.messages;
 DROP TABLE IF EXISTS messaging.private_chats;
 DROP TABLE IF EXISTS messaging.chat_participants;
+DROP TABLE IF EXISTS messaging.channels;
 DROP TABLE IF EXISTS messaging.chats;
 
 DROP TABLE IF EXISTS auth.sessions;
+DROP TABLE IF EXISTS auth.bot_tokens;
+DROP TABLE IF EXISTS auth.bots;
 DROP TABLE IF EXISTS auth.users;
 
 DROP SCHEMA IF EXISTS auth;

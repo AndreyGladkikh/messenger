@@ -17,22 +17,12 @@ func NewBus() *Bus {
 	}
 }
 
-func (b *Bus) Dispatch(ctx context.Context, c command.Command) (any, error) {
-	handler, ok := b.handlers[c.Name()]
-	if !ok {
-		var zero any
-		return zero, fmt.Errorf("не найден обработчик команды '%s'", c.Name())
-	}
-
-	return handler.Handle(ctx, c)
-}
-
-func Dispatch[R any](ctx context.Context, b *Bus, c command.Command) (R, error) {
+func (b *Bus) Dispatch[R any](ctx context.Context, c command.Command) (R, error) {
 	var zero R
 
 	handler, ok := b.handlers[c.Name()]
 	if !ok {
-		return zero, fmt.Errorf("не найден обработчик команды '%s'", c.Name())
+		return zero, fmt.Errorf("command bus: not found handler for command '%s'", c.Name())
 	}
 
 	response, err := handler.Handle(ctx, c)
@@ -48,15 +38,7 @@ func Dispatch[R any](ctx context.Context, b *Bus, c command.Command) (R, error) 
 	return typedResponse, nil
 }
 
-func (b *Bus) Use(middleware Middleware) {
-	for c, h := range b.handlers {
-		b.handlers[c] = middleware(h)
-	}
-
-	b.middlewares = append(b.middlewares, middleware)
-}
-
-func RegisterHandler[C command.Command, R any](b *Bus, handler command.Handler[C, R]) error {
+func (b *Bus) RegisterHandler[C command.Command, R any](handler command.Handler[C, R]) error {
 	c := *new(C)
 
 	var adapted CommandHandler = &AppCommandHandlerAdapter[C, R]{handler: handler}
@@ -69,6 +51,14 @@ func RegisterHandler[C command.Command, R any](b *Bus, handler command.Handler[C
 	}
 	b.handlers[c.Name()] = adapted
 	return nil
+}
+
+func (b *Bus) Use(middleware Middleware) {
+	for c, h := range b.handlers {
+		b.handlers[c] = middleware(h)
+	}
+
+	b.middlewares = append(b.middlewares, middleware)
 }
 
 type CommandHandler command.Handler[command.Command, any]

@@ -49,11 +49,11 @@ func BuildCommandBus(
 	bus.Use(loggingMiddlewareContainer.Middleware)
 	bus.Use(middlewares.ErrorMapping)
 
-	commandbus.RegisterHandler(bus, registerUserHandler)
-	commandbus.RegisterHandler(bus, loginHandler)
-	commandbus.RegisterHandler(bus, refreshSessionHandler)
-	commandbus.RegisterHandler(bus, sendMessageHandler)
-	commandbus.RegisterHandler(bus, createPrivateChatHandler)
+	bus.RegisterHandler(registerUserHandler)
+	bus.RegisterHandler(loginHandler)
+	bus.RegisterHandler(refreshSessionHandler)
+	bus.RegisterHandler(sendMessageHandler)
+	bus.RegisterHandler(createPrivateChatHandler)
 
 	return bus
 }

@@ -166,7 +166,7 @@ func (h *WebsocketHandler) processWSMessage(ctx context.Context, m WSMessage) (a
 			MessageBody:      data.Body,
 			ReplyToMessageID: data.ReplyToMessageID,
 		}
-		return commandbus.Dispatch[any](ctx, h.commandBus, command)
+		return h.commandBus.Dispatch[any](ctx, command)
 	// case wsMessageTypeAddSubscription:
 	// 	data, err := decodeWSMessageDataAsType[map[string]any](m.Data)
 	// 	if err != nil {
