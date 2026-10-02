@@ -1,6 +1,6 @@
 package get_current_user
 
-import "github.com/google/uuid"
+import "uuid"
 
 const QueryName = "GetCurrentUser"
 

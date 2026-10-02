@@ -9,13 +9,13 @@ import (
 	"context"
 	"net/netip"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"uuid"
 )
 
 type AddParticipantsToChatParams struct {
 	ID            uuid.UUID
-	ChatID        uuid.NullUUID
+	ChatID        *uuid.UUID
 	ParticipantID uuid.UUID
 	Role          string
 }
@@ -87,7 +87,7 @@ type CreateMessageParams struct {
 	SenderID         uuid.UUID
 	ChatID           uuid.UUID
 	Body             string
-	ReplyToMessageID uuid.NullUUID
+	ReplyToMessageID *uuid.UUID
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {

@@ -10,7 +10,8 @@ import (
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
 
-	"github.com/google/uuid"
+	"uuid"
+
 	"github.com/jackc/pgx/v5/pgconn"
 )
 

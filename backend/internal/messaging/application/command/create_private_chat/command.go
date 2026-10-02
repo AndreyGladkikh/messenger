@@ -1,6 +1,6 @@
 package create_private_chat
 
-import "github.com/google/uuid"
+import "uuid"
 
 var CommandName = "CreatePrivateChat"
 

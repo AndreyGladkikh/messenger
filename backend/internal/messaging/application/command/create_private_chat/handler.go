@@ -5,7 +5,7 @@ import (
 	"messenger/messenger/internal/messaging/domain/chat"
 	"messenger/messenger/internal/messaging/domain/chat_participant"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type Handler struct {

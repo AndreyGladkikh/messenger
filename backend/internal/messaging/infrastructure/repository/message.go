@@ -7,7 +7,7 @@ import (
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/repository"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type MessageRepository struct {

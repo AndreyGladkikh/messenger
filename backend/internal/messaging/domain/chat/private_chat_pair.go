@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type PrivateChatPair struct {

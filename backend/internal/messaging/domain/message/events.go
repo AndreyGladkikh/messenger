@@ -1,6 +1,6 @@
 package message
 
-import "github.com/google/uuid"
+import "uuid"
 
 const MessageSentEventName = "MessageSent"
 

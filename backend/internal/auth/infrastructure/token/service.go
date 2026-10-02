@@ -17,9 +17,10 @@ import (
 	"os"
 	"time"
 
+	"uuid"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang-jwt/jwt/v5/request"
-	"github.com/google/uuid"
 )
 
 var ErrInvalidToken = fmt.Errorf("%w: invalid token", authDomain.ErrUnauthorized)
@@ -60,7 +61,7 @@ func NewService() (*Service, error) {
 
 type Claims struct {
 	jwt.RegisteredClaims
-	SID uuid.UUID
+	SID    uuid.UUID
 	Scopes []string
 }
 

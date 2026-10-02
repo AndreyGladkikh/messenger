@@ -5,10 +5,10 @@ import (
 	"messenger/messenger/internal/bff/web/application/model/homepage"
 	"messenger/messenger/internal/bff/web/application/reader"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
-type GetHomePage struct{
+type GetHomePage struct {
 	UserID uuid.UUID
 }
 

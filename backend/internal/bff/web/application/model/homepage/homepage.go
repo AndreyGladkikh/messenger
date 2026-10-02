@@ -3,7 +3,7 @@ package homepage
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type HomePage struct {

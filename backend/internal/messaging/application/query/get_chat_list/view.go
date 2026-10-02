@@ -3,7 +3,7 @@ package get_chat_list
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type ChatListView struct {

@@ -3,7 +3,7 @@ package chat_participant
 import (
 	sharedDomain "messenger/messenger/internal/shared/domain"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type ChatParticipant struct {

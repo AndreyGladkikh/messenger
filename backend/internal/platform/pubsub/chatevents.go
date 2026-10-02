@@ -7,7 +7,7 @@ import (
 	"messenger/messenger/internal/shared/application/event"
 	"messenger/messenger/internal/shared/domain"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type ChatEventsPubSub struct {

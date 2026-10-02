@@ -15,7 +15,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3filter"
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 func AuthMiddleware(tokenService *token.Service) func(next http.Handler) http.Handler {
@@ -25,7 +25,7 @@ func AuthMiddleware(tokenService *token.Service) func(next http.Handler) http.Ha
 
 			switch {
 			case isHeaderPresentInRequest(r, headers.Authorization),
-			isCookiePresentInRequest(r, cookies.AccessToken):
+				isCookiePresentInRequest(r, cookies.AccessToken):
 				claims, err := tokenService.ParseAccessTokenFromRequestAndGetClaims(r)
 				if err != nil {
 					next.ServeHTTP(w, r)
@@ -85,12 +85,12 @@ func FirewallMiddleware(oas *openapi3.T, errHandler *ErrorHandler) func(next htt
 					if input.SecuritySchemeName != string(a.Method) {
 						return fmt.Errorf("security scheme %s != '%s'", input.SecuritySchemeName, string(a.Method))
 					}
-				
+
 					err = CheckScopes(input.Scopes, a.Principal.Scope)
 					if err != nil {
 						return err
 					}
-				
+
 					return nil
 				},
 			},

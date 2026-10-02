@@ -4,8 +4,7 @@ import (
 	"context"
 	"messenger/messenger/internal/shared/domain"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type Handler[E domain.Event] interface {

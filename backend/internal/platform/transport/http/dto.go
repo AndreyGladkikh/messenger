@@ -3,7 +3,7 @@ package http
 import (
 	"bytes"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // type Credentials struct {

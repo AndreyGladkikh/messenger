@@ -1,6 +1,6 @@
 package chat_participant
 
-import "github.com/google/uuid"
+import "uuid"
 
 type ParticipantAddedToChat struct {
 	ChatID        uuid.UUID

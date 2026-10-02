@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 	SubjectTypeBot  SubjectType = "bot"
 
 	MethodBearerToken Method = "bearerHttpAuthentication"
-	MethodApiKey  Method = "apiKey"
+	MethodApiKey      Method = "apiKey"
 )
 
 var ErrNoAuthInContext = errors.New("no auth in context")

@@ -3,7 +3,7 @@ package get_current_user
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type Handler struct {

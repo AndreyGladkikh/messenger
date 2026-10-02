@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"messenger/messenger/internal/conversation/application/service"
-	"messenger/messenger/internal/conversation/domain/model/conversation"
 	"messenger/messenger/internal/conversation/domain/model/participant"
 )
 
@@ -15,33 +14,19 @@ type SendFirstDirectMessage struct {
 
 type SendFirstDirectMessageHandler struct {
 	directConversationResolver *service.DirectConversationResolver
-	messageSender              service.MessageSender
-	// directConversationRepository direct_conversation.Repository
-	// messageSender     *message.Sender
-	// messageRepository message.Repository
+	messageSender              *service.MessageSender
 }
 
-func (h *SendFirstDirectMessageHandler) Handle(ctx context.Context, c SendFirstDirectMessage) error {
-	participants, err := conversation.NewDirectConversationParticipantsPair(c.Sender, c.Recipient)
+func (h *SendFirstDirectMessageHandler) Handle(ctx context.Context, cmd SendFirstDirectMessage) (any, error) {
+	cnv, err := h.directConversationResolver.FindOrCreate(ctx, cmd.Sender, cmd.Recipient)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	cnv, err := h.directConversationResolver.Create(ctx, participants)
+	_, err = h.messageSender.Send(ctx, cmd.Sender, cnv, cmd.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// msg, err := h.messageSender.Send(ctx, c.Sender, conv, c.Body)
-	if err != nil {
-		return err
-	}
-
-	// err = h.messageRepository.Save(ctx, msg)
-	if err != nil {
-		return err
-	}
-
-	_ = cnv
-	return nil
+	return nil, nil
 }

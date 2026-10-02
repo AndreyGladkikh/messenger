@@ -4,7 +4,7 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 const TTL = 30 * 24 * time.Hour

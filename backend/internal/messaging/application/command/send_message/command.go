@@ -3,7 +3,7 @@ package send_message
 import (
 	"bytes"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 const CommandName = "SendMessage"

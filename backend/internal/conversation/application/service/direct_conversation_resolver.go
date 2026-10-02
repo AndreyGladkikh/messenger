@@ -5,6 +5,7 @@ import (
 	"errors"
 	"messenger/messenger/internal/conversation/domain/model/conversation"
 	"messenger/messenger/internal/conversation/domain/model/membership"
+	"messenger/messenger/internal/conversation/domain/model/participant"
 	"messenger/messenger/internal/shared/domain"
 )
 
@@ -13,26 +14,22 @@ type DirectConversationResolver struct {
 	membershipRepository   membership.Repository
 }
 
-func (f *DirectConversationResolver) Create(
+func (f *DirectConversationResolver) FindOrCreate(
 	ctx context.Context,
-	participants conversation.DirectConversationParticipantsPair,
+	participantOne participant.Participant,
+	participantTwo participant.Participant,
 ) (*conversation.Conversation, error) {
-	// exists, err := f.conversationRepository.ExistsDirectBetween(ctx, participants)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// if exists {
-	// 	return nil, domain.ErrAlreadyExists
-	// }
-
-	cnv, err := f.conversationRepository.GetDirectBetween(ctx, participants)
-	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+	participants, err := conversation.NewDirectConversationParticipantsPair(participantOne, participantTwo)
+	if err != nil {
 		return nil, err
 	}
 
-	if cnv != nil {
+	cnv, err := f.conversationRepository.GetDirectBetween(ctx, participants)
+	if err == nil {
 		return cnv, nil
+	}
+	if !errors.Is(err, domain.ErrNotFound) {
+		return nil, err
 	}
 
 	cnv = conversation.New(conversation.ConversationTypeDirect)

@@ -12,7 +12,7 @@ import (
 	sharedDomain "messenger/messenger/internal/shared/domain"
 	"time"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 var ErrHandlerAlreadyExecuted = errors.New("handler already executed")

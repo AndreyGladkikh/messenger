@@ -4,7 +4,7 @@ import (
 	"context"
 	"messenger/messenger/internal/bff/web/application/model/homepage"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type Reader interface {

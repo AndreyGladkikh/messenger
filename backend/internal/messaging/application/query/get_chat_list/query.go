@@ -1,6 +1,6 @@
 package get_chat_list
 
-import "github.com/google/uuid"
+import "uuid"
 
 const QueryName = "GetChatList"
 

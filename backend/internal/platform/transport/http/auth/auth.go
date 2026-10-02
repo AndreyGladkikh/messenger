@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type key int

@@ -1,6 +1,6 @@
 package chat
 
-import "github.com/google/uuid"
+import "uuid"
 
 const ChatCreatedEventName = "ChatCreated"
 

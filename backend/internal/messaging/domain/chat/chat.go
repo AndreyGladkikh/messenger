@@ -4,7 +4,7 @@ import (
 	sharedDomain "messenger/messenger/internal/shared/domain"
 	"time"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 type Chat struct {

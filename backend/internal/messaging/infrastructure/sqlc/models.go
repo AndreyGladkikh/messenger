@@ -7,8 +7,8 @@ package sqlc
 import (
 	"net/netip"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"uuid"
 )
 
 type AuthBot struct {
@@ -74,7 +74,7 @@ type MessagingChat struct {
 
 type MessagingChatParticipant struct {
 	ID            uuid.UUID
-	ChatID        uuid.NullUUID
+	ChatID        *uuid.UUID
 	ParticipantID uuid.UUID
 	Role          string
 	JoinedAt      pgtype.Timestamptz
@@ -93,7 +93,7 @@ type MessagingMessage struct {
 	SenderID         uuid.UUID
 	ChatID           uuid.UUID
 	Body             string
-	ReplyToMessageID uuid.NullUUID
+	ReplyToMessageID *uuid.UUID
 	CreatedAt        pgtype.Timestamptz
 	UpdatedAt        pgtype.Timestamptz
 	DeletedAt        pgtype.Timestamptz
@@ -101,8 +101,8 @@ type MessagingMessage struct {
 
 type MessagingMessageFile struct {
 	ID        uuid.UUID
-	MessageID uuid.NullUUID
-	FileID    uuid.NullUUID
+	MessageID *uuid.UUID
+	FileID    *uuid.UUID
 	Name      pgtype.Text
 }
 
