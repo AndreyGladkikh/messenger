@@ -7,7 +7,7 @@ import (
 )
 
 type Message struct {
-	sharedDomain.BaseAggregate
+	sharedDomain.AggregateRoot
 
 	id               uuid.UUID
 	body             string

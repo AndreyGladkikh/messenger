@@ -7,7 +7,7 @@ import (
 )
 
 type ChatParticipant struct {
-	sharedDomain.BaseAggregate
+	sharedDomain.AggregateRoot
 
 	id            uuid.UUID
 	chatID        uuid.UUID
