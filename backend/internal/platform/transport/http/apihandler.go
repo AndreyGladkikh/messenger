@@ -2,14 +2,16 @@ package http
 
 import (
 	"context"
+	"encoding/json/v2"
 	"fmt"
-	"messenger/messenger/internal/auth/application/command/login"
-	"messenger/messenger/internal/auth/application/command/refresh"
-	"messenger/messenger/internal/auth/application/command/register"
-	"messenger/messenger/internal/auth/application/query/get_current_user"
-	"messenger/messenger/internal/auth/application/token"
-	authDomain "messenger/messenger/internal/auth/domain"
-	"messenger/messenger/internal/auth/domain/session"
+	"messenger/messenger/internal/conversations/app/command"
+	"messenger/messenger/internal/identity/application/command/login"
+	"messenger/messenger/internal/identity/application/command/refresh"
+	"messenger/messenger/internal/identity/application/command/register"
+	"messenger/messenger/internal/identity/application/query/get_current_user"
+	"messenger/messenger/internal/identity/application/token"
+	authDomain "messenger/messenger/internal/identity/domain"
+	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/querybus"
@@ -18,6 +20,7 @@ import (
 	"net/http"
 	"net/netip"
 	"time"
+	"uuid"
 
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -45,7 +48,7 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 		return nil, err
 	}
 
-	q := &get_current_user.Query{
+	q := get_current_user.Query{
 		UserID: a.Principal.Subject.ID,
 	}
 	response, err := h.queryBus.Dispatch[get_current_user.AuthView](ctx, q)
@@ -83,7 +86,7 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 		return nil, err
 	}
 
-	command := &login.Command{
+	command := login.Command{
 		Login:     request.Body.Login,
 		Password:  request.Body.Password,
 		IP:        ip,
@@ -101,7 +104,7 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 }
 
 func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error) {
-	command := &refresh.Command{
+	command := refresh.Command{
 		RefreshToken: request.Params.RefreshToken,
 	}
 	response, err := h.commandBus.Dispatch[refresh.Response](ctx, command)
@@ -122,7 +125,7 @@ func (h *ApiHandler) Register(ctx context.Context, request RegisterRequestObject
 		return nil, err
 	}
 
-	command := &register.Command{
+	command := register.Command{
 		Login:     request.Body.Login,
 		Password:  request.Body.Password,
 		IP:        ip,
@@ -196,4 +199,39 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 
 	http.SetCookie(w, accessTokenCookie)
 	http.SetCookie(w, refreshTokenCookie)
+}
+
+func (h *ApiHandler) SendMsg(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	a, err := auth.AuthFromContext(r.Context())
+	if err != nil {
+		http.Error(w, "failed to accept websocket connection: unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var rqst struct {
+		Body        string    `json:"body"`
+		RecipientID uuid.UUID `json:"recipietId"`
+	}
+	err = json.UnmarshalRead(r.Body, &rqst)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	cmd := command.SendFirstDirectMessage{
+		Sender:    a.Principal.Subject.ID,
+		Recipient: rqst.RecipientID,
+		Body:      rqst.Body,
+	}
+
+	rsp, err := h.commandBus.Dispatch[any](r.Context(), cmd)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.MarshalWrite(w, rsp)
+	// w.Write([]byte("foo"))
 }

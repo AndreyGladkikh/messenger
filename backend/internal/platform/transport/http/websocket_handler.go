@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/domain/model/message"
+	authDomain "messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/db"
@@ -161,9 +161,9 @@ func (h *WebsocketHandler) processWSMessage(ctx context.Context, m WSMessage) (a
 		}
 
 		command := command.SendMessage{
-			SenderID:         a.Principal.Subject.ID,
-			ConversationID:           data.ChatID,
-			Body:      data.Body,
+			SenderID:       a.Principal.Subject.ID,
+			ConversationID: data.ChatID,
+			Body:           data.Body,
 		}
 		return h.commandBus.Dispatch[any](ctx, command)
 	// case wsMessageTypeAddSubscription:

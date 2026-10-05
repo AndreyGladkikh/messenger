@@ -153,13 +153,13 @@ func (q *Queries) GetMessage(ctx context.Context, id uuid.UUID) (ConversationsMe
 }
 
 const getSessionByRefreshTokenHash = `-- name: GetSessionByRefreshTokenHash :one
-SELECT id, user_id, refresh_token_hash, created_at, expires_at, revoked_at, last_used_at, user_agent, ip FROM auth.sessions
+SELECT id, user_id, refresh_token_hash, created_at, expires_at, revoked_at, last_used_at, user_agent, ip FROM identity.sessions
 WHERE refresh_token_hash = $1
 `
 
-func (q *Queries) GetSessionByRefreshTokenHash(ctx context.Context, refreshTokenHash string) (AuthSession, error) {
+func (q *Queries) GetSessionByRefreshTokenHash(ctx context.Context, refreshTokenHash string) (IdentitySession, error) {
 	row := q.db.QueryRow(ctx, getSessionByRefreshTokenHash, refreshTokenHash)
-	var i AuthSession
+	var i IdentitySession
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -175,22 +175,14 @@ func (q *Queries) GetSessionByRefreshTokenHash(ctx context.Context, refreshToken
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT id, login, password_hash, display_name, username, created_at, deleted_at FROM auth.users
+SELECT id, login, password_hash FROM identity.users
 WHERE login = $1
 `
 
-func (q *Queries) GetUserByLogin(ctx context.Context, login string) (AuthUser, error) {
+func (q *Queries) GetUserByLogin(ctx context.Context, login string) (IdentityUser, error) {
 	row := q.db.QueryRow(ctx, getUserByLogin, login)
-	var i AuthUser
-	err := row.Scan(
-		&i.ID,
-		&i.Login,
-		&i.PasswordHash,
-		&i.DisplayName,
-		&i.Username,
-		&i.CreatedAt,
-		&i.DeletedAt,
-	)
+	var i IdentityUser
+	err := row.Scan(&i.ID, &i.Login, &i.PasswordHash)
 	return i, err
 }
 
@@ -312,7 +304,7 @@ func (q *Queries) ListMessagesForConversation(ctx context.Context, arg ListMessa
 const userExistsByLogin = `-- name: UserExistsByLogin :one
 SELECT EXISTS(
     SELECT 1 
-    FROM auth.users
+    FROM identity.users
     WHERE login = $1
 )
 `

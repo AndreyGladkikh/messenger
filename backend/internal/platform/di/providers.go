@@ -1,22 +1,22 @@
 package di
 
 import (
-	"messenger/messenger/internal/auth/application/command/login"
-	"messenger/messenger/internal/auth/application/command/refresh"
-	"messenger/messenger/internal/auth/application/command/register"
-	authPasswordPort "messenger/messenger/internal/auth/application/password"
-	"messenger/messenger/internal/auth/application/query/get_current_user"
-	authTokenPort "messenger/messenger/internal/auth/application/token"
-	"messenger/messenger/internal/auth/domain/session"
-	"messenger/messenger/internal/auth/domain/user"
-	authPasswordAdapter "messenger/messenger/internal/auth/infrastructure/password"
-	authRepository "messenger/messenger/internal/auth/infrastructure/repository"
-	authTokenAdapter "messenger/messenger/internal/auth/infrastructure/token"
 	"messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
 	cnvRepo "messenger/messenger/internal/conversations/infra/repository"
+	"messenger/messenger/internal/identity/application/command/login"
+	"messenger/messenger/internal/identity/application/command/refresh"
+	"messenger/messenger/internal/identity/application/command/register"
+	authPasswordPort "messenger/messenger/internal/identity/application/password"
+	"messenger/messenger/internal/identity/application/query/get_current_user"
+	authTokenPort "messenger/messenger/internal/identity/application/token"
+	"messenger/messenger/internal/identity/domain/session"
+	"messenger/messenger/internal/identity/domain/user"
+	authPasswordAdapter "messenger/messenger/internal/identity/infrastructure/password"
+	authRepository "messenger/messenger/internal/identity/infrastructure/repository"
+	authTokenAdapter "messenger/messenger/internal/identity/infrastructure/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -114,5 +114,4 @@ var QueryHandlers = wire.NewSet(
 	get_current_user.NewHandler,
 )
 
-var EventHandlers = wire.NewSet(
-)
+var EventHandlers = wire.NewSet()

@@ -42,9 +42,11 @@ func (h *ApEventHandlerAdapter[E]) Name() string {
 }
 
 func (h *ApEventHandlerAdapter[E]) Handle(ctx context.Context, e event.Envelope[domain.Event]) error {
+	var eTP E
+
 	typedEvent, ok := e.Event.(E)
 	if !ok {
-		return fmt.Errorf("handler %s expected event of type %T, got %T", h.handler.Name(), new(E), e.Event)
+		return fmt.Errorf("handler %s expected event of type %T, got %T", h.handler.Name(), eTP, e.Event)
 	}
 
 	typedEnvelope := event.Envelope[E]{

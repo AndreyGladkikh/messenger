@@ -1,9 +1,9 @@
 package di
 
 import (
-	"messenger/messenger/internal/auth/application/command/login"
-	"messenger/messenger/internal/auth/application/command/refresh"
-	"messenger/messenger/internal/auth/application/command/register"
+	"messenger/messenger/internal/identity/application/command/login"
+	"messenger/messenger/internal/identity/application/command/refresh"
+	"messenger/messenger/internal/identity/application/command/register"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/commandbus/middlewares"
 	"messenger/messenger/internal/platform/db/transaction"

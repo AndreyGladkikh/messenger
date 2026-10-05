@@ -1,0 +1,56 @@
+package refresh
+
+import (
+	"context"
+	"errors"
+	"messenger/messenger/internal/identity/application/token"
+	"messenger/messenger/internal/identity/domain"
+	"messenger/messenger/internal/identity/domain/session"
+	sharedDomain "messenger/messenger/internal/shared/domain"
+)
+
+type Handler struct {
+	sessionRepo  session.Repository
+	tokenService token.Service
+}
+
+func NewHandler(
+	sessionRepo session.Repository,
+	tokenService token.Service,
+) *Handler {
+	return &Handler{
+		sessionRepo:  sessionRepo,
+		tokenService: tokenService,
+	}
+}
+
+func (h *Handler) Handle(ctx context.Context, cmd Command) (Response, error) {
+	var zero Response
+
+	ses, err := h.sessionRepo.GetByRefreshTokenHash(ctx, h.tokenService.HashRefreshToken(cmd.RefreshToken))
+	if err != nil && !errors.Is(err, sharedDomain.ErrNotFound) {
+		return zero, err
+	}
+	if errors.Is(err, sharedDomain.ErrNotFound) {
+		return zero, domain.ErrUnauthorized
+	}
+
+	refreshToken := h.tokenService.GenerateRefreshToken()
+	refreshTokenHash := h.tokenService.HashRefreshToken(refreshToken)
+
+	ses.Refresh(refreshTokenHash)
+
+	if err = h.sessionRepo.Save(ctx, ses); err != nil {
+		return zero, err
+	}
+
+	accessToken, err := h.tokenService.GenerateAccessToken(ses)
+	if err != nil {
+		return zero, err
+	}
+
+	return Response{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}

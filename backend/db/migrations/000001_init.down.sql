@@ -8,10 +8,11 @@ DROP TABLE IF EXISTS conversations.direct_conversations;
 DROP TABLE IF EXISTS conversations.memberships;
 DROP TABLE IF EXISTS conversations.conversations;
 
-DROP TABLE IF EXISTS auth.sessions;
-DROP TABLE IF EXISTS auth.bot_tokens;
-DROP TABLE IF EXISTS auth.bots;
-DROP TABLE IF EXISTS auth.users;
+DROP TABLE IF EXISTS identity.sessions;
+DROP TABLE IF EXISTS identity.bot_tokens;
+DROP TABLE IF EXISTS identity.bots;
+DROP TABLE IF EXISTS identity.users;
+DROP TABLE IF EXISTS identity.accounts;
 
-DROP SCHEMA IF EXISTS auth;
+DROP SCHEMA IF EXISTS identity;
 DROP SCHEMA IF EXISTS conversations;

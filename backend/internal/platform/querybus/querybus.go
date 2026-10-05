@@ -3,7 +3,7 @@ package querybus
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/auth/application/query/get_current_user"
+	"messenger/messenger/internal/identity/application/query/get_current_user"
 	"messenger/messenger/internal/shared/application/query"
 )
 
@@ -43,7 +43,7 @@ func (b *Bus) RegisterHandler[Q query.Query, R any](handler query.Handler[Q, R])
 	q := *new(Q)
 
 	var adapted QueryHandler = AppQueryHandlerAdapter[Q, R]{handler: handler}
-	
+
 	if _, ok := b.handlers[q.Name()]; ok {
 		return fmt.Errorf("query bus: already has handler for query '%s'", q.Name())
 	}
@@ -71,9 +71,11 @@ type AppQueryHandlerAdapter[Q query.Query, R any] struct {
 }
 
 func (a AppQueryHandlerAdapter[Q, R]) Handle(ctx context.Context, q query.Query) (any, error) {
+	var qTP Q
+
 	typedQuery, ok := q.(Q)
 	if !ok {
-		return nil, fmt.Errorf("query handler expected query of type %T, got %T", new(Q), q)
+		return nil, fmt.Errorf("query handler expected query of type %T, got %T", qTP, q)
 	}
 
 	return a.handler.Handle(ctx, typedQuery)

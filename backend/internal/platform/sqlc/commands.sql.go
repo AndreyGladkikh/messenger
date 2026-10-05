@@ -20,6 +20,25 @@ type AddParticipantsToConversationParams struct {
 	Role           string
 }
 
+const createAccount = `-- name: CreateAccount :exec
+INSERT INTO identity.accounts (
+  id,
+  type
+) VALUES (
+  $1, $2
+)
+`
+
+type CreateAccountParams struct {
+	ID   uuid.UUID
+	Type string
+}
+
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) error {
+	_, err := q.db.Exec(ctx, createAccount, arg.ID, arg.Type)
+	return err
+}
+
 const createConversation = `-- name: CreateConversation :exec
 INSERT INTO conversations.conversations (
     id,
@@ -149,7 +168,7 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) er
 }
 
 const createSession = `-- name: CreateSession :exec
-INSERT INTO auth.sessions (
+INSERT INTO identity.sessions (
   id,
   user_id,
   refresh_token_hash,
@@ -183,7 +202,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 }
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO auth.users (
+INSERT INTO identity.users (
   id,
   login,
   password_hash
@@ -295,7 +314,7 @@ func (q *Queries) PutToOutbox(ctx context.Context, arg PutToOutboxParams) error 
 }
 
 const saveSession = `-- name: SaveSession :exec
-UPDATE auth.sessions
+UPDATE identity.sessions
 SET refresh_token_hash = $2,
   expires_at = $3,
   revoked_at = $4,

@@ -1,35 +1,27 @@
-CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS identity;
 CREATE SCHEMA IF NOT EXISTS conversations;
 
-CREATE TABLE auth.users(
+CREATE TABLE identity.accounts(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    type TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE identity.users(
+    id UUID PRIMARY KEY REFERENCES identity.accounts ON DELETE CASCADE,
     login TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    display_name TEXT NOT NULL,
-    username TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMP WITH TIME ZONE
+    password_hash TEXT NOT NULL
 );
 
-CREATE TABLE auth.bots(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    owner_id UUID NOT NULL REFERENCES auth.users,
-    display_name TEXT NOT NULL,
-    username TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    deleted_at TIMESTAMP WITH TIME ZONE
+CREATE TABLE identity.bots(
+    id UUID PRIMARY KEY REFERENCES identity.accounts ON DELETE CASCADE,
+    token_hash TEXT NOT NULL
 );
 
-CREATE TABLE auth.bot_tokens(
+CREATE TABLE identity.sessions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    bot_id UUID NOT NULL REFERENCES auth.bots ON DELETE CASCADE,
-    token_hash TEXT NOT NULL,
-    revoked_at TIMESTAMP WITH TIME ZONE
-);
-
-CREATE TABLE auth.sessions(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES identity.users ON DELETE CASCADE,
     refresh_token_hash TEXT NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -38,8 +30,8 @@ CREATE TABLE auth.sessions(
     user_agent TEXT NOT NULL,
     ip INET NOT NULL
 );
-CREATE INDEX session_user_id_index on auth.sessions (user_id);
-CREATE INDEX session_refresh_token_index on auth.sessions (refresh_token_hash);
+CREATE INDEX session_user_id_index on identity.sessions (user_id);
+CREATE INDEX session_refresh_token_index on identity.sessions (refresh_token_hash);
 
 CREATE TABLE conversations.conversations(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

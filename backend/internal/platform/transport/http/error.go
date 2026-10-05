@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	auth "messenger/messenger/internal/auth/domain"
+	auth "messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/transport/http/contenttype"
@@ -15,14 +15,14 @@ import (
 )
 
 var (
-	problemTypeNotFound = "not-found"
-	problemTypeAlreadyExists = "already-exists"
+	problemTypeNotFound        = "not-found"
+	problemTypeAlreadyExists   = "already-exists"
 	problemTypeValidationError = "validation-error"
-	problemTypeServerError = "server-error"
+	problemTypeServerError     = "server-error"
 )
 
 type ErrorHandler struct {
-	cfg *config.Config
+	cfg    *config.Config
 	logger *logger.Logger
 }
 
@@ -31,7 +31,7 @@ func NewErrorHandler(
 	logger *logger.Logger,
 ) *ErrorHandler {
 	return &ErrorHandler{
-		cfg: cfg,
+		cfg:    cfg,
 		logger: logger,
 	}
 }
@@ -76,7 +76,7 @@ func (h *ErrorHandler) mapError(err error) ProblemDetails {
 			// Type: &typeUrl,
 			// Title: problemTitle(typ),
 			Title: err.Error(),
-			Code: &err.Code,
+			Code:  &err.Code,
 		}
 	}
 

@@ -11,44 +11,6 @@ import (
 	"uuid"
 )
 
-type AuthBot struct {
-	ID          uuid.UUID
-	OwnerID     uuid.UUID
-	DisplayName string
-	Username    string
-	CreatedAt   pgtype.Timestamptz
-	DeletedAt   pgtype.Timestamptz
-}
-
-type AuthBotToken struct {
-	ID        uuid.UUID
-	BotID     uuid.UUID
-	TokenHash string
-	RevokedAt pgtype.Timestamptz
-}
-
-type AuthSession struct {
-	ID               uuid.UUID
-	UserID           uuid.UUID
-	RefreshTokenHash string
-	CreatedAt        pgtype.Timestamptz
-	ExpiresAt        pgtype.Timestamptz
-	RevokedAt        pgtype.Timestamptz
-	LastUsedAt       pgtype.Timestamptz
-	UserAgent        string
-	Ip               netip.Addr
-}
-
-type AuthUser struct {
-	ID           uuid.UUID
-	Login        string
-	PasswordHash string
-	DisplayName  string
-	Username     string
-	CreatedAt    pgtype.Timestamptz
-	DeletedAt    pgtype.Timestamptz
-}
-
 type ConversationsConversation struct {
 	ID        uuid.UUID
 	Type      string
@@ -94,6 +56,36 @@ type ConversationsMessageFile struct {
 	MessageID *uuid.UUID
 	FileID    *uuid.UUID
 	Name      pgtype.Text
+}
+
+type IdentityAccount struct {
+	ID        uuid.UUID
+	Type      string
+	CreatedAt pgtype.Timestamptz
+	DeletedAt pgtype.Timestamptz
+}
+
+type IdentityBot struct {
+	ID        uuid.UUID
+	TokenHash string
+}
+
+type IdentitySession struct {
+	ID               uuid.UUID
+	UserID           uuid.UUID
+	RefreshTokenHash string
+	CreatedAt        pgtype.Timestamptz
+	ExpiresAt        pgtype.Timestamptz
+	RevokedAt        pgtype.Timestamptz
+	LastUsedAt       pgtype.Timestamptz
+	UserAgent        string
+	Ip               netip.Addr
+}
+
+type IdentityUser struct {
+	ID           uuid.UUID
+	Login        string
+	PasswordHash string
 }
 
 type Inbox struct {

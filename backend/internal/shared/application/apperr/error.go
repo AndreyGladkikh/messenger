@@ -2,23 +2,23 @@ package apperr
 
 import (
 	"errors"
-	auth "messenger/messenger/internal/auth/domain"
-	"messenger/messenger/internal/auth/domain/user"
-	"messenger/messenger/internal/auth/infrastructure/token"
+	auth "messenger/messenger/internal/identity/domain"
+	"messenger/messenger/internal/identity/domain/user"
+	"messenger/messenger/internal/identity/infrastructure/token"
 	"messenger/messenger/internal/shared/domain"
 )
 
 const (
-	CodeInvalidCredentials = "INVALID_CREDENTIALS"
-	CodeInvalidToken = "INVALID_TOKEN"
-	CodeUnauthorized = "UNAUTHORIZED"
-	CodeAlreadyExists = "ALREADY_EXISTS"
-	CodeUserNotFound = "USER_NOT_FOUND"
-	CodeLoginAlreadyExists = "LOGIN_ALREADY_EXISTS"
-	CodeChatNotFound = "CHAT_NOT_FOUND"
-	CodeChatDeleted = "CHAT_DELETED"
+	CodeInvalidCredentials       = "INVALID_CREDENTIALS"
+	CodeInvalidToken             = "INVALID_TOKEN"
+	CodeUnauthorized             = "UNAUTHORIZED"
+	CodeAlreadyExists            = "ALREADY_EXISTS"
+	CodeUserNotFound             = "USER_NOT_FOUND"
+	CodeLoginAlreadyExists       = "LOGIN_ALREADY_EXISTS"
+	CodeChatNotFound             = "CHAT_NOT_FOUND"
+	CodeChatDeleted              = "CHAT_DELETED"
 	CodePrivateChatAlreadyExists = "PRIVATE_CHAT_ALREADY_EXISTS"
-	CodeNotFound = "NOT_FOUND"
+	CodeNotFound                 = "NOT_FOUND"
 )
 
 type Error struct {
@@ -48,44 +48,44 @@ func Map(err error) error {
 	switch {
 	case errors.Is(err, token.ErrInvalidToken):
 		return &Error{
-			Code: CodeInvalidToken,
+			Code:    CodeInvalidToken,
 			Message: "Invalid access token",
 			Wrapped: err,
 		}
 	case errors.Is(err, auth.ErrInvalidCredantials):
 		return &Error{
-			Code: CodeInvalidCredentials,
+			Code:    CodeInvalidCredentials,
 			Message: "Invalid credentials",
 			Wrapped: err,
 		}
 	case errors.Is(err, auth.ErrUnauthorized):
 		return &Error{
-			Code: CodeUnauthorized,
+			Code:    CodeUnauthorized,
 			Message: "Authentication failed",
 			Wrapped: err,
 		}
 	case errors.Is(err, user.ErrNotFound):
 		return &Error{
-			Code: CodeUserNotFound,
+			Code:    CodeUserNotFound,
 			Message: "User not found",
 			Wrapped: err,
 		}
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return &Error{
-			Code: CodeLoginAlreadyExists,
+			Code:    CodeLoginAlreadyExists,
 			Message: "Login already exists",
 			Wrapped: err,
 		}
 
 	case errors.Is(err, domain.ErrNotFound):
 		return &Error{
-			Code: CodeNotFound,
+			Code:    CodeNotFound,
 			Message: "Not found",
 			Wrapped: err,
 		}
 	case errors.Is(err, domain.ErrAlreadyExists):
 		return &Error{
-			Code: CodeAlreadyExists,
+			Code:    CodeAlreadyExists,
 			Message: "Already exists",
 			Wrapped: err,
 		}

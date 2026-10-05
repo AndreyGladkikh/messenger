@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
+	"messenger/messenger/internal/identity/domain"
 	"uuid"
 )
 
@@ -14,7 +14,7 @@ var ErrSenderNotParticipantOfConversation = fmt.Errorf("%w: sender is not a part
 
 type MessageSender struct {
 	membershipRepository membership.Repository
-	messagesRepository     message.Repository
+	messagesRepository   message.Repository
 }
 
 func NewMessageSender(
@@ -23,7 +23,7 @@ func NewMessageSender(
 ) *MessageSender {
 	return &MessageSender{
 		membershipRepository: membershipRepository,
-		messagesRepository:     messagesRepository,
+		messagesRepository:   messagesRepository,
 	}
 }
 

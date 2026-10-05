@@ -7,13 +7,13 @@
 package di
 
 import (
-	"messenger/messenger/internal/auth/application/command/login"
-	"messenger/messenger/internal/auth/application/command/refresh"
-	"messenger/messenger/internal/auth/application/command/register"
-	"messenger/messenger/internal/auth/application/query/get_current_user"
-	"messenger/messenger/internal/auth/infrastructure/password"
-	repository2 "messenger/messenger/internal/auth/infrastructure/repository"
-	"messenger/messenger/internal/auth/infrastructure/token"
+	"messenger/messenger/internal/identity/application/command/login"
+	"messenger/messenger/internal/identity/application/command/refresh"
+	"messenger/messenger/internal/identity/application/command/register"
+	"messenger/messenger/internal/identity/application/query/get_current_user"
+	"messenger/messenger/internal/identity/infrastructure/password"
+	repository2 "messenger/messenger/internal/identity/infrastructure/repository"
+	"messenger/messenger/internal/identity/infrastructure/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
