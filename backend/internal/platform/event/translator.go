@@ -3,8 +3,8 @@ package event
 import (
 	"encoding/json"
 	"fmt"
-	"messenger/messenger/internal/messaging/domain/message"
-	"messenger/messenger/internal/messaging/infrastructure/sqlc"
+	"messenger/messenger/internal/conversations/domain/model/message"
+	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/shared/application/event"
 	"messenger/messenger/internal/shared/domain"
 )

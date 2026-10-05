@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	authDomain "messenger/messenger/internal/auth/domain"
-	"messenger/messenger/internal/messaging/application/command/send_message"
-	"messenger/messenger/internal/messaging/domain/message"
+	"messenger/messenger/internal/conversations/app/command"
+	"messenger/messenger/internal/conversations/domain/model/message"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/db"
@@ -136,7 +136,7 @@ func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.C
 	defer subscription.Cancel(ctx)
 
 	// todo refactor to app query
-	userChatIDs, err := h.storage.Queries(ctx).ListChatIDsForUser(ctx, a.Principal.Subject.ID)
+	userChatIDs, err := h.storage.Queries(ctx).ListConversationIDsForUser(ctx, a.Principal.Subject.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,11 +160,10 @@ func (h *WebsocketHandler) processWSMessage(ctx context.Context, m WSMessage) (a
 			return nil, err
 		}
 
-		command := &send_message.Command{
+		command := command.SendMessage{
 			SenderID:         a.Principal.Subject.ID,
-			ChatID:           data.ChatID,
-			MessageBody:      data.Body,
-			ReplyToMessageID: data.ReplyToMessageID,
+			ConversationID:           data.ChatID,
+			Body:      data.Body,
 		}
 		return h.commandBus.Dispatch[any](ctx, command)
 	// case wsMessageTypeAddSubscription:

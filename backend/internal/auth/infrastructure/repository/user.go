@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"messenger/messenger/internal/auth/domain/user"
-	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/platform/sqlc"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )

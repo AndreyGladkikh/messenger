@@ -5,7 +5,6 @@ import (
 	auth "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/user"
 	"messenger/messenger/internal/auth/infrastructure/token"
-	"messenger/messenger/internal/messaging/domain/chat"
 	"messenger/messenger/internal/shared/domain"
 )
 
@@ -77,24 +76,6 @@ func Map(err error) error {
 			Message: "Login already exists",
 			Wrapped: err,
 		}
-	case errors.Is(err, chat.ErrNotFound):
-		return &Error{
-			Code: CodeChatNotFound,
-			Message: "Chat not found",
-			Wrapped: err,
-		}
-	case errors.Is(err, chat.ErrDeleted):
-		return &Error{
-			Code: CodeChatDeleted,
-			Message: "Chat deleted",
-			Wrapped: err,
-		}
-	case errors.Is(err, chat.ErrPrivateChatAlreadyExists):
-		return &Error{
-			Code: CodePrivateChatAlreadyExists,
-			Message: "Private chat already exists",
-			Wrapped: err,
-		}
 
 	case errors.Is(err, domain.ErrNotFound):
 		return &Error{
@@ -128,10 +109,6 @@ func code(err error) string {
 		return "USER_NOT_FOUND"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "LOGIN_ALREADY_EXISTS"
-	case errors.Is(err, chat.ErrDeleted):
-		return "CHAT_DELETED"
-	case errors.Is(err, chat.ErrPrivateChatAlreadyExists):
-		return "PRIVATE_CHAT_ALREADY_EXISTS"
 	case errors.Is(err, domain.ErrNotFound):
 		return "NOT_FOUND"
 	default:
@@ -151,12 +128,6 @@ func message(err error) string {
 		return "Пользователь не найден"
 	case errors.Is(err, user.ErrLoginAlreadyExists):
 		return "Пользователь с таким логином уже существует"
-	case errors.Is(err, chat.ErrNotFound):
-		return "Чат не найден"
-	case errors.Is(err, chat.ErrDeleted):
-		return "Чат удален"
-	case errors.Is(err, chat.ErrPrivateChatAlreadyExists):
-		return "Приватный чат уже существует"
 	case errors.Is(err, domain.ErrNotFound):
 		return "Ресурс не найден"
 	default:

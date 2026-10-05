@@ -14,12 +14,6 @@ import (
 	"messenger/messenger/internal/auth/infrastructure/password"
 	repository2 "messenger/messenger/internal/auth/infrastructure/repository"
 	"messenger/messenger/internal/auth/infrastructure/token"
-	"messenger/messenger/internal/messaging/application/command/create_private_chat"
-	"messenger/messenger/internal/messaging/application/command/send_message"
-	"messenger/messenger/internal/messaging/application/event/message_sent"
-	"messenger/messenger/internal/messaging/application/query/get_chat_list"
-	repository3 "messenger/messenger/internal/messaging/infrastructure/repository"
-	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -31,6 +25,7 @@ import (
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/transport/http"
 )
 
@@ -59,15 +54,9 @@ func InitializeApi() (*Api, func(), error) {
 	handler := register.NewHandler(userRepository, sessionRepository, hasher, service)
 	loginHandler := login.NewHandler(userRepository, sessionRepository, hasher, service)
 	refreshHandler := refresh.NewHandler(sessionRepository, service)
-	messageRepository := repository3.NewMessageRepository(repositoryRepository)
-	chatRepository := repository3.NewChatRepository(repositoryRepository)
-	send_messageHandler := send_message.NewHandler(messageRepository, chatRepository)
-	chatParticipantRepository := repository3.NewChatParticipantRepository(repositoryRepository)
-	create_private_chatHandler := create_private_chat.NewHandler(chatRepository, chatParticipantRepository)
-	bus := BuildCommandBus(manager, loggerLogger, eventService, handler, loginHandler, refreshHandler, send_messageHandler, create_private_chatHandler)
+	bus := BuildCommandBus(manager, loggerLogger, eventService, handler, loginHandler, refreshHandler)
 	get_current_userHandler := get_current_user.NewHandler()
-	get_chat_listHandler := get_chat_list.NewHandler()
-	querybusBus := querybus.InitBus(get_current_userHandler, get_chat_listHandler)
+	querybusBus := querybus.InitBus(get_current_userHandler)
 	apiHandler := http.NewApiHandler(bus, querybusBus)
 	errorHandler := http.NewErrorHandler(configConfig, loggerLogger)
 	client, cleanup2, err := redis.NewRedis(configConfig)
@@ -111,20 +100,9 @@ func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 	eventService := event.NewEventService(storage)
 	manager := transaction.NewManager(pool)
 	loggerLogger := logger.New()
-	client, cleanup2, err := redis.NewRedis(configConfig)
-	if err != nil {
-		cleanup()
-		return nil, nil, err
-	}
-	pubSub, cleanup3 := pubsub.NewPubSub(client)
-	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
-	notifyChatParticipantsHandler := message_sent.NewNotifyChatParticipantsHandler(chatEventsPubSub)
-	rebuildQueryModelHandler := message_sent.NewRebuildQueryModelHandler()
-	handlerRegistry := NewEventHandlerRegistry(notifyChatParticipantsHandler, rebuildQueryModelHandler)
+	handlerRegistry := NewEventHandlerRegistry()
 	outboxRelay := outbox_relay.NewOutboxRelay(eventService, manager, loggerLogger, queries, handlerRegistry)
 	return outboxRelay, func() {
-		cleanup3()
-		cleanup2()
 		cleanup()
 	}, nil
 }

@@ -1,15 +1,12 @@
 openapi: 3.1.0
 info:
-  title: Chatique - OpenAPI 3.1
+  title: Chat
   description: |-
-    Chatique (pronounced "chatik", or "cha-TEEK", with the stress on the last syllable, French-style) is a messaging platform featuring message and file sharing, reactions, comments, and bot creation. WIP.
+    Chat is a messaging platform featuring message and file sharing, reactions, comments, and bot creation. WIP.
 
   contact:
     email: andrgladkikh@gmail.com
   version: 1.0.0
-servers:
-  - url: https://chatique.ru/api/v1
-  - url: localhost:3000
 tags:
   - name: auth
     description: Everything about identity and access

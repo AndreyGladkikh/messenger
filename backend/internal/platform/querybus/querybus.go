@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"messenger/messenger/internal/auth/application/query/get_current_user"
-	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/shared/application/query"
 )
 
@@ -92,11 +91,9 @@ type Middleware func(next QueryHandler) QueryHandler
 
 func InitBus(
 	getCurrentUserHandler *get_current_user.Handler,
-	getChatListHandler *get_chat_list.Handler,
 ) *Bus {
 	b := NewBus()
 
-	b.RegisterHandler(getChatListHandler)
 	b.RegisterHandler(getCurrentUserHandler)
 
 	return b

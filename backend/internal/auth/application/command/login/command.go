@@ -11,8 +11,8 @@ type Command struct {
 	IP        netip.Addr
 }
 
-func (c *Command) IsCommand() {}
+func (c Command) IsCommand() {}
 
-func (c *Command) Name() string {
+func (c Command) Name() string {
 	return CommandName
 }

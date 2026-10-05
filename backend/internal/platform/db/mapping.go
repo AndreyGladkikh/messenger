@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"uuid"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -40,29 +39,16 @@ func ToDBText(v string) pgtype.Text {
 	return pgText
 }
 
-// func ToDBOptionalUUID(value string) uuid.NullUUID {
-// 	if value == "" {
-// 		return uuid.NullUUID{}
-// 	}
-
-// 	v := uuid.MustParse(value)
-
+// func ToDBOptionalUUID(id uuid.UUID) uuid.NullUUID {
 // 	return uuid.NullUUID{
-// 		UUID:  v,
-// 		Valid: true,
+// 		UUID:  id,
+// 		Valid: id != uuid.Nil,
 // 	}
 // }
 
-func ToDBOptionalUUID(id uuid.UUID) uuid.NullUUID {
-	return uuid.NullUUID{
-		UUID:  id,
-		Valid: id != uuid.Nil,
-	}
-}
-
-func FromDBOptionalUUID(id uuid.NullUUID) uuid.UUID {
-	return id.UUID
-}
+// func FromDBOptionalUUID(id uuid.NullUUID) uuid.UUID {
+// 	return id.UUID
+// }
 
 func ToDBOptionalString(v string) sql.NullString {
 	if v == "" {
@@ -86,12 +72,12 @@ func ToDBOptionalTime(v time.Time) sql.NullTime {
 	}
 }
 
-func FromDBUUID(value uuid.NullUUID) string {
-	if value.Valid {
-		return value.UUID.String()
-	}
-	return ""
-}
+// func FromDBUUID(value uuid.NullUUID) string {
+// 	if value.Valid {
+// 		return value.UUID.String()
+// 	}
+// 	return ""
+// }
 
 func ToDBTimestamp(t time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{

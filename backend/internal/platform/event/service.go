@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
+	"messenger/messenger/internal/platform/sqlc"
 	sharedDomain "messenger/messenger/internal/shared/domain"
 	"time"
 

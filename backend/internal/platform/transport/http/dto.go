@@ -31,7 +31,7 @@ type CreatePrivateChatRequest struct {
 type Message struct {
 	Body             string          `json:"body"`
 	ChatID           uuid.UUID       `json:"chatId"`
-	ReplyToMessageID uuid.UUID       `json:"replyToMessageId"`
+	ReplyToMessageID *uuid.UUID       `json:"replyToMessageId"`
 	Attachments      []*bytes.Buffer `json:"attachments"`
 }
 

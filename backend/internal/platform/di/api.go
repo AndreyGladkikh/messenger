@@ -4,8 +4,6 @@ import (
 	"messenger/messenger/internal/auth/application/command/login"
 	"messenger/messenger/internal/auth/application/command/refresh"
 	"messenger/messenger/internal/auth/application/command/register"
-	"messenger/messenger/internal/messaging/application/command/create_private_chat"
-	"messenger/messenger/internal/messaging/application/command/send_message"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/commandbus/middlewares"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -36,8 +34,6 @@ func BuildCommandBus(
 	registerUserHandler *register.Handler,
 	loginHandler *login.Handler,
 	refreshSessionHandler *refresh.Handler,
-	sendMessageHandler *send_message.Handler,
-	createPrivateChatHandler *create_private_chat.Handler,
 ) *commandbus.Bus {
 	bus := commandbus.NewBus()
 
@@ -52,8 +48,6 @@ func BuildCommandBus(
 	bus.RegisterHandler(registerUserHandler)
 	bus.RegisterHandler(loginHandler)
 	bus.RegisterHandler(refreshSessionHandler)
-	bus.RegisterHandler(sendMessageHandler)
-	bus.RegisterHandler(createPrivateChatHandler)
 
 	return bus
 }

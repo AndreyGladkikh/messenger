@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"messenger/messenger/internal/auth/domain/session"
-	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/platform/sqlc"
 	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 

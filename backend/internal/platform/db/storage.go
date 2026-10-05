@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
-	"messenger/messenger/internal/messaging/infrastructure/sqlc"
 	"messenger/messenger/internal/platform/db/transaction"
+	"messenger/messenger/internal/platform/sqlc"
 )
 
 type Storage struct {

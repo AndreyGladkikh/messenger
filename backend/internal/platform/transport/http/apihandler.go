@@ -10,7 +10,6 @@ import (
 	"messenger/messenger/internal/auth/application/token"
 	authDomain "messenger/messenger/internal/auth/domain"
 	"messenger/messenger/internal/auth/domain/session"
-	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/querybus"
@@ -61,20 +60,20 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 }
 
 func (h *ApiHandler) GetMyChatList(ctx context.Context, request GetMyChatListRequestObject) (GetMyChatListResponseObject, error) {
-	a, err := getAuth(ctx)
+	_, err := getAuth(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	query := &get_chat_list.Query{
-		UserID: a.Principal.Subject.ID,
-	}
-	response, err := h.queryBus.Dispatch[get_chat_list.ChatListView](ctx, query)
-	if err != nil {
-		return nil, err
-	}
+	// query := &get_chat_list.Query{
+	// 	UserID: a.Principal.Subject.ID,
+	// }
+	// response, err := h.queryBus.Dispatch[get_chat_list.ChatListView](ctx, query)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return GetMyChatList200JSONResponse(mapChatList(response)), nil
+	return GetMyChatList200JSONResponse{}, nil
 }
 
 func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error) {

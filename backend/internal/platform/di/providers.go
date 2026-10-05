@@ -12,15 +12,11 @@ import (
 	authPasswordAdapter "messenger/messenger/internal/auth/infrastructure/password"
 	authRepository "messenger/messenger/internal/auth/infrastructure/repository"
 	authTokenAdapter "messenger/messenger/internal/auth/infrastructure/token"
-	"messenger/messenger/internal/messaging/application/command/create_private_chat"
-	"messenger/messenger/internal/messaging/application/command/send_message"
-	"messenger/messenger/internal/messaging/application/event/message_sent"
-	"messenger/messenger/internal/messaging/application/query/get_chat_list"
-	"messenger/messenger/internal/messaging/domain/chat"
-	"messenger/messenger/internal/messaging/domain/chat_participant"
-	"messenger/messenger/internal/messaging/domain/message"
-	messagingRepository "messenger/messenger/internal/messaging/infrastructure/repository"
-	"messenger/messenger/internal/messaging/infrastructure/sqlc"
+	"messenger/messenger/internal/conversations/app/command"
+	"messenger/messenger/internal/conversations/domain/model/conversation"
+	"messenger/messenger/internal/conversations/domain/model/membership"
+	"messenger/messenger/internal/conversations/domain/model/message"
+	cnvRepo "messenger/messenger/internal/conversations/infra/repository"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -32,6 +28,7 @@ import (
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/transport/http"
 	"messenger/messenger/internal/shared/application/chateventspublisher"
 
@@ -92,15 +89,15 @@ var CommonSet = wire.NewSet(
 
 var Repositories = wire.NewSet(
 	repository.NewRepository,
-	messagingRepository.NewMessageRepository,
-	messagingRepository.NewChatRepository,
-	messagingRepository.NewChatParticipantRepository,
+	cnvRepo.NewConversationRepository,
+	cnvRepo.NewMembershipRepository,
+	cnvRepo.NewMessageRepository,
 	authRepository.NewUserRepository,
 	authRepository.NewSessionRepository,
 
-	wire.Bind(new(message.Repository), new(*messagingRepository.MessageRepository)),
-	wire.Bind(new(chat.Repository), new(*messagingRepository.ChatRepository)),
-	wire.Bind(new(chat_participant.Repository), new(*messagingRepository.ChatParticipantRepository)),
+	wire.Bind(new(message.Repository), new(*cnvRepo.MessageRepository)),
+	wire.Bind(new(conversation.Repository), new(*cnvRepo.ConversationRepository)),
+	wire.Bind(new(membership.Repository), new(*cnvRepo.MembershipRepository)),
 	wire.Bind(new(user.Repository), new(*authRepository.UserRepository)),
 	wire.Bind(new(session.Repository), new(*authRepository.SessionRepository)),
 )
@@ -109,16 +106,13 @@ var CommandHandlers = wire.NewSet(
 	register.NewHandler,
 	login.NewHandler,
 	refresh.NewHandler,
-	create_private_chat.NewHandler,
-	send_message.NewHandler,
+	command.NewSendMessageHandler,
+	command.NewSendFirstDirectMessageHandler,
 )
 
 var QueryHandlers = wire.NewSet(
 	get_current_user.NewHandler,
-	get_chat_list.NewHandler,
 )
 
 var EventHandlers = wire.NewSet(
-	message_sent.NewNotifyChatParticipantsHandler,
-	message_sent.NewRebuildQueryModelHandler,
 )
