@@ -11,7 +11,7 @@ type Message struct {
 	domain.AggregateRoot
 
 	id             uuid.UUID
-	SenderID         uuid.UUID
+	SenderID       uuid.UUID
 	ConversationID uuid.UUID
 	Body           string
 }
@@ -27,7 +27,7 @@ func New(
 ) *Message {
 	msg := &Message{
 		id:             uuid.New(),
-		SenderID:         senderID,
+		SenderID:       senderID,
 		ConversationID: conversationID,
 		Body:           body,
 	}

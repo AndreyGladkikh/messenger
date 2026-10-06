@@ -13,11 +13,11 @@ import (
 )
 
 type Config struct {
-	Env        string
+	Env         string
 	FrontendUrl string
-	Database   *DatabaseConfig
-	Cache      *CacheConfig
-	HttpServer *HttpServerConfig
+	Database    *DatabaseConfig
+	Cache       *CacheConfig
+	HttpServer  *HttpServerConfig
 }
 
 type DatabaseConfig struct {

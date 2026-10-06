@@ -3,8 +3,8 @@ package logout
 import (
 	"context"
 	"errors"
-	"messenger/messenger/internal/identity/application/password"
-	"messenger/messenger/internal/identity/application/token"
+	"messenger/messenger/internal/identity/app/password"
+	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/identity/domain/user"
 	sharedDomain "messenger/messenger/internal/shared/domain"

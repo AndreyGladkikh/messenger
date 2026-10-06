@@ -3,20 +3,24 @@ package user
 import "uuid"
 
 type User struct {
-	ID           uuid.UUID
+	id           uuid.UUID
 	Login        string
 	PasswordHash string
 }
 
-func Register(
+func New(
 	login string,
 	passwordHash string,
 ) *User {
 	return &User{
-		ID:           uuid.New(),
+		id:           uuid.New(),
 		Login:        login,
 		PasswordHash: passwordHash,
 	}
+}
+
+func (u *User) ID() uuid.UUID {
+	return u.id
 }
 
 func Rehydrate(
@@ -25,7 +29,7 @@ func Rehydrate(
 	passwordHash string,
 ) *User {
 	return &User{
-		ID:           id,
+		id:           id,
 		Login:        login,
 		PasswordHash: passwordHash,
 	}

@@ -8,9 +8,9 @@ import (
 )
 
 type SendMessage struct {
-	SenderID    uuid.UUID
+	SenderID       uuid.UUID
 	ConversationID uuid.UUID
-	Body      string
+	Body           string
 }
 
 func (cmd SendMessage) IsCommand() {}
@@ -21,7 +21,7 @@ func (cmd SendMessage) Name() string {
 
 type SendMessageHandler struct {
 	conversationRepository conversation.Repository
-	messageSender              *service.MessageSender
+	messageSender          *service.MessageSender
 }
 
 func NewSendMessageHandler(
@@ -30,7 +30,7 @@ func NewSendMessageHandler(
 ) *SendMessageHandler {
 	return &SendMessageHandler{
 		conversationRepository: conversationRepository,
-		messageSender:              messageSender,
+		messageSender:          messageSender,
 	}
 }
 

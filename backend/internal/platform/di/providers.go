@@ -1,22 +1,20 @@
 package di
 
 import (
-	"messenger/messenger/internal/conversations/app/command"
+	cnvCommand "messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
 	cnvRepo "messenger/messenger/internal/conversations/infra/repository"
-	"messenger/messenger/internal/identity/application/command/login"
-	"messenger/messenger/internal/identity/application/command/refresh"
-	"messenger/messenger/internal/identity/application/command/register"
-	authPasswordPort "messenger/messenger/internal/identity/application/password"
-	"messenger/messenger/internal/identity/application/query/get_current_user"
-	authTokenPort "messenger/messenger/internal/identity/application/token"
+	idCommand "messenger/messenger/internal/identity/app/command"
+	authPasswordPort "messenger/messenger/internal/identity/app/password"
+	"messenger/messenger/internal/identity/app/query/get_current_user"
+	authTokenPort "messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/identity/domain/user"
-	authPasswordAdapter "messenger/messenger/internal/identity/infrastructure/password"
-	authRepository "messenger/messenger/internal/identity/infrastructure/repository"
-	authTokenAdapter "messenger/messenger/internal/identity/infrastructure/token"
+	authPasswordAdapter "messenger/messenger/internal/identity/infra/password"
+	authRepository "messenger/messenger/internal/identity/infra/repository"
+	authTokenAdapter "messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -103,11 +101,11 @@ var Repositories = wire.NewSet(
 )
 
 var CommandHandlers = wire.NewSet(
-	register.NewHandler,
-	login.NewHandler,
-	refresh.NewHandler,
-	command.NewSendMessageHandler,
-	command.NewSendFirstDirectMessageHandler,
+	idCommand.NewRegisterUserHandler,
+	idCommand.NewLoginUserHandler,
+	idCommand.NewRefreshUserTokensHandler,
+	cnvCommand.NewSendMessageHandler,
+	cnvCommand.NewSendFirstDirectMessageHandler,
 )
 
 var QueryHandlers = wire.NewSet(

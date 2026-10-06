@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"messenger/messenger/internal/identity/domain/user"
+	"messenger/messenger/internal/identity/infra/storage"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
@@ -26,9 +27,17 @@ func (r *UserRepository) ExistsByLogin(ctx context.Context, login string) (bool,
 	return r.Queries(ctx).UserExistsByLogin(ctx, login)
 }
 
-func (r *UserRepository) Add(ctx context.Context, u *user.User) error {
-	err := r.Queries(ctx).CreateUser(ctx, sqlc.CreateUserParams{
-		ID:           u.ID,
+func (r *UserRepository) Save(ctx context.Context, u *user.User) error {
+	err := r.Queries(ctx).CreateAccount(ctx, sqlc.CreateAccountParams{
+		ID:   u.ID(),
+		Type: storage.AccountTypeUser,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = r.Queries(ctx).CreateUser(ctx, sqlc.CreateUserParams{
+		ID:           u.ID(),
 		Login:        u.Login,
 		PasswordHash: u.PasswordHash,
 	})

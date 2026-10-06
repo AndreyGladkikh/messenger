@@ -4,7 +4,7 @@ import (
 	"errors"
 	auth "messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/identity/domain/user"
-	"messenger/messenger/internal/identity/infrastructure/token"
+	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/shared/domain"
 )
 

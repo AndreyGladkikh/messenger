@@ -16,11 +16,11 @@ type DirectConversationResolver struct {
 
 func NewDirectConversationResolver(
 	conversationRepository conversation.Repository,
-	membershipRepository   membership.Repository,
+	membershipRepository membership.Repository,
 ) *DirectConversationResolver {
 	return &DirectConversationResolver{
 		conversationRepository: conversationRepository,
-		membershipRepository: membershipRepository,
+		membershipRepository:   membershipRepository,
 	}
 }
 

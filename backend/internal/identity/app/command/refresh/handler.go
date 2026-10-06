@@ -3,7 +3,7 @@ package refresh
 import (
 	"context"
 	"errors"
-	"messenger/messenger/internal/identity/application/token"
+	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/identity/domain/session"
 	sharedDomain "messenger/messenger/internal/shared/domain"

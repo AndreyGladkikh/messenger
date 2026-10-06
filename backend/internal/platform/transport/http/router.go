@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"messenger/messenger/internal/identity/infrastructure/token"
+	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/transport/http/contenttype"
 	"messenger/messenger/internal/platform/transport/http/headers"
 	"net/http"

@@ -3,8 +3,8 @@ package register
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/identity/application/password"
-	"messenger/messenger/internal/identity/application/token"
+	"messenger/messenger/internal/identity/app/password"
+	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/identity/domain/user"
 )
@@ -46,12 +46,12 @@ func (h *Handler) Handle(ctx context.Context, cmd Command) (Response, error) {
 		return zero, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	user := user.Register(
+	user := user.New(
 		cmd.Login,
 		passHash,
 	)
 
-	err = h.userRepo.Add(ctx, user)
+	err = h.userRepo.Save(ctx, user)
 	if err != nil {
 		return zero, err
 	}
@@ -60,12 +60,12 @@ func (h *Handler) Handle(ctx context.Context, cmd Command) (Response, error) {
 	refreshTokenHash := h.tokenService.HashRefreshToken(refreshToken)
 
 	session := session.Create(
-		user.ID,
+		user.ID(),
 		refreshTokenHash,
 		cmd.UserAgent,
 		cmd.IP,
 	)
-	if err = h.sessionRepo.Add(ctx, session); err != nil {
+	if err = h.sessionRepo.Save(ctx, session); err != nil {
 		return zero, err
 	}
 

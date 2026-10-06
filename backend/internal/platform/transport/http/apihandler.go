@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json/v2"
 	"fmt"
-	"messenger/messenger/internal/conversations/app/command"
-	"messenger/messenger/internal/identity/application/command/login"
-	"messenger/messenger/internal/identity/application/command/refresh"
-	"messenger/messenger/internal/identity/application/command/register"
-	"messenger/messenger/internal/identity/application/query/get_current_user"
-	"messenger/messenger/internal/identity/application/token"
+	cnvCommand "messenger/messenger/internal/conversations/app/command"
+	idCommand "messenger/messenger/internal/identity/app/command"
+	"messenger/messenger/internal/identity/app/query/get_current_user"
+	"messenger/messenger/internal/identity/app/token"
 	authDomain "messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/platform/auth"
@@ -86,13 +84,13 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 		return nil, err
 	}
 
-	command := login.Command{
+	command := idCommand.LoginUser{
 		Login:     request.Body.Login,
 		Password:  request.Body.Password,
 		IP:        ip,
 		UserAgent: request.Params.UserAgent,
 	}
-	response, err := h.commandBus.Dispatch[login.Response](ctx, command)
+	response, err := h.commandBus.Dispatch[idCommand.LoginUserResponse](ctx, command)
 	if err != nil {
 		return nil, err
 	}
@@ -104,10 +102,10 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 }
 
 func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error) {
-	command := refresh.Command{
+	command := idCommand.RefreshUserTokens{
 		RefreshToken: request.Params.RefreshToken,
 	}
-	response, err := h.commandBus.Dispatch[refresh.Response](ctx, command)
+	response, err := h.commandBus.Dispatch[idCommand.RefreshUserTokensResponse](ctx, command)
 	if err != nil {
 		return nil, err
 	}
@@ -125,13 +123,13 @@ func (h *ApiHandler) Register(ctx context.Context, request RegisterRequestObject
 		return nil, err
 	}
 
-	command := register.Command{
+	command := idCommand.RegisterUser{
 		Login:     request.Body.Login,
 		Password:  request.Body.Password,
 		IP:        ip,
 		UserAgent: request.Params.UserAgent,
 	}
-	response, err := h.commandBus.Dispatch[register.Response](ctx, command)
+	response, err := h.commandBus.Dispatch[idCommand.RegisterUserResponse](ctx, command)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +218,7 @@ func (h *ApiHandler) SendMsg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := command.SendFirstDirectMessage{
+	cmd := cnvCommand.SendFirstDirectMessage{
 		Sender:    a.Principal.Subject.ID,
 		Recipient: rqst.RecipientID,
 		Body:      rqst.Body,

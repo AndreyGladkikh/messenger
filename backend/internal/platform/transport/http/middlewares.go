@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	authDomain "messenger/messenger/internal/identity/domain"
-	"messenger/messenger/internal/identity/infrastructure/token"
+	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/transport/http/cookies"
 	"messenger/messenger/internal/platform/transport/http/headers"

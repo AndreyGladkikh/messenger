@@ -71,7 +71,7 @@ type AppCommandHandlerAdapter[C command.Command, R any] struct {
 
 func (a *AppCommandHandlerAdapter[C, R]) Handle(ctx context.Context, c command.Command) (any, error) {
 	var cmdTP C
-	
+
 	typedCommand, ok := c.(C)
 	if !ok {
 		return nil, fmt.Errorf("command handler expected command of type %T, got %T", cmdTP, c)

@@ -19,7 +19,7 @@ type Membership struct {
 
 	id             uuid.UUID
 	ConversationID uuid.UUID
-	ParticipantID    uuid.UUID
+	ParticipantID  uuid.UUID
 	Role           Role
 }
 
@@ -35,7 +35,7 @@ func New(
 	return &Membership{
 		id:             uuid.New(),
 		ConversationID: conversationID,
-		ParticipantID:    participantID,
+		ParticipantID:  participantID,
 		Role:           role,
 	}
 }

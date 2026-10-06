@@ -6,7 +6,7 @@ type ParticipantType string
 
 const (
 	ParticipantTypeUser ParticipantType = "user"
-	ParticipantTypeBot ParticipantType = "bot"
+	ParticipantTypeBot  ParticipantType = "bot"
 )
 
 type Participant struct {

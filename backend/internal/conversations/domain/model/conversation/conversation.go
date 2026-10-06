@@ -51,7 +51,7 @@ func Rehydrate(
 }
 
 type DirectConversationParticipantsPair struct {
-	participantLow uuid.UUID
+	participantLow  uuid.UUID
 	participantHigh uuid.UUID
 }
 
@@ -68,7 +68,7 @@ func NewDirectConversationParticipantsPair(
 	}
 
 	return DirectConversationParticipantsPair{
-		participantLow: participantOne,
+		participantLow:  participantOne,
 		participantHigh: participantTwo,
 	}, nil
 }

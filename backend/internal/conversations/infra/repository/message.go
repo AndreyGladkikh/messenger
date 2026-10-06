@@ -19,10 +19,10 @@ func NewMessageRepository(repo *repository.Repository) *MessageRepository {
 
 func (m *MessageRepository) Save(ctx context.Context, msg *message.Message) error {
 	err := m.Queries(ctx).CreateMessage(ctx, sqlc.CreateMessageParams{
-		ID: msg.ID(),
-		SenderID: msg.SenderID,
+		ID:             msg.ID(),
+		SenderID:       msg.SenderID,
 		ConversationID: msg.ConversationID,
-		Body: msg.Body,
+		Body:           msg.Body,
 	})
 	if err != nil {
 		return err

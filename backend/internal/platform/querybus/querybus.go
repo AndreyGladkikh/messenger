@@ -3,7 +3,7 @@ package querybus
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/identity/application/query/get_current_user"
+	"messenger/messenger/internal/identity/app/query/get_current_user"
 	"messenger/messenger/internal/shared/application/query"
 )
 

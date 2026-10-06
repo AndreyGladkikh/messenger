@@ -3,8 +3,8 @@ package login
 import (
 	"context"
 	"errors"
-	"messenger/messenger/internal/identity/application/password"
-	"messenger/messenger/internal/identity/application/token"
+	"messenger/messenger/internal/identity/app/password"
+	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/identity/domain/user"
@@ -54,12 +54,12 @@ func (h *Handler) Handle(ctx context.Context, cmd Command) (Response, error) {
 	refreshTokenHash := h.tokenService.HashRefreshToken(refreshToken)
 
 	session := session.Create(
-		u.ID,
+		u.ID(),
 		refreshTokenHash,
 		cmd.UserAgent,
 		cmd.IP,
 	)
-	if err = h.sessionRepo.Add(ctx, session); err != nil {
+	if err = h.sessionRepo.Save(ctx, session); err != nil {
 		return zero, err
 	}
 

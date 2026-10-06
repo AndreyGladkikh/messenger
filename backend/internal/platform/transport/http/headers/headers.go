@@ -79,5 +79,5 @@ const (
 	XRatelimitLimit        = "X-Ratelimit-Limit"
 	XRatelimitRemaining    = "X-Ratelimit-Remaining"
 	XRatelimitReset        = "X-Ratelimit-Reset"
-	XApiKey        = "X-Api-Key"
+	XApiKey                = "X-Api-Key"
 )

@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/identity/application/token"
+	"messenger/messenger/internal/identity/app/token"
 	authDomain "messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/platform/transport/http/cookies"

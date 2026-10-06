@@ -167,40 +167,6 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) er
 	return err
 }
 
-const createSession = `-- name: CreateSession :exec
-INSERT INTO identity.sessions (
-  id,
-  user_id,
-  refresh_token_hash,
-  expires_at,
-  user_agent,
-  ip
-) VALUES (
-  $1, $2, $3, $4, $5, $6
-)
-`
-
-type CreateSessionParams struct {
-	ID               uuid.UUID
-	UserID           uuid.UUID
-	RefreshTokenHash string
-	ExpiresAt        pgtype.Timestamptz
-	UserAgent        string
-	Ip               netip.Addr
-}
-
-func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
-	_, err := q.db.Exec(ctx, createSession,
-		arg.ID,
-		arg.UserID,
-		arg.RefreshTokenHash,
-		arg.ExpiresAt,
-		arg.UserAgent,
-		arg.Ip,
-	)
-	return err
-}
-
 const createUser = `-- name: CreateUser :exec
 INSERT INTO identity.users (
   id,
@@ -313,34 +279,6 @@ func (q *Queries) PutToOutbox(ctx context.Context, arg PutToOutboxParams) error 
 	return err
 }
 
-const saveSession = `-- name: SaveSession :exec
-UPDATE identity.sessions
-SET refresh_token_hash = $2,
-  expires_at = $3,
-  revoked_at = $4,
-  last_used_at = $5
-WHERE id = $1
-`
-
-type SaveSessionParams struct {
-	ID               uuid.UUID
-	RefreshTokenHash string
-	ExpiresAt        pgtype.Timestamptz
-	RevokedAt        pgtype.Timestamptz
-	LastUsedAt       pgtype.Timestamptz
-}
-
-func (q *Queries) SaveSession(ctx context.Context, arg SaveSessionParams) error {
-	_, err := q.db.Exec(ctx, saveSession,
-		arg.ID,
-		arg.RefreshTokenHash,
-		arg.ExpiresAt,
-		arg.RevokedAt,
-		arg.LastUsedAt,
-	)
-	return err
-}
-
 const updateMessage = `-- name: UpdateMessage :exec
 UPDATE conversations.messages
   set body = $2,
@@ -356,5 +294,52 @@ type UpdateMessageParams struct {
 
 func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) error {
 	_, err := q.db.Exec(ctx, updateMessage, arg.ID, arg.Body, arg.UpdatedAt)
+	return err
+}
+
+const upsertSession = `-- name: UpsertSession :exec
+INSERT INTO identity.sessions (
+  id,
+  user_id,
+  refresh_token_hash,
+  expires_at,
+  user_agent,
+  ip,
+  revoked_at,
+  last_used_at
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8
+)
+ON CONFLICT (id) DO UPDATE
+SET refresh_token_hash = EXCLUDED.refresh_token_hash,
+  expires_at = EXCLUDED.expires_at,
+  user_agent = EXCLUDED.user_agent,
+  ip = EXCLUDED.ip,
+  revoked_at = EXCLUDED.revoked_at,
+  last_used_at = EXCLUDED.last_used_at
+`
+
+type UpsertSessionParams struct {
+	ID               uuid.UUID
+	UserID           uuid.UUID
+	RefreshTokenHash string
+	ExpiresAt        pgtype.Timestamptz
+	UserAgent        string
+	Ip               netip.Addr
+	RevokedAt        pgtype.Timestamptz
+	LastUsedAt       pgtype.Timestamptz
+}
+
+func (q *Queries) UpsertSession(ctx context.Context, arg UpsertSessionParams) error {
+	_, err := q.db.Exec(ctx, upsertSession,
+		arg.ID,
+		arg.UserID,
+		arg.RefreshTokenHash,
+		arg.ExpiresAt,
+		arg.UserAgent,
+		arg.Ip,
+		arg.RevokedAt,
+		arg.LastUsedAt,
+	)
 	return err
 }

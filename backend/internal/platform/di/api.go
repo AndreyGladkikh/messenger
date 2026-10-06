@@ -1,9 +1,7 @@
 package di
 
 import (
-	"messenger/messenger/internal/identity/application/command/login"
-	"messenger/messenger/internal/identity/application/command/refresh"
-	"messenger/messenger/internal/identity/application/command/register"
+	idCommand "messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/commandbus/middlewares"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -31,9 +29,9 @@ func BuildCommandBus(
 	txManager *transaction.Manager,
 	logger *logger.Logger,
 	eventService *event.EventService,
-	registerUserHandler *register.Handler,
-	loginHandler *login.Handler,
-	refreshSessionHandler *refresh.Handler,
+	registerUserHandler *idCommand.RegisterUserHandler,
+	loginUserHandler *idCommand.LoginUserHandler,
+	refreshSessionHandler *idCommand.RefreshUserTokensHandler,
 ) *commandbus.Bus {
 	bus := commandbus.NewBus()
 
@@ -46,7 +44,7 @@ func BuildCommandBus(
 	bus.Use(middlewares.ErrorMapping)
 
 	bus.RegisterHandler(registerUserHandler)
-	bus.RegisterHandler(loginHandler)
+	bus.RegisterHandler(loginUserHandler)
 	bus.RegisterHandler(refreshSessionHandler)
 
 	return bus

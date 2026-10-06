@@ -21,17 +21,6 @@ func NewSessionRepository(repo *repository.Repository) *SessionRepository {
 	}
 }
 
-func (r *SessionRepository) Add(ctx context.Context, s *session.Session) error {
-	return r.Queries(ctx).CreateSession(ctx, sqlc.CreateSessionParams{
-		ID:               s.ID,
-		UserID:           s.UserID,
-		RefreshTokenHash: s.RefreshTokenHash,
-		ExpiresAt:        db.ToDBTimestamp(s.ExpiresAt),
-		UserAgent:        s.UserAgent,
-		Ip:               s.IP,
-	})
-}
-
 func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token string) (*session.Session, error) {
 	s, err := r.Queries(ctx).GetSessionByRefreshTokenHash(ctx, token)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -55,8 +44,11 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 }
 
 func (r *SessionRepository) Save(ctx context.Context, s *session.Session) error {
-	return r.Queries(ctx).SaveSession(ctx, sqlc.SaveSessionParams{
+	return r.Queries(ctx).UpsertSession(ctx, sqlc.UpsertSessionParams{
 		ID:               s.ID,
+		UserID:           s.UserID,
+		UserAgent:        s.UserAgent,
+		Ip:               s.IP,
 		RefreshTokenHash: s.RefreshTokenHash,
 		ExpiresAt:        db.ToDBTimestamp(s.ExpiresAt),
 		RevokedAt:        db.ToDBTimestamp(s.RevokedAt),

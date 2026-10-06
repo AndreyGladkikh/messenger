@@ -11,7 +11,7 @@ import (
 
 type Server struct {
 	httpServer *http.Server
-	logger *logger.Logger
+	logger     *logger.Logger
 }
 
 func NewServer(

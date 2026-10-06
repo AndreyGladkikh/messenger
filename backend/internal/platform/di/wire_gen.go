@@ -7,13 +7,11 @@
 package di
 
 import (
-	"messenger/messenger/internal/identity/application/command/login"
-	"messenger/messenger/internal/identity/application/command/refresh"
-	"messenger/messenger/internal/identity/application/command/register"
-	"messenger/messenger/internal/identity/application/query/get_current_user"
-	"messenger/messenger/internal/identity/infrastructure/password"
-	repository2 "messenger/messenger/internal/identity/infrastructure/repository"
-	"messenger/messenger/internal/identity/infrastructure/token"
+	"messenger/messenger/internal/identity/app/command"
+	"messenger/messenger/internal/identity/app/query/get_current_user"
+	"messenger/messenger/internal/identity/infra/password"
+	repository2 "messenger/messenger/internal/identity/infra/repository"
+	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/db/transaction"
@@ -51,12 +49,12 @@ func InitializeApi() (*Api, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	handler := register.NewHandler(userRepository, sessionRepository, hasher, service)
-	loginHandler := login.NewHandler(userRepository, sessionRepository, hasher, service)
-	refreshHandler := refresh.NewHandler(sessionRepository, service)
-	bus := BuildCommandBus(manager, loggerLogger, eventService, handler, loginHandler, refreshHandler)
-	get_current_userHandler := get_current_user.NewHandler()
-	querybusBus := querybus.InitBus(get_current_userHandler)
+	registerUserHandler := command.NewRegisterUserHandler(userRepository, sessionRepository, hasher, service)
+	loginUserHandler := command.NewLoginUserHandler(userRepository, sessionRepository, hasher, service)
+	refreshUserTokensHandler := command.NewRefreshUserTokensHandler(sessionRepository, service)
+	bus := BuildCommandBus(manager, loggerLogger, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler)
+	handler := get_current_user.NewHandler()
+	querybusBus := querybus.InitBus(handler)
 	apiHandler := http.NewApiHandler(bus, querybusBus)
 	errorHandler := http.NewErrorHandler(configConfig, loggerLogger)
 	client, cleanup2, err := redis.NewRedis(configConfig)

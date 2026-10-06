@@ -40,7 +40,7 @@ func (c *ConversationRepository) GetDirectBetween(ctx context.Context, participa
 
 func (c *ConversationRepository) Save(ctx context.Context, cnv *conversation.Conversation) error {
 	err := c.Queries(ctx).CreateConversation(ctx, sqlc.CreateConversationParams{
-		ID: cnv.ID(),
+		ID:   cnv.ID(),
 		Type: cnv.Type.String(),
 	})
 	if err != nil {
