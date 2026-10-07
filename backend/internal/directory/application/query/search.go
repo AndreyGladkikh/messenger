@@ -3,10 +3,12 @@ package query
 import "context"
 
 type Search struct {
-	Name string
+	Str string
 }
 
 type SearchResponse struct {
+	// Global []GlobalSearchResult
+	// Messages []Message
 }
 
 type Handler struct {

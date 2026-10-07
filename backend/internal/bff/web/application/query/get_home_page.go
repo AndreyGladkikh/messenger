@@ -2,8 +2,6 @@ package query
 
 import (
 	"context"
-	"messenger/messenger/internal/bff/web/application/model/homepage"
-	"messenger/messenger/internal/bff/web/application/reader"
 
 	"uuid"
 )
@@ -12,14 +10,14 @@ type GetHomePage struct {
 	UserID uuid.UUID
 }
 
-type GetHomePageHandler struct {
-	reader reader.Reader
+type HomePage struct {
+	Peers []PeerItem
 }
 
-func (h *GetHomePageHandler) Handle(ctx context.Context, query GetHomePage) (homepage.HomePage, error) {
-	hp, err := h.reader.GetHomePage(ctx, query.UserID)
-	if err != nil {
-		return homepage.HomePage{}, err
-	}
-	return hp, nil
+type GetHomePageHandler struct {
+	reader Reader
+}
+
+func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomePage, error) {
+	return h.reader.GetHomePage(ctx, qry.UserID)
 }

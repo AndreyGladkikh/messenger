@@ -43,9 +43,9 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	manager := transactions.NewManager(pool)
 	queries := sqlc.New(pool)
-	store := store.NewStore(queries)
-	eventService := event.NewEventService(store)
-	repositoryRepository := repository.NewRepository(store)
+	storeStore := store.NewStore(queries)
+	eventService := event.NewEventService(storeStore)
+	repositoryRepository := repository.NewRepository(storeStore)
 	userRepository := repository2.NewUserRepository(repositoryRepository)
 	sessionRepository := repository2.NewSessionRepository(repositoryRepository)
 	hasher := password.NewHasher(configConfig)
@@ -59,7 +59,7 @@ func InitializeApi() (*Api, func(), error) {
 	refreshUserTokensHandler := command.NewRefreshUserTokensHandler(sessionRepository, tokenService)
 	conversationRepository := repository3.NewConversationRepository(repositoryRepository)
 	membershipRepository := repository3.NewMembershipRepository(repositoryRepository)
-	readerReader := reader.NewReader(store)
+	readerReader := reader.NewReader(storeStore)
 	getAccountHandler := query.NewGetAccountHandler(readerReader)
 	bus := querybus.InitBus(getAccountHandler)
 	participantLookup := lookup.NewParticipantLookup(bus)
@@ -78,7 +78,7 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(client)
 	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
-	websocketHandler := http.NewWebsocketHandler(loggerLogger, commandbusBus, bus, store, chatEventsPubSub)
+	websocketHandler := http.NewWebsocketHandler(loggerLogger, commandbusBus, bus, storeStore, chatEventsPubSub)
 	handler, err := http.NewRouter(apiHandler, errorHandler, tokenService, websocketHandler)
 	if err != nil {
 		cleanup3()
@@ -108,8 +108,8 @@ func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 		return nil, nil, err
 	}
 	queries := sqlc.New(pool)
-	store := store.NewStore(queries)
-	eventService := event.NewEventService(store)
+	storeStore := store.NewStore(queries)
+	eventService := event.NewEventService(storeStore)
 	manager := transactions.NewManager(pool)
 	loggerLogger := logger.New()
 	handlerRegistry := NewEventHandlerRegistry()
