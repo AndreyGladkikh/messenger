@@ -3,7 +3,7 @@ package event
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/shared/application/event"
+	"messenger/messenger/internal/shared/app/event"
 	"messenger/messenger/internal/shared/domain"
 	"slices"
 )

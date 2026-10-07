@@ -6,14 +6,14 @@ info:
 
   contact:
     email: andrgladkikh@gmail.com
-  version: 1.0.0
+  version: 0.0.1
 tags:
   - name: auth
     description: Everything about identity and access
   - name: me
     description: Current user info
 paths:
-  /auth/register:
+  /auth/user/register:
     post:
       tags:
         - auth
@@ -56,7 +56,7 @@ paths:
           $ref: '#/components/responses/ServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /auth/login:
+  /auth/user/login:
     post:
       tags:
         - auth
@@ -99,7 +99,7 @@ paths:
           $ref: '#/components/responses/ServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /auth/refresh:
+  /auth/user/refreshTokens:
     post:
       parameters:
         - name: refresh_token

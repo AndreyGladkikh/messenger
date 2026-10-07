@@ -3,7 +3,7 @@ package commandbus
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/shared/application/command"
+	"messenger/messenger/internal/shared/app/command"
 )
 
 type Bus struct {

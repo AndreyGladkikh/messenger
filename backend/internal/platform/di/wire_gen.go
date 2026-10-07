@@ -10,16 +10,14 @@ import (
 	command2 "messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/app/service"
 	"messenger/messenger/internal/conversations/infra/lookup"
-	repository3 "messenger/messenger/internal/conversations/infra/repository"
+	repository3 "messenger/messenger/internal/conversations/infra/persistence/repository"
 	"messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/infra/password"
-	"messenger/messenger/internal/identity/infra/query_reader"
-	repository2 "messenger/messenger/internal/identity/infra/repository"
+	"messenger/messenger/internal/identity/infra/persistence/reader"
+	repository2 "messenger/messenger/internal/identity/infra/persistence/repository"
 	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
-	"messenger/messenger/internal/platform/db"
-	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/outbox_relay"
@@ -29,6 +27,8 @@ import (
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/platform/store"
+	"messenger/messenger/internal/platform/transactions"
 	"messenger/messenger/internal/platform/transport/http"
 )
 
@@ -41,11 +41,11 @@ func InitializeApi() (*Api, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	manager := transaction.NewManager(pool)
+	manager := transactions.NewManager(pool)
 	queries := sqlc.New(pool)
-	storage := db.NewStore(queries)
-	eventService := event.NewEventService(storage)
-	repositoryRepository := repository.NewRepository(storage)
+	store := store.NewStore(queries)
+	eventService := event.NewEventService(store)
+	repositoryRepository := repository.NewRepository(store)
 	userRepository := repository2.NewUserRepository(repositoryRepository)
 	sessionRepository := repository2.NewSessionRepository(repositoryRepository)
 	hasher := password.NewHasher(configConfig)
@@ -59,8 +59,8 @@ func InitializeApi() (*Api, func(), error) {
 	refreshUserTokensHandler := command.NewRefreshUserTokensHandler(sessionRepository, tokenService)
 	conversationRepository := repository3.NewConversationRepository(repositoryRepository)
 	membershipRepository := repository3.NewMembershipRepository(repositoryRepository)
-	reader := query_reader.NewReader(storage)
-	getAccountHandler := query.NewGetAccountHandler(reader)
+	readerReader := reader.NewReader(store)
+	getAccountHandler := query.NewGetAccountHandler(readerReader)
 	bus := querybus.InitBus(getAccountHandler)
 	participantLookup := lookup.NewParticipantLookup(bus)
 	directConversationResolver := service.NewDirectConversationResolver(conversationRepository, membershipRepository, participantLookup)
@@ -78,7 +78,7 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(client)
 	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
-	websocketHandler := http.NewWebsocketHandler(loggerLogger, commandbusBus, bus, storage, chatEventsPubSub)
+	websocketHandler := http.NewWebsocketHandler(loggerLogger, commandbusBus, bus, store, chatEventsPubSub)
 	handler, err := http.NewRouter(apiHandler, errorHandler, tokenService, websocketHandler)
 	if err != nil {
 		cleanup3()
@@ -108,9 +108,9 @@ func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 		return nil, nil, err
 	}
 	queries := sqlc.New(pool)
-	storage := db.NewStore(queries)
-	eventService := event.NewEventService(storage)
-	manager := transaction.NewManager(pool)
+	store := store.NewStore(queries)
+	eventService := event.NewEventService(store)
+	manager := transactions.NewManager(pool)
 	loggerLogger := logger.New()
 	handlerRegistry := NewEventHandlerRegistry()
 	outboxRelay := outbox_relay.NewOutboxRelay(eventService, manager, loggerLogger, queries, handlerRegistry)

@@ -1,9 +1,9 @@
-package db
+package store
 
 import (
 	"context"
-	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/platform/transactions"
 )
 
 type Store struct {
@@ -17,7 +17,7 @@ func NewStore(q *sqlc.Queries) *Store {
 }
 
 func (s *Store) Queries(ctx context.Context) *sqlc.Queries {
-	if tx, ok := transaction.FromContext(ctx); ok {
+	if tx, ok := transactions.FromContext(ctx); ok {
 		return s.q.WithTx(tx)
 	}
 	return s.q

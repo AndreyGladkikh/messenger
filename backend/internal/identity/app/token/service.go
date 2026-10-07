@@ -1,7 +1,7 @@
 package token
 
 import (
-	"messenger/messenger/internal/identity/domain/session"
+	"messenger/messenger/internal/identity/domain/model/session"
 	"time"
 )
 

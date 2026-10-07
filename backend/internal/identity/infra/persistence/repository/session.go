@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"messenger/messenger/internal/identity/domain/session"
+	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
 	sharedDomain "messenger/messenger/internal/shared/domain"
@@ -44,7 +44,7 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 
 func (r *SessionRepository) Save(ctx context.Context, s *session.Session) error {
 	return r.Queries(ctx).UpsertSession(ctx, sqlc.UpsertSessionParams{
-		ID:               s.ID,
+		ID:               s.ID(),
 		UserID:           s.UserID,
 		UserAgent:        s.UserAgent,
 		Ip:               s.IP,

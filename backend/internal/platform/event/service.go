@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/platform/store"
 	sharedDomain "messenger/messenger/internal/shared/domain"
 	"time"
 
@@ -18,11 +18,11 @@ import (
 var ErrHandlerAlreadyExecuted = errors.New("handler already executed")
 
 type EventService struct {
-	*db.Store
+	*store.Store
 }
 
 func NewEventService(
-	store *db.Store,
+	store *store.Store,
 ) *EventService {
 	return &EventService{
 		Store: store,

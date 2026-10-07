@@ -5,8 +5,6 @@ import (
 	"uuid"
 )
 
-var _ domain.Aggregate = (*Message)(nil)
-
 type Message struct {
 	domain.AggregateRoot
 

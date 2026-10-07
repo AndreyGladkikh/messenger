@@ -9,8 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"messenger/messenger/internal/identity/app/token"
-	authDomain "messenger/messenger/internal/identity/domain"
-	"messenger/messenger/internal/identity/domain/session"
+	authDomain "messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/transport/http/cookies"
 	"messenger/messenger/internal/platform/utils"
 	"net/http"
@@ -72,7 +72,7 @@ func (s *Service) GenerateAccessToken(session *session.Session) (string, error) 
 		Subject:   session.UserID.String(),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(token.AccessTokenTTL)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		SID:       session.ID,
+		SID:       session.ID(),
 	}
 
 	return t.SignedString(s.jwtSignKey)

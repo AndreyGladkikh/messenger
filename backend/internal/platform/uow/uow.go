@@ -2,24 +2,24 @@ package uow
 
 import (
 	"maps"
-	sharedDomain "messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/shared/domain"
 	"slices"
 )
 
 type UnitOfWork struct {
-	aggregates map[string]sharedDomain.Aggregate
+	aggregates map[string]domain.Aggregate
 }
 
 func New() *UnitOfWork {
 	return &UnitOfWork{
-		aggregates: make(map[string]sharedDomain.Aggregate),
+		aggregates: make(map[string]domain.Aggregate),
 	}
 }
 
-func (u *UnitOfWork) RegisterAggregate(a sharedDomain.Aggregate) {
+func (u *UnitOfWork) RegisterAggregate(a domain.Aggregate) {
 	u.aggregates[a.ID().String()] = a
 }
 
-func (u *UnitOfWork) Aggregates() []sharedDomain.Aggregate {
+func (u *UnitOfWork) Aggregates() []domain.Aggregate {
 	return slices.Collect(maps.Values(u.aggregates))
 }

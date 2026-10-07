@@ -1,8 +1,13 @@
 package user
 
-import "uuid"
+import (
+	"messenger/messenger/internal/shared/domain"
+	"uuid"
+)
 
 type User struct {
+	domain.AggregateRoot
+	
 	id           uuid.UUID
 	Login        string
 	PasswordHash string
@@ -19,10 +24,6 @@ func New(
 	}
 }
 
-func (u *User) ID() uuid.UUID {
-	return u.id
-}
-
 func Rehydrate(
 	id uuid.UUID,
 	login string,
@@ -33,4 +34,8 @@ func Rehydrate(
 		Login:        login,
 		PasswordHash: passwordHash,
 	}
+}
+
+func (u *User) ID() uuid.UUID {
+	return u.id
 }

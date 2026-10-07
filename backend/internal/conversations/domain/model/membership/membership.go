@@ -12,8 +12,6 @@ const (
 	RoleMember Role = "member"
 )
 
-var _ domain.Aggregate = (*Membership)(nil)
-
 type Membership struct {
 	domain.AggregateRoot
 

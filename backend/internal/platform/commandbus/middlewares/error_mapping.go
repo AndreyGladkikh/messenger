@@ -3,8 +3,8 @@ package middlewares
 import (
 	"context"
 	"messenger/messenger/internal/platform/commandbus"
-	"messenger/messenger/internal/shared/application/apperr"
-	"messenger/messenger/internal/shared/application/command"
+	"messenger/messenger/internal/shared/app/apperr"
+	"messenger/messenger/internal/shared/app/command"
 )
 
 func ErrorMapping(next commandbus.CommandHandler) commandbus.CommandHandler {

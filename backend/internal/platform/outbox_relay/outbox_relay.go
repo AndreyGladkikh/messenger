@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/sqlc"
-	apevent "messenger/messenger/internal/shared/application/event"
+	"messenger/messenger/internal/platform/transactions"
+	apevent "messenger/messenger/internal/shared/app/event"
 	"messenger/messenger/internal/shared/domain"
 	"strings"
 	"sync"
@@ -40,7 +40,7 @@ func (e *EventHandlingError) AsStrings() []string {
 
 type OutboxRelay struct {
 	eventService         *event.EventService
-	txManager            *transaction.Manager
+	txManager            *transactions.Manager
 	logger               *logger.Logger
 	qs                   *sqlc.Queries
 	eventHandlerRegistry *event.HandlerRegistry
@@ -48,7 +48,7 @@ type OutboxRelay struct {
 
 func NewOutboxRelay(
 	eventService *event.EventService,
-	txManager *transaction.Manager,
+	txManager *transactions.Manager,
 	logger *logger.Logger,
 	qs *sqlc.Queries,
 	eventHandlerRegistry *event.HandlerRegistry,

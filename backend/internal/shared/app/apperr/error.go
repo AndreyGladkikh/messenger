@@ -2,8 +2,8 @@ package apperr
 
 import (
 	"errors"
-	auth "messenger/messenger/internal/identity/domain"
-	"messenger/messenger/internal/identity/domain/user"
+	auth "messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/identity/domain/model/user"
 	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/shared/domain"
 )

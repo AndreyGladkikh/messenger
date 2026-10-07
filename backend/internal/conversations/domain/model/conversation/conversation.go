@@ -18,8 +18,6 @@ const (
 	ConversationTypeGroup  ConversationType = "group"
 )
 
-var _ domain.Aggregate = (*Conversation)(nil)
-
 type Conversation struct {
 	domain.AggregateRoot
 

@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/domain/model/message"
-	authDomain "messenger/messenger/internal/identity/domain"
+	authDomain "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
-	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
-	"messenger/messenger/internal/shared/application/apperr"
+	"messenger/messenger/internal/platform/store"
+	"messenger/messenger/internal/shared/app/apperr"
 	"net/http"
 	"sync"
 	"time"
@@ -33,7 +33,7 @@ type WebsocketHandler struct {
 	logger     *logger.Logger
 	commandBus *commandbus.Bus
 	queryBus   *querybus.Bus
-	store    *db.Store
+	store      *store.Store
 	pubsub     *pubsub.ChatEventsPubSub
 }
 
@@ -41,14 +41,14 @@ func NewWebsocketHandler(
 	logger *logger.Logger,
 	commandBus *commandbus.Bus,
 	queryBus *querybus.Bus,
-	store *db.Store,
+	store *store.Store,
 	pubsub *pubsub.ChatEventsPubSub,
 ) *WebsocketHandler {
 	return &WebsocketHandler{
 		logger:     logger,
 		commandBus: commandBus,
 		queryBus:   queryBus,
-		store:    store,
+		store:      store,
 		pubsub:     pubsub,
 	}
 }

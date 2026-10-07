@@ -4,8 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"messenger/messenger/internal/identity/domain/user"
-	"messenger/messenger/internal/identity/infra/store"
+	"messenger/messenger/internal/identity/domain/model/user"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
@@ -30,7 +29,7 @@ func (r *UserRepository) ExistsByLogin(ctx context.Context, login string) (bool,
 func (r *UserRepository) Save(ctx context.Context, u *user.User) error {
 	err := r.Queries(ctx).CreateAccount(ctx, sqlc.CreateAccountParams{
 		ID:   u.ID(),
-		Type: store.AccountTypeUser,
+		Type: sqlc.AccountTypeUser,
 	})
 	if err != nil {
 		return err

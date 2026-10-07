@@ -5,8 +5,8 @@ import (
 	"errors"
 	"messenger/messenger/internal/identity/app/password"
 	"messenger/messenger/internal/identity/app/token"
-	"messenger/messenger/internal/identity/domain/session"
-	"messenger/messenger/internal/identity/domain/user"
+	"messenger/messenger/internal/identity/domain/model/session"
+	"messenger/messenger/internal/identity/domain/model/user"
 	"messenger/messenger/internal/shared/domain"
 )
 

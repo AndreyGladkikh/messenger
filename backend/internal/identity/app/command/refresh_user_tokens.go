@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"messenger/messenger/internal/identity/app/token"
-	"messenger/messenger/internal/identity/domain"
-	"messenger/messenger/internal/identity/domain/session"
+	"messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/identity/domain/model/session"
 	sharedDomain "messenger/messenger/internal/shared/domain"
 )
 
@@ -47,7 +47,7 @@ func (h *RefreshUserTokensHandler) Handle(ctx context.Context, cmd RefreshUserTo
 		return RefreshUserTokensResponse{}, err
 	}
 	if errors.Is(err, sharedDomain.ErrNotFound) {
-		return RefreshUserTokensResponse{}, domain.ErrUnauthorized
+		return RefreshUserTokensResponse{}, model.ErrUnauthorized
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()

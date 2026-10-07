@@ -5,9 +5,9 @@ import (
 	"errors"
 	"messenger/messenger/internal/identity/app/password"
 	"messenger/messenger/internal/identity/app/token"
-	"messenger/messenger/internal/identity/domain"
-	"messenger/messenger/internal/identity/domain/session"
-	"messenger/messenger/internal/identity/domain/user"
+	"messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/identity/domain/model/session"
+	"messenger/messenger/internal/identity/domain/model/user"
 	"net/netip"
 )
 
@@ -58,7 +58,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUser) (LoginUser
 		return LoginUserResponse{}, err
 	}
 	if errors.Is(err, user.ErrNotFound) {
-		return LoginUserResponse{}, domain.ErrInvalidCredantials
+		return LoginUserResponse{}, model.ErrInvalidCredantials
 	}
 
 	eq, err := h.passHasher.Compare(cmd.Password, u.PasswordHash)
@@ -66,7 +66,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUser) (LoginUser
 		return LoginUserResponse{}, err
 	}
 	if !eq {
-		return LoginUserResponse{}, domain.ErrInvalidCredantials
+		return LoginUserResponse{}, model.ErrInvalidCredantials
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()

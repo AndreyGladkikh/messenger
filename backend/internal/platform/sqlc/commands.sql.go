@@ -31,7 +31,7 @@ INSERT INTO identity.accounts (
 
 type CreateAccountParams struct {
 	ID   uuid.UUID
-	Type string
+	Type AccountType
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) error {

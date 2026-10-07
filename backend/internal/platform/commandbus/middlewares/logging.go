@@ -5,7 +5,7 @@ import (
 	"errors"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/logger"
-	"messenger/messenger/internal/shared/application/command"
+	"messenger/messenger/internal/shared/app/command"
 )
 
 type LoggerMiddlewareContainer struct {

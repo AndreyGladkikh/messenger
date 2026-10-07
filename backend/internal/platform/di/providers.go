@@ -7,20 +7,18 @@ import (
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
 	cnvLookup "messenger/messenger/internal/conversations/infra/lookup"
-	cnvRepo "messenger/messenger/internal/conversations/infra/repository"
+	cnvRepo "messenger/messenger/internal/conversations/infra/persistence/repository"
 	idCommand "messenger/messenger/internal/identity/app/command"
 	authPasswordPort "messenger/messenger/internal/identity/app/password"
 	idQuery "messenger/messenger/internal/identity/app/query"
 	authTokenPort "messenger/messenger/internal/identity/app/token"
-	"messenger/messenger/internal/identity/domain/session"
-	"messenger/messenger/internal/identity/domain/user"
+	"messenger/messenger/internal/identity/domain/model/session"
+	"messenger/messenger/internal/identity/domain/model/user"
 	authPasswordAdapter "messenger/messenger/internal/identity/infra/password"
-	idQueryReader "messenger/messenger/internal/identity/infra/query_reader"
-	authRepository "messenger/messenger/internal/identity/infra/repository"
+	idQueryReader "messenger/messenger/internal/identity/infra/persistence/reader"
+	authRepository "messenger/messenger/internal/identity/infra/persistence/repository"
 	authTokenAdapter "messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
-	"messenger/messenger/internal/platform/db"
-	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/outbox_relay"
@@ -30,8 +28,10 @@ import (
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/platform/store"
+	"messenger/messenger/internal/platform/transactions"
 	"messenger/messenger/internal/platform/transport/http"
-	"messenger/messenger/internal/shared/application/chateventspublisher"
+	"messenger/messenger/internal/shared/app/chateventspublisher"
 
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -66,7 +66,7 @@ var CommonSet = wire.NewSet(
 	config.Load,
 
 	sqlc.New,
-	db.NewStore,
+	store.NewStore,
 	Repositories,
 
 	CommandHandlers,
@@ -74,7 +74,7 @@ var CommonSet = wire.NewSet(
 	EventHandlers,
 
 	postgres.NewPool,
-	transaction.NewManager,
+	transactions.NewManager,
 
 	redis.NewRedis,
 

@@ -14,5 +14,7 @@ DROP TABLE IF EXISTS identity.bots;
 DROP TABLE IF EXISTS identity.users;
 DROP TABLE IF EXISTS identity.accounts;
 
+DROP TYPE account_type;
+
 DROP SCHEMA IF EXISTS identity;
 DROP SCHEMA IF EXISTS conversations;

@@ -6,11 +6,11 @@ import (
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
-	"messenger/messenger/internal/identity/domain"
+	"messenger/messenger/internal/identity/domain/model"
 	"uuid"
 )
 
-var ErrSenderNotParticipantOfConversation = fmt.Errorf("%w: sender is not a participant in conversation", domain.ErrForbidden)
+var ErrSenderNotParticipantOfConversation = fmt.Errorf("%w: sender is not a participant in conversation", model.ErrForbidden)
 
 type MessageSender struct {
 	membershipRepository membership.Repository

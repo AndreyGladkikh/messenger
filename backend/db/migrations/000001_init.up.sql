@@ -1,9 +1,11 @@
 CREATE SCHEMA IF NOT EXISTS identity;
 CREATE SCHEMA IF NOT EXISTS conversations;
 
+CREATE TYPE account_type AS ENUM ('user', 'bot', 'service');
+
 CREATE TABLE identity.accounts(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    type TEXT NOT NULL,
+    type ACCOUNT_TYPE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     deleted_at TIMESTAMP WITH TIME ZONE
 );

@@ -1,6 +1,7 @@
 package session
 
 import (
+	"messenger/messenger/internal/shared/domain"
 	"net/netip"
 	"time"
 
@@ -10,7 +11,9 @@ import (
 const TTL = 30 * 24 * time.Hour
 
 type Session struct {
-	ID               uuid.UUID
+	domain.AggregateRoot
+
+	id               uuid.UUID
 	UserID           uuid.UUID
 	RefreshTokenHash string
 	CreatedAt        time.Time
@@ -28,11 +31,11 @@ func Create(
 	ip netip.Addr,
 ) *Session {
 	s := &Session{
-		ID:        uuid.New(),
-		UserID:    userID,
-		CreatedAt: time.Now(),
-		UserAgent: userAgent,
-		IP:        ip,
+		id:         uuid.New(),
+		UserID:     userID,
+		CreatedAt:  time.Now(),
+		UserAgent:  userAgent,
+		IP:         ip,
 		LastUsedAt: time.Now(),
 	}
 	s.Refresh(refreshTokenHash)
@@ -51,7 +54,7 @@ func Rehydrate(
 	ip netip.Addr,
 ) *Session {
 	return &Session{
-		ID:               id,
+		id:               id,
 		UserID:           userID,
 		RefreshTokenHash: refreshTokenHash,
 		CreatedAt:        createdAt,
@@ -61,6 +64,10 @@ func Rehydrate(
 		UserAgent:        userAgent,
 		IP:               ip,
 	}
+}
+
+func (s *Session) ID() uuid.UUID {
+	return s.id
 }
 
 func (s *Session) IsRevoked() bool {

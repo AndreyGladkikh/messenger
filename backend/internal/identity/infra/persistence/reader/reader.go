@@ -1,21 +1,21 @@
-package query_reader
+package reader
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"messenger/messenger/internal/identity/app/query"
-	"messenger/messenger/internal/platform/db"
+	"messenger/messenger/internal/platform/store"
 	"messenger/messenger/internal/shared/domain"
 	"uuid"
 )
 
 type Reader struct {
-	*db.Store
+	*store.Store
 }
 
 func NewReader(
-	store *db.Store,
+	store *store.Store,
 ) *Reader {
 	return &Reader{
 		Store: store,
@@ -35,6 +35,6 @@ func (r *Reader) GetAccount(ctx context.Context, id uuid.UUID) (query.AccountVie
 
 	return query.AccountView{
 		ID:   acc.ID,
-		Type: acc.Type,
+		Type: string(acc.Type),
 	}, nil
 }

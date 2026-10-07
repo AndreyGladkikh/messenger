@@ -5,9 +5,9 @@ import (
 	"errors"
 	"messenger/messenger/internal/identity/app/password"
 	"messenger/messenger/internal/identity/app/token"
-	"messenger/messenger/internal/identity/domain"
-	"messenger/messenger/internal/identity/domain/session"
-	"messenger/messenger/internal/identity/domain/user"
+	"messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/identity/domain/model/session"
+	"messenger/messenger/internal/identity/domain/model/user"
 )
 
 type Handler struct {
@@ -39,7 +39,7 @@ func (h *Handler) Handle(ctx context.Context, cmd Command) (Response, error) {
 		return zero, err
 	}
 	if errors.Is(err, user.ErrNotFound) {
-		return zero, domain.ErrInvalidCredantials
+		return zero, model.ErrInvalidCredantials
 	}
 
 	eq, err := h.passHasher.Compare(cmd.Password, u.PasswordHash)
@@ -47,7 +47,7 @@ func (h *Handler) Handle(ctx context.Context, cmd Command) (Response, error) {
 		return zero, err
 	}
 	if !eq {
-		return zero, domain.ErrInvalidCredantials
+		return zero, model.ErrInvalidCredantials
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()

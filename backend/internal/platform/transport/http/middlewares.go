@@ -3,12 +3,12 @@ package http
 import (
 	"context"
 	"fmt"
-	authDomain "messenger/messenger/internal/identity/domain"
+	authDomain "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/transport/http/cookies"
 	"messenger/messenger/internal/platform/transport/http/headers"
-	"messenger/messenger/internal/shared/application/apperr"
+	"messenger/messenger/internal/shared/app/apperr"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"

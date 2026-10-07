@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	query1 "messenger/messenger/internal/identity/app/query"
-	"messenger/messenger/internal/shared/application/query"
+	"messenger/messenger/internal/shared/app/query"
 )
 
 type Bus struct {

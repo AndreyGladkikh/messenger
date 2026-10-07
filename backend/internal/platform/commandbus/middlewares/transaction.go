@@ -4,19 +4,19 @@ import (
 	"context"
 	"fmt"
 	"messenger/messenger/internal/platform/commandbus"
-	"messenger/messenger/internal/platform/db/transaction"
 	"messenger/messenger/internal/platform/event"
+	"messenger/messenger/internal/platform/transactions"
 	"messenger/messenger/internal/platform/uow"
-	"messenger/messenger/internal/shared/application/command"
+	"messenger/messenger/internal/shared/app/command"
 )
 
 type TransactionMiddlewareContainer struct {
-	txManager    *transaction.Manager
+	txManager    *transactions.Manager
 	eventService *event.EventService
 }
 
 func NewTransactionMiddlewareContainer(
-	txManager *transaction.Manager,
+	txManager *transactions.Manager,
 	eventService *event.EventService,
 ) *TransactionMiddlewareContainer {
 	return &TransactionMiddlewareContainer{

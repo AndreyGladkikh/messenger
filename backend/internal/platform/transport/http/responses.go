@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"messenger/messenger/internal/platform/transport/http/headers"
-	"messenger/messenger/internal/shared/application/apperr"
+	"messenger/messenger/internal/shared/app/apperr"
 	"net/http"
 	"time"
 

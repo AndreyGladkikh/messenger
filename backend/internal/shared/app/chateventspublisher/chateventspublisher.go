@@ -2,7 +2,7 @@ package chateventspublisher
 
 import (
 	"context"
-	"messenger/messenger/internal/shared/application/event"
+	"messenger/messenger/internal/shared/app/event"
 	"messenger/messenger/internal/shared/domain"
 
 	"uuid"

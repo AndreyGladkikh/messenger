@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"messenger/messenger/internal/conversations/domain/model/message"
 	"messenger/messenger/internal/platform/sqlc"
-	"messenger/messenger/internal/shared/application/event"
+	"messenger/messenger/internal/shared/app/event"
 	"messenger/messenger/internal/shared/domain"
 )
 
