@@ -1,4 +1,4 @@
-package storage
+package store
 
 const (
 	AccountTypeUser = "user"

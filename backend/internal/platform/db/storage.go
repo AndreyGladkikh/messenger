@@ -6,17 +6,17 @@ import (
 	"messenger/messenger/internal/platform/sqlc"
 )
 
-type Storage struct {
+type Store struct {
 	q *sqlc.Queries
 }
 
-func NewStorage(q *sqlc.Queries) *Storage {
-	return &Storage{
+func NewStore(q *sqlc.Queries) *Store {
+	return &Store{
 		q: q,
 	}
 }
 
-func (s *Storage) Queries(ctx context.Context) *sqlc.Queries {
+func (s *Store) Queries(ctx context.Context) *sqlc.Queries {
 	if tx, ok := transaction.FromContext(ctx); ok {
 		return s.q.WithTx(tx)
 	}

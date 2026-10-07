@@ -6,6 +6,7 @@ package sqlc
 
 import (
 	"net/netip"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"uuid"
@@ -14,8 +15,8 @@ import (
 type ConversationsConversation struct {
 	ID        uuid.UUID
 	Type      string
-	CreatedAt pgtype.Timestamptz
-	DeletedAt pgtype.Timestamptz
+	CreatedAt time.Time
+	DeletedAt *time.Time
 }
 
 type ConversationsDirectConversation struct {
@@ -29,7 +30,7 @@ type ConversationsFile struct {
 	Hash      []byte
 	Name      pgtype.Text
 	Url       string
-	CreatedAt pgtype.Timestamptz
+	CreatedAt *time.Time
 }
 
 type ConversationsMembership struct {
@@ -37,7 +38,7 @@ type ConversationsMembership struct {
 	ConversationID uuid.UUID
 	ParticipantID  uuid.UUID
 	Role           string
-	JoinedAt       pgtype.Timestamptz
+	JoinedAt       time.Time
 }
 
 type ConversationsMessage struct {
@@ -46,9 +47,9 @@ type ConversationsMessage struct {
 	ConversationID   uuid.UUID
 	Body             string
 	ReplyToMessageID *uuid.UUID
-	CreatedAt        pgtype.Timestamptz
-	UpdatedAt        pgtype.Timestamptz
-	DeletedAt        pgtype.Timestamptz
+	CreatedAt        time.Time
+	UpdatedAt        *time.Time
+	DeletedAt        *time.Time
 }
 
 type ConversationsMessageFile struct {
@@ -61,8 +62,8 @@ type ConversationsMessageFile struct {
 type IdentityAccount struct {
 	ID        uuid.UUID
 	Type      string
-	CreatedAt pgtype.Timestamptz
-	DeletedAt pgtype.Timestamptz
+	CreatedAt time.Time
+	DeletedAt *time.Time
 }
 
 type IdentityBot struct {
@@ -74,10 +75,10 @@ type IdentitySession struct {
 	ID               uuid.UUID
 	UserID           uuid.UUID
 	RefreshTokenHash string
-	CreatedAt        pgtype.Timestamptz
-	ExpiresAt        pgtype.Timestamptz
-	RevokedAt        pgtype.Timestamptz
-	LastUsedAt       pgtype.Timestamptz
+	CreatedAt        time.Time
+	ExpiresAt        time.Time
+	RevokedAt        *time.Time
+	LastUsedAt       time.Time
 	UserAgent        string
 	Ip               netip.Addr
 }
@@ -92,7 +93,7 @@ type Inbox struct {
 	ID         uuid.UUID
 	EventID    uuid.UUID
 	Handler    string
-	ExecutedAt pgtype.Timestamptz
+	ExecutedAt *time.Time
 }
 
 type Outbox struct {
@@ -100,10 +101,10 @@ type Outbox struct {
 	EventID      uuid.UUID
 	EventType    string
 	EventPayload []byte
-	OccurredAt   pgtype.Timestamptz
+	OccurredAt   time.Time
 	Status       string
-	ClaimedAt    pgtype.Timestamptz
+	ClaimedAt    time.Time
 	Attempts     int32
 	Errors       []string
-	NextRetryAt  pgtype.Timestamptz
+	NextRetryAt  *time.Time
 }

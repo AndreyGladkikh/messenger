@@ -33,7 +33,7 @@ type WebsocketHandler struct {
 	logger     *logger.Logger
 	commandBus *commandbus.Bus
 	queryBus   *querybus.Bus
-	storage    *db.Storage
+	store    *db.Store
 	pubsub     *pubsub.ChatEventsPubSub
 }
 
@@ -41,14 +41,14 @@ func NewWebsocketHandler(
 	logger *logger.Logger,
 	commandBus *commandbus.Bus,
 	queryBus *querybus.Bus,
-	storage *db.Storage,
+	store *db.Store,
 	pubsub *pubsub.ChatEventsPubSub,
 ) *WebsocketHandler {
 	return &WebsocketHandler{
 		logger:     logger,
 		commandBus: commandBus,
 		queryBus:   queryBus,
-		storage:    storage,
+		store:    store,
 		pubsub:     pubsub,
 	}
 }
@@ -136,7 +136,7 @@ func (h *WebsocketHandler) subscribeToChatEvents(ctx context.Context) (*pubsub.C
 	defer subscription.Cancel(ctx)
 
 	// todo refactor to app query
-	userChatIDs, err := h.storage.Queries(ctx).ListConversationIDsForUser(ctx, a.Principal.Subject.ID)
+	userChatIDs, err := h.store.Queries(ctx).ListConversationIDsForUser(ctx, a.Principal.Subject.ID)
 	if err != nil {
 		return nil, err
 	}

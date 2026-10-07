@@ -30,26 +30,30 @@ func (b *Bus) Dispatch[R any](ctx context.Context, c command.Command) (R, error)
 		return zero, err
 	}
 
+	if response == nil {
+		return zero, nil
+	}
+
 	typedResponse, ok := response.(R)
 	if !ok {
-		return zero, fmt.Errorf("command bus: handler of dispatched command responded with unexpected type: expected %T, got %T", new(R), response)
+		return zero, fmt.Errorf("command bus: handler of dispatched command responded with unexpected type: expected %T, got %T", zero, response)
 	}
 
 	return typedResponse, nil
 }
 
 func (b *Bus) RegisterHandler[C command.Command, R any](handler command.Handler[C, R]) error {
-	c := *new(C)
+	var cmd C
 
 	var adapted CommandHandler = &AppCommandHandlerAdapter[C, R]{handler: handler}
 
-	if _, ok := b.handlers[c.Name()]; ok {
-		return fmt.Errorf("для команды '%s' уже зарегистрирован обработчик", c.Name())
+	if _, ok := b.handlers[cmd.Name()]; ok {
+		return fmt.Errorf("для команды '%s' уже зарегистрирован обработчик", cmd.Name())
 	}
 	for _, m := range b.middlewares {
 		adapted = m(adapted)
 	}
-	b.handlers[c.Name()] = adapted
+	b.handlers[cmd.Name()] = adapted
 	return nil
 }
 

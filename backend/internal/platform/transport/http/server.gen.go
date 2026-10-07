@@ -665,7 +665,7 @@ type GetMeResponseObject interface {
 
 type GetMe200JSONResponse struct {
 	Id   string `json:"id"`
-	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 func (response GetMe200JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
@@ -1515,11 +1515,11 @@ var swaggerSpec = []string{
 	"hmkeHHm9950C2b2agrm2LJGjZQ7VK28TZfd2Mij9zF3XWu7jxT18u9tz9V7kuTonZsMrgjbfOpwPBkeT",
 	"yB1THmHucnO2TPJkWb5Eq14MBm1ESyn7lecYZsnZ5iW1AohZ9GTzomUh2ay42LyiLLaaBZebF/jLlrj6",
 	"/HwLRXiL+otO8HQbNVargWbNk+3WNGpg5uS3ob0GK02nykQRPEPvcZbFpa0eTMGDyR9AFw+QSK5cCrUK",
-	"0R9Av4LgQL/dqtbSUutoLWV4wuI31/+Lu75LekyUaM9ZPt4v7qs4aXX1Gmw6ATrVEjsuB2uPam/sBEIr",
-	"dVK1iqA3lVxOrQa7xnUDZ5VPaTEJl3UuGMWLrwxHklGGYdIEzVCITwyWQdPN/E2XeeVOcfNbqPqG1+OE",
-	"qlastEUuWzMBuQ5+dgahhMPMANsHPkfmL5hkXhfvu4vtf8s3v4H4tCD2Is4D4RT6ZbNvY/aJM0nClC0n",
-	"pZRhTJuCPxedF7284IS+XWtjfvPwb2nldmll6chVVNikclF+0UTCiweQcx2bmhn+MMKVOfXcpHo2XlZq",
-	"eIixRadJ5LqZ3S5XmB9fLf43AA==",
+	"0R9Av4LgQL/dqtZSZALr4yQrHxJ5wuI31/+Lu75LekyUaM9ZPt4v7qs4aXX1Gmw6QQpV7LgcrD2qvbET",
+	"CK3USdUqgt5Ucjm1Guwa1w2cVT6lxSRc1rlgFC++MhxJRhmGSRM0QyE+MVgGTTfzN13mlTvFzW+h6hte",
+	"jxOqWrHSFrlszQTkOvjZGYQSDjMDbB/4HJm/YJJ5XbzvLrb/Ld/8BuLTgtiLOA+EU+iXzb6N2SfOJAlT",
+	"tpyUUoYxbQr+XHRe9PKCE/p2rY35zcO/pZXbpZWlI1dRYZPKRflFEwkvHkDOdWxqZvjDCFfm1HOT6tl4",
+	"WanhIcYWnSaR62Z2u1xhfny1+N8A",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

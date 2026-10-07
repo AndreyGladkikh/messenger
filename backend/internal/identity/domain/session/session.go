@@ -15,7 +15,7 @@ type Session struct {
 	RefreshTokenHash string
 	CreatedAt        time.Time
 	ExpiresAt        time.Time
-	RevokedAt        time.Time
+	RevokedAt        *time.Time
 	LastUsedAt       time.Time
 	UserAgent        string
 	IP               netip.Addr
@@ -33,6 +33,7 @@ func Create(
 		CreatedAt: time.Now(),
 		UserAgent: userAgent,
 		IP:        ip,
+		LastUsedAt: time.Now(),
 	}
 	s.Refresh(refreshTokenHash)
 	return s
@@ -44,7 +45,7 @@ func Rehydrate(
 	refreshTokenHash string,
 	createdAt time.Time,
 	expiresAt time.Time,
-	revokedAt time.Time,
+	revokedAt *time.Time,
 	lastUsedAt time.Time,
 	userAgent string,
 	ip netip.Addr,
@@ -63,7 +64,7 @@ func Rehydrate(
 }
 
 func (s *Session) IsRevoked() bool {
-	return !s.RevokedAt.IsZero()
+	return s.RevokedAt != nil
 }
 
 func (s *Session) IsExpired() bool {
@@ -74,7 +75,8 @@ func (s *Session) Revoke() {
 	if s.IsRevoked() {
 		return
 	}
-	s.RevokedAt = time.Now()
+	now := time.Now()
+	s.RevokedAt = &now
 }
 
 func (s *Session) Refresh(tokenHash string) {

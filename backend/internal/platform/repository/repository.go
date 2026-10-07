@@ -8,12 +8,12 @@ import (
 )
 
 type Repository struct {
-	*db.Storage
+	*db.Store
 }
 
-func NewRepository(storage *db.Storage) *Repository {
+func NewRepository(store *db.Store) *Repository {
 	return &Repository{
-		Storage: storage,
+		Store: store,
 	}
 }
 

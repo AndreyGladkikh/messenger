@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"messenger/messenger/internal/identity/domain/session"
-	"messenger/messenger/internal/platform/db"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
 	sharedDomain "messenger/messenger/internal/shared/domain"
@@ -34,10 +33,10 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 		s.ID,
 		s.UserID,
 		s.RefreshTokenHash,
-		s.CreatedAt.Time,
-		s.ExpiresAt.Time,
-		s.RevokedAt.Time,
-		s.LastUsedAt.Time,
+		s.CreatedAt,
+		s.ExpiresAt,
+		s.RevokedAt,
+		s.LastUsedAt,
 		s.UserAgent,
 		s.Ip,
 	), nil
@@ -50,8 +49,8 @@ func (r *SessionRepository) Save(ctx context.Context, s *session.Session) error 
 		UserAgent:        s.UserAgent,
 		Ip:               s.IP,
 		RefreshTokenHash: s.RefreshTokenHash,
-		ExpiresAt:        db.ToDBTimestamp(s.ExpiresAt),
-		RevokedAt:        db.ToDBTimestamp(s.RevokedAt),
-		LastUsedAt:       db.ToDBTimestamp(s.LastUsedAt),
+		ExpiresAt:        s.ExpiresAt,
+		RevokedAt:        s.RevokedAt,
+		LastUsedAt:       s.LastUsedAt,
 	})
 }

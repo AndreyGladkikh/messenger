@@ -18,14 +18,14 @@ import (
 var ErrHandlerAlreadyExecuted = errors.New("handler already executed")
 
 type EventService struct {
-	*db.Storage
+	*db.Store
 }
 
 func NewEventService(
-	storage *db.Storage,
+	store *db.Store,
 ) *EventService {
 	return &EventService{
-		Storage: storage,
+		Store: store,
 	}
 }
 
@@ -63,10 +63,10 @@ func (s *EventService) UpdateEvent(
 	err := s.Queries(ctx).ProcessEvent(ctx, sqlc.ProcessEventParams{
 		ID:          event.ID,
 		Status:      string(status),
-		ClaimedAt:   db.ToDBTimestamp(time.Now()),
+		ClaimedAt:   time.Now(),
 		Attempts:    event.Attempts + 1,
 		Errors:      errors,
-		NextRetryAt: db.ToDBTimestamp(nextRetryAt),
+		NextRetryAt: &nextRetryAt,
 	})
 	if err != nil {
 		return fmt.Errorf("event processor: failed to mark event as processed: %w", err)

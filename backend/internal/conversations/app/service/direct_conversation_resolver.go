@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/shared/domain"
@@ -12,19 +13,22 @@ import (
 type DirectConversationResolver struct {
 	conversationRepository conversation.Repository
 	membershipRepository   membership.Repository
+	participantLookup ParticipantLookup
 }
 
 func NewDirectConversationResolver(
 	conversationRepository conversation.Repository,
 	membershipRepository membership.Repository,
+	participantLookup ParticipantLookup,
 ) *DirectConversationResolver {
 	return &DirectConversationResolver{
 		conversationRepository: conversationRepository,
 		membershipRepository:   membershipRepository,
+		participantLookup: participantLookup,
 	}
 }
 
-func (f *DirectConversationResolver) FindOrCreate(
+func (d *DirectConversationResolver) FindOrCreate(
 	ctx context.Context,
 	participantOneID uuid.UUID,
 	participantTwoID uuid.UUID,
@@ -34,7 +38,7 @@ func (f *DirectConversationResolver) FindOrCreate(
 		return nil, err
 	}
 
-	cnv, err := f.conversationRepository.GetDirectBetween(ctx, participants)
+	cnv, err := d.conversationRepository.GetDirectBetween(ctx, participants)
 	if err == nil {
 		return cnv, nil
 	}
@@ -44,18 +48,27 @@ func (f *DirectConversationResolver) FindOrCreate(
 
 	cnv = conversation.New(conversation.ConversationTypeDirect)
 
-	err = f.conversationRepository.SaveDirect(ctx, cnv, participants)
+	err = d.conversationRepository.SaveDirect(ctx, cnv, participants)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, participantID := range participants.List() {
+		exists, err := d.participantLookup.Exists(ctx, participantID) 
+		if err != nil {
+			return nil, err
+		}
+
+		if !exists {
+			return nil, fmt.Errorf("participant doesnt exist: %w", domain.ErrNotFound)
+		}
+
 		membership := membership.New(
 			cnv.ID(),
 			participantID,
 			membership.RoleMember,
 		)
-		err = f.membershipRepository.Save(ctx, membership)
+		err = d.membershipRepository.Save(ctx, membership)
 		if err != nil {
 			return nil, err
 		}

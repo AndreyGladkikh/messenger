@@ -3,7 +3,7 @@ package querybus
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/identity/app/query/get_current_user"
+	query1 "messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/shared/application/query"
 )
 
@@ -40,7 +40,7 @@ func (b *Bus) Dispatch[R any](ctx context.Context, q query.Query) (R, error) {
 }
 
 func (b *Bus) RegisterHandler[Q query.Query, R any](handler query.Handler[Q, R]) error {
-	q := *new(Q)
+	var q Q
 
 	var adapted QueryHandler = AppQueryHandlerAdapter[Q, R]{handler: handler}
 
@@ -92,11 +92,11 @@ func (f HandlerFunc) Handle(ctx context.Context, q query.Query) (any, error) {
 type Middleware func(next QueryHandler) QueryHandler
 
 func InitBus(
-	getCurrentUserHandler *get_current_user.Handler,
+	getAccountHandler *query1.GetAccountHandler,
 ) *Bus {
 	b := NewBus()
 
-	b.RegisterHandler(getCurrentUserHandler)
+	b.RegisterHandler(getAccountHandler)
 
 	return b
 }

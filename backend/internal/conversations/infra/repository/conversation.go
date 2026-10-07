@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/platform/postgres"
@@ -28,8 +29,11 @@ func (c *ConversationRepository) GetDirectBetween(ctx context.Context, participa
 		ParticipantIDLow:  participants.ParticipantLow(),
 		ParticipantIDHigh: participants.ParticipantHigh(),
 	})
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
 	}
 
 	return conversation.Rehydrate(

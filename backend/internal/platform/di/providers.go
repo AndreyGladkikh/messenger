@@ -2,17 +2,20 @@ package di
 
 import (
 	cnvCommand "messenger/messenger/internal/conversations/app/command"
+	cnvService "messenger/messenger/internal/conversations/app/service"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
+	cnvLookup "messenger/messenger/internal/conversations/infra/lookup"
 	cnvRepo "messenger/messenger/internal/conversations/infra/repository"
 	idCommand "messenger/messenger/internal/identity/app/command"
 	authPasswordPort "messenger/messenger/internal/identity/app/password"
-	"messenger/messenger/internal/identity/app/query/get_current_user"
+	idQuery "messenger/messenger/internal/identity/app/query"
 	authTokenPort "messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/session"
 	"messenger/messenger/internal/identity/domain/user"
 	authPasswordAdapter "messenger/messenger/internal/identity/infra/password"
+	idQueryReader "messenger/messenger/internal/identity/infra/query_reader"
 	authRepository "messenger/messenger/internal/identity/infra/repository"
 	authTokenAdapter "messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
@@ -63,7 +66,7 @@ var CommonSet = wire.NewSet(
 	config.Load,
 
 	sqlc.New,
-	db.NewStorage,
+	db.NewStore,
 	Repositories,
 
 	CommandHandlers,
@@ -80,9 +83,15 @@ var CommonSet = wire.NewSet(
 	logger.New,
 	pubsub.NewPubSub,
 	pubsub.NewChatEventsPubSub,
+	cnvService.NewDirectConversationResolver,
+	cnvService.NewMessageSender,
+	cnvLookup.NewParticipantLookup,
+	idQueryReader.NewReader,
 
 	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 	wire.Bind(new(chateventspublisher.ChatEventsPublisher), new(*pubsub.ChatEventsPubSub)),
+	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvLookup.ParticipantLookup)),
+	wire.Bind(new(idQuery.Reader), new(*idQueryReader.Reader)),
 )
 
 var Repositories = wire.NewSet(
@@ -109,7 +118,7 @@ var CommandHandlers = wire.NewSet(
 )
 
 var QueryHandlers = wire.NewSet(
-	get_current_user.NewHandler,
+	idQuery.NewGetAccountHandler,
 )
 
 var EventHandlers = wire.NewSet()

@@ -54,6 +54,23 @@ func (q *Queries) DirectConversationExists(ctx context.Context, arg DirectConver
 	return exists, err
 }
 
+const getAccount = `-- name: GetAccount :one
+SELECT id, type, created_at, deleted_at FROM identity.accounts
+WHERE id = $1
+`
+
+func (q *Queries) GetAccount(ctx context.Context, id uuid.UUID) (IdentityAccount, error) {
+	row := q.db.QueryRow(ctx, getAccount, id)
+	var i IdentityAccount
+	err := row.Scan(
+		&i.ID,
+		&i.Type,
+		&i.CreatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getConversation = `-- name: GetConversation :one
 SELECT id, type, created_at, deleted_at FROM conversations.conversations
 WHERE id = $1

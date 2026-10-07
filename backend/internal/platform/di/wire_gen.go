@@ -7,9 +7,14 @@
 package di
 
 import (
+	command2 "messenger/messenger/internal/conversations/app/command"
+	"messenger/messenger/internal/conversations/app/service"
+	"messenger/messenger/internal/conversations/infra/lookup"
+	repository3 "messenger/messenger/internal/conversations/infra/repository"
 	"messenger/messenger/internal/identity/app/command"
-	"messenger/messenger/internal/identity/app/query/get_current_user"
+	"messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/infra/password"
+	"messenger/messenger/internal/identity/infra/query_reader"
 	repository2 "messenger/messenger/internal/identity/infra/repository"
 	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
@@ -38,24 +43,33 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	manager := transaction.NewManager(pool)
 	queries := sqlc.New(pool)
-	storage := db.NewStorage(queries)
+	storage := db.NewStore(queries)
 	eventService := event.NewEventService(storage)
 	repositoryRepository := repository.NewRepository(storage)
 	userRepository := repository2.NewUserRepository(repositoryRepository)
 	sessionRepository := repository2.NewSessionRepository(repositoryRepository)
 	hasher := password.NewHasher(configConfig)
-	service, err := token.NewService()
+	tokenService, err := token.NewService()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	registerUserHandler := command.NewRegisterUserHandler(userRepository, sessionRepository, hasher, service)
-	loginUserHandler := command.NewLoginUserHandler(userRepository, sessionRepository, hasher, service)
-	refreshUserTokensHandler := command.NewRefreshUserTokensHandler(sessionRepository, service)
-	bus := BuildCommandBus(manager, loggerLogger, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler)
-	handler := get_current_user.NewHandler()
-	querybusBus := querybus.InitBus(handler)
-	apiHandler := http.NewApiHandler(bus, querybusBus)
+	registerUserHandler := command.NewRegisterUserHandler(userRepository, sessionRepository, hasher, tokenService)
+	loginUserHandler := command.NewLoginUserHandler(userRepository, sessionRepository, hasher, tokenService)
+	refreshUserTokensHandler := command.NewRefreshUserTokensHandler(sessionRepository, tokenService)
+	conversationRepository := repository3.NewConversationRepository(repositoryRepository)
+	membershipRepository := repository3.NewMembershipRepository(repositoryRepository)
+	reader := query_reader.NewReader(storage)
+	getAccountHandler := query.NewGetAccountHandler(reader)
+	bus := querybus.InitBus(getAccountHandler)
+	participantLookup := lookup.NewParticipantLookup(bus)
+	directConversationResolver := service.NewDirectConversationResolver(conversationRepository, membershipRepository, participantLookup)
+	messageRepository := repository3.NewMessageRepository(repositoryRepository)
+	messageSender := service.NewMessageSender(membershipRepository, messageRepository)
+	sendFirstDirectMessageHandler := command2.NewSendFirstDirectMessageHandler(directConversationResolver, messageSender)
+	sendMessageHandler := command2.NewSendMessageHandler(conversationRepository, messageSender)
+	commandbusBus := BuildCommandBus(manager, loggerLogger, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler)
+	apiHandler := http.NewApiHandler(commandbusBus, bus)
 	errorHandler := http.NewErrorHandler(configConfig, loggerLogger)
 	client, cleanup2, err := redis.NewRedis(configConfig)
 	if err != nil {
@@ -64,15 +78,15 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(client)
 	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
-	websocketHandler := http.NewWebsocketHandler(loggerLogger, bus, querybusBus, storage, chatEventsPubSub)
-	httpHandler, err := http.NewRouter(apiHandler, errorHandler, service, websocketHandler)
+	websocketHandler := http.NewWebsocketHandler(loggerLogger, commandbusBus, bus, storage, chatEventsPubSub)
+	handler, err := http.NewRouter(apiHandler, errorHandler, tokenService, websocketHandler)
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	server, err := http.NewServer(configConfig, loggerLogger, httpHandler)
+	server, err := http.NewServer(configConfig, loggerLogger, handler)
 	if err != nil {
 		cleanup3()
 		cleanup2()
@@ -94,7 +108,7 @@ func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 		return nil, nil, err
 	}
 	queries := sqlc.New(pool)
-	storage := db.NewStorage(queries)
+	storage := db.NewStore(queries)
 	eventService := event.NewEventService(storage)
 	manager := transaction.NewManager(pool)
 	loggerLogger := logger.New()

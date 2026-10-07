@@ -154,11 +154,11 @@ paths:
                 properties:
                   id:
                     type: string
-                  name:
+                  type:
                     type: string
                 required:
                   - id
-                  - name
+                  - type
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':

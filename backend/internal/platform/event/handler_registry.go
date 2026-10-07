@@ -23,7 +23,7 @@ func (r *HandlerRegistry) HandlersForEvent(event domain.Event) []Handler {
 }
 
 func RegisterEventHandler[E domain.Event](r *HandlerRegistry, handler event.Handler[E]) {
-	e := *new(E)
+	var e E
 	adaptedHandler := &ApEventHandlerAdapter[E]{handler}
 	r.handlers[e.Name()] = append(r.handlers[e.Name()], adaptedHandler)
 }

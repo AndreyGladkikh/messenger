@@ -8,8 +8,8 @@ package sqlc
 import (
 	"context"
 	"net/netip"
+	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"uuid"
 )
 
@@ -196,7 +196,7 @@ WHERE id = $1
 
 type DeleteConversationParams struct {
 	ID        uuid.UUID
-	DeletedAt pgtype.Timestamptz
+	DeletedAt *time.Time
 }
 
 func (q *Queries) DeleteConversation(ctx context.Context, arg DeleteConversationParams) error {
@@ -212,7 +212,7 @@ WHERE id = $1
 
 type DeleteMessageParams struct {
 	ID        uuid.UUID
-	DeletedAt pgtype.Timestamptz
+	DeletedAt *time.Time
 }
 
 func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) error {
@@ -233,10 +233,10 @@ WHERE id = $1
 type ProcessEventParams struct {
 	ID          uuid.UUID
 	Status      string
-	ClaimedAt   pgtype.Timestamptz
+	ClaimedAt   time.Time
 	Attempts    int32
 	Errors      []string
-	NextRetryAt pgtype.Timestamptz
+	NextRetryAt *time.Time
 }
 
 func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) error {
@@ -289,7 +289,7 @@ WHERE id = $1
 type UpdateMessageParams struct {
 	ID        uuid.UUID
 	Body      string
-	UpdatedAt pgtype.Timestamptz
+	UpdatedAt *time.Time
 }
 
 func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) error {
@@ -323,11 +323,11 @@ type UpsertSessionParams struct {
 	ID               uuid.UUID
 	UserID           uuid.UUID
 	RefreshTokenHash string
-	ExpiresAt        pgtype.Timestamptz
+	ExpiresAt        time.Time
 	UserAgent        string
 	Ip               netip.Addr
-	RevokedAt        pgtype.Timestamptz
-	LastUsedAt       pgtype.Timestamptz
+	RevokedAt        *time.Time
+	LastUsedAt       time.Time
 }
 
 func (q *Queries) UpsertSession(ctx context.Context, arg UpsertSessionParams) error {

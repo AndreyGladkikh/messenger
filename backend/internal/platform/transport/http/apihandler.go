@@ -6,7 +6,7 @@ import (
 	"fmt"
 	cnvCommand "messenger/messenger/internal/conversations/app/command"
 	idCommand "messenger/messenger/internal/identity/app/command"
-	"messenger/messenger/internal/identity/app/query/get_current_user"
+	"messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/app/token"
 	authDomain "messenger/messenger/internal/identity/domain"
 	"messenger/messenger/internal/identity/domain/session"
@@ -46,17 +46,17 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 		return nil, err
 	}
 
-	q := get_current_user.Query{
-		UserID: a.Principal.Subject.ID,
+	q := query.GetAccount{
+		ID: a.Principal.Subject.ID,
 	}
-	response, err := h.queryBus.Dispatch[get_current_user.AuthView](ctx, q)
+	response, err := h.queryBus.Dispatch[query.AccountView](ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
 	return GetMe200JSONResponse{
 		Id:   response.ID.String(),
-		Name: response.Name,
+		Type: response.Type,
 	}, nil
 }
 
