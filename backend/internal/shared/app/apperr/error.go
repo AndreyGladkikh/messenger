@@ -2,6 +2,7 @@ package apperr
 
 import (
 	"errors"
+	"messenger/messenger/internal/directory/domain/entry"
 	auth "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/domain/model/user"
 	"messenger/messenger/internal/identity/infra/token"
@@ -9,6 +10,7 @@ import (
 )
 
 const (
+	CodeUnsupportableDirectoryEntryTargetType       = "UNSUPPORTABLE_DIRECTORY_ENTRY_TARGET_TYPE"
 	CodeInvalidCredentials       = "INVALID_CREDENTIALS"
 	CodeInvalidToken             = "INVALID_TOKEN"
 	CodeUnauthorized             = "UNAUTHORIZED"
@@ -45,53 +47,64 @@ func Map(err error) error {
 		return err
 	}
 
-	switch {
-	case errors.Is(err, token.ErrInvalidToken):
+	if _, ok := errors.AsType[entry.UnsupportableTargetTypeError](err); ok {
+		return &Error{
+			Code:    CodeUnsupportableDirectoryEntryTargetType,
+			Message: "Unsupportable Directory Entry Target Type",
+			Wrapped: err,
+		}
+	}
+	if errors.Is(err, token.ErrInvalidToken) {
 		return &Error{
 			Code:    CodeInvalidToken,
 			Message: "Invalid access token",
 			Wrapped: err,
 		}
-	case errors.Is(err, auth.ErrInvalidCredantials):
+	}
+	if errors.Is(err, auth.ErrInvalidCredantials) {
 		return &Error{
 			Code:    CodeInvalidCredentials,
 			Message: "Invalid credentials",
 			Wrapped: err,
 		}
-	case errors.Is(err, auth.ErrUnauthorized):
+	}
+	if errors.Is(err, auth.ErrUnauthorized) {
 		return &Error{
 			Code:    CodeUnauthorized,
 			Message: "Authentication failed",
 			Wrapped: err,
 		}
-	case errors.Is(err, user.ErrNotFound):
+	}
+	if errors.Is(err, user.ErrNotFound) {
 		return &Error{
 			Code:    CodeUserNotFound,
 			Message: "User not found",
 			Wrapped: err,
 		}
-	case errors.Is(err, user.ErrLoginAlreadyExists):
+	}
+	if errors.Is(err, user.ErrLoginAlreadyExists) {
 		return &Error{
 			Code:    CodeLoginAlreadyExists,
 			Message: "Login already exists",
 			Wrapped: err,
 		}
-
-	case errors.Is(err, domain.ErrNotFound):
+	}
+	if errors.Is(err, domain.ErrNotFound) {
 		return &Error{
 			Code:    CodeNotFound,
 			Message: "Not found",
 			Wrapped: err,
 		}
-	case errors.Is(err, domain.ErrAlreadyExists):
+	}
+	if errors.Is(err, domain.ErrAlreadyExists) {
 		return &Error{
 			Code:    CodeAlreadyExists,
 			Message: "Already exists",
 			Wrapped: err,
 		}
-	default:
-		return err
 	}
+	
+	return err
 }
 
 func Translate(err error) *Error {

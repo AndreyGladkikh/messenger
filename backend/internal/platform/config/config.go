@@ -18,6 +18,7 @@ type Config struct {
 	Database    *DatabaseConfig
 	Cache       *CacheConfig
 	HttpServer  *HttpServerConfig
+	RabbitMq  *RabbitMqConfig
 }
 
 type DatabaseConfig struct {
@@ -35,6 +36,10 @@ type CacheConfig struct {
 }
 
 type HttpServerConfig struct {
+	Addr string
+}
+
+type RabbitMqConfig struct {
 	Addr string
 }
 

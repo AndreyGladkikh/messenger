@@ -1,5 +1,6 @@
-CREATE SCHEMA IF NOT EXISTS identity;
-CREATE SCHEMA IF NOT EXISTS conversations;
+CREATE SCHEMA identity;
+CREATE SCHEMA conversations;
+CREATE SCHEMA directory;
 
 CREATE TYPE account_type AS ENUM ('user', 'bot', 'service');
 
@@ -32,8 +33,8 @@ CREATE TABLE identity.sessions(
     user_agent TEXT NOT NULL,
     ip INET NOT NULL
 );
-CREATE INDEX session_user_id_index on identity.sessions (user_id);
-CREATE INDEX session_refresh_token_index on identity.sessions (refresh_token_hash);
+CREATE INDEX sessions_user_id_idx on identity.sessions (user_id);
+CREATE INDEX sessions_refresh_token_idx on identity.sessions (refresh_token_hash);
 
 CREATE TABLE conversations.conversations(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -57,8 +58,8 @@ CREATE TABLE conversations.memberships(
     joined_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     UNIQUE(conversation_id, participant_id)
 );
-CREATE INDEX conversation_memberships_conversation_id_index ON conversations.memberships (conversation_id);
-CREATE INDEX conversation_memberships_participant_id_index ON conversations.memberships (participant_id);
+CREATE INDEX conversation_memberships_conversation_id_idx ON conversations.memberships (conversation_id);
+CREATE INDEX conversation_memberships_participant_id_idx ON conversations.memberships (participant_id);
 
 CREATE TABLE conversations.messages(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -86,6 +87,21 @@ CREATE TABLE conversations.message_files(
     name TEXT
 );
 
+CREATE TABLE directory.entries(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    target_id UUID NOT NULL,
+    target_type TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    handle TEXT NOT NULL UNIQUE,
+    ts_vec TSVECTOR GENERATED ALWAYS AS (
+        to_tsvector('russian', coalesce(display_name, '')) ||
+        to_tsvector('english', coalesce(display_name, '') || ' ' || coalesce(handle, '')) ||
+        to_tsvector('simple', coalesce(display_name, '') || ' ' || coalesce(handle, ''))
+    ) STORED,
+    UNIQUE(target_id, target_type)
+);
+CREATE INDEX directory_entries_textsearch_idx ON directory.entries USING GIN (ts_vec);
+
 CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_id UUID NOT NULL,
@@ -98,8 +114,8 @@ CREATE TABLE outbox(
     errors TEXT[],
     next_retry_at TIMESTAMP WITH TIME ZONE
 );
-CREATE INDEX outbox_occurred_at_index ON outbox(occurred_at) WHERE status = 'pending';
-CREATE INDEX outbox_next_retry_at_occurred_at_index ON outbox(next_retry_at, occurred_at) WHERE status = 'retry';
+CREATE INDEX outbox_occurred_at_idx ON outbox(occurred_at) WHERE status = 'pending';
+CREATE INDEX outbox_next_retry_at_occurred_at_idx ON outbox(next_retry_at, occurred_at) WHERE status = 'retry';
 
 CREATE TABLE inbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

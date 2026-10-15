@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json/v2"
 	"fmt"
-	cnvCommand "messenger/messenger/internal/conversations/app/command"
+
+	// cnvCommand "messenger/messenger/internal/conversations/app/command"
+	"messenger/messenger/internal/directory/app/command"
+	"messenger/messenger/internal/directory/app/query"
 	idCommand "messenger/messenger/internal/identity/app/command"
-	"messenger/messenger/internal/identity/app/query"
+	idQuery "messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/app/token"
 	authDomain "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/domain/model/session"
@@ -18,7 +21,8 @@ import (
 	"net/http"
 	"net/netip"
 	"time"
-	"uuid"
+
+	// "uuid"
 
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -46,10 +50,10 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 		return nil, err
 	}
 
-	q := query.GetAccount{
+	q := idQuery.GetAccount{
 		ID: a.Principal.Subject.ID,
 	}
-	response, err := h.queryBus.Dispatch[query.AccountView](ctx, q)
+	response, err := h.queryBus.Dispatch[idQuery.AccountView](ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +81,7 @@ func (h *ApiHandler) GetMyChatList(ctx context.Context, request GetMyChatListReq
 	return GetMyChatList200JSONResponse{}, nil
 }
 
-func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error) {
+func (h *ApiHandler) LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error) {
 	clientIP := middleware.GetClientIP(ctx)
 	ip, err := netip.ParseAddr(clientIP)
 	if err != nil {
@@ -101,6 +105,22 @@ func (h *ApiHandler) Login(ctx context.Context, request LoginRequestObject) (Log
 	}, nil
 }
 
+func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error) {
+	cmd := command.RegisterEntry{
+		TargetID: request.Body.TargetId,
+		TargetType: request.Body.TargetType,
+		DisplayName: request.Body.DisplayName,
+		Handle: request.Body.Handle,
+	}
+
+	_, err := h.commandBus.Dispatch[any](ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return RegisterDirectoryEntry201Response{}, nil
+}
+
 func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error) {
 	command := idCommand.RefreshUserTokens{
 		RefreshToken: request.Params.RefreshToken,
@@ -116,7 +136,7 @@ func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensReq
 	}, nil
 }
 
-func (h *ApiHandler) Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error) {
+func (h *ApiHandler) RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error) {
 	clientIP := middleware.GetClientIP(ctx)
 	ip, err := netip.ParseAddr(clientIP)
 	if err != nil {
@@ -150,21 +170,21 @@ func getAuth(ctx context.Context) (auth.Auth, error) {
 }
 
 type Register200JSONResponseCustom struct {
-	Register200JSONResponse
+	RegisterUser200JSONResponse
 }
 
 func (response Register200JSONResponseCustom) VisitRegisterResponse(w http.ResponseWriter) error {
 	setAuthCookies(w, response.AccessToken, response.RefreshToken)
-	return response.Register200JSONResponse.VisitRegisterResponse(w)
+	return response.RegisterUser200JSONResponse.VisitRegisterUserResponse(w)
 }
 
 type Login200JSONResponseCustom struct {
-	Login200JSONResponse
+	LoginUser200JSONResponse
 }
 
 func (response Login200JSONResponseCustom) VisitLoginResponse(w http.ResponseWriter) error {
 	setAuthCookies(w, response.AccessToken, response.RefreshToken)
-	return response.Login200JSONResponse.VisitLoginResponse(w)
+	return response.LoginUser200JSONResponse.VisitLoginUserResponse(w)
 }
 
 type RefreshTokens200JSONResponseCustom struct {
@@ -199,32 +219,53 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 	http.SetCookie(w, refreshTokenCookie)
 }
 
-func (h *ApiHandler) SendMsg(w http.ResponseWriter, r *http.Request) {
+func (h *ApiHandler) Test(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	a, err := auth.AuthFromContext(r.Context())
+	_, err := auth.AuthFromContext(r.Context())
 	if err != nil {
 		http.Error(w, "failed to accept websocket connection: unauthorized", http.StatusUnauthorized)
 		return
 	}
 
+	// var rqst struct {
+	// 	Body        string    `json:"body"`
+	// 	RecipientID uuid.UUID `json:"recipietId"`
+	// }
+
+	// err = json.UnmarshalRead(r.Body, &rqst)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// cmd := cnvCommand.SendFirstDirectMessage{
+	// 	Sender:    a.Principal.Subject.ID,
+	// 	Recipient: rqst.RecipientID,
+	// 	Body:      rqst.Body,
+	// }
+
+	// rsp, err := h.commandBus.Dispatch[any](r.Context(), cmd)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
 	var rqst struct {
-		Body        string    `json:"body"`
-		RecipientID uuid.UUID `json:"recipietId"`
+		Search string `json:"search"`
 	}
+
 	err = json.UnmarshalRead(r.Body, &rqst)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	cmd := cnvCommand.SendFirstDirectMessage{
-		Sender:    a.Principal.Subject.ID,
-		Recipient: rqst.RecipientID,
-		Body:      rqst.Body,
+	qry := query.Search{
+		Str: rqst.Search,
 	}
 
-	rsp, err := h.commandBus.Dispatch[any](r.Context(), cmd)
+	rsp, err := h.queryBus.Dispatch[any](r.Context(), qry)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

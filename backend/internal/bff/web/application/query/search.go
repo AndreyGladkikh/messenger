@@ -10,6 +10,7 @@ type Search struct {
 }
 
 type SearchResponse struct {
+	Contacts []PeerItem
 	Global   []GlobalSearchResultPeerItem
 	Messages []PeerItem
 }

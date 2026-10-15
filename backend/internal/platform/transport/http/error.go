@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"messenger/messenger/internal/directory/domain/entry"
 	auth "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
@@ -93,16 +94,17 @@ func (h *ErrorHandler) problemTypeUrl(typ string) string {
 }
 
 func getErrorStatus(err error) int {
-	switch {
-	case errors.Is(err, auth.ErrUnauthorized):
+	if _, ok := errors.AsType[entry.UnsupportableTargetTypeError](err); ok {
+		return http.StatusUnprocessableEntity
+	} else if (errors.Is(err, auth.ErrUnauthorized)) {
 		return http.StatusUnauthorized
-	case errors.Is(err, auth.ErrForbidden):
+	} else if (errors.Is(err, auth.ErrForbidden)) {
 		return http.StatusForbidden
-	case errors.Is(err, domain.ErrNotFound):
+	} else if (errors.Is(err, domain.ErrNotFound)) {
 		return http.StatusNotFound
-	case errors.Is(err, domain.ErrDeleted):
+	} else if (errors.Is(err, domain.ErrDeleted)) {
 		return http.StatusGone
-	case errors.Is(err, domain.ErrAlreadyExists):
+	} else if (errors.Is(err, domain.ErrAlreadyExists)) {
 		return http.StatusConflict
 	}
 

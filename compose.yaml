@@ -5,6 +5,7 @@ services:
     shm_size: 128mb
     volumes:
       - postgres:/var/lib/postgresql
+      - ./backend/db/seeds:/etc/db/seeds
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: secret
@@ -20,6 +21,19 @@ services:
     shm_size: 128mb
     ports:
       - "6379:6379"
+    networks:
+      - mynet
+
+  rabbit:
+    image: rabbitmq:4.3.6-management
+    hostname: main
+    restart: always
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: app
+      RABBITMQ_DEFAULT_PASS: secret
     networks:
       - mynet
 

@@ -279,6 +279,31 @@ func (q *Queries) PutToOutbox(ctx context.Context, arg PutToOutboxParams) error 
 	return err
 }
 
+const updateDirectoryEntry = `-- name: UpdateDirectoryEntry :exec
+UPDATE directory.entries
+  set display_name = $3,
+  handle = $4
+WHERE target_id = $1
+AND target_type = $2
+`
+
+type UpdateDirectoryEntryParams struct {
+	TargetID    uuid.UUID
+	TargetType  string
+	DisplayName string
+	Handle      string
+}
+
+func (q *Queries) UpdateDirectoryEntry(ctx context.Context, arg UpdateDirectoryEntryParams) error {
+	_, err := q.db.Exec(ctx, updateDirectoryEntry,
+		arg.TargetID,
+		arg.TargetType,
+		arg.DisplayName,
+		arg.Handle,
+	)
+	return err
+}
+
 const updateMessage = `-- name: UpdateMessage :exec
 UPDATE conversations.messages
   set body = $2,
@@ -294,6 +319,39 @@ type UpdateMessageParams struct {
 
 func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) error {
 	_, err := q.db.Exec(ctx, updateMessage, arg.ID, arg.Body, arg.UpdatedAt)
+	return err
+}
+
+const upsertDirectoryEntry = `-- name: UpsertDirectoryEntry :exec
+INSERT INTO directory.entries (
+    id,
+    target_id,
+    target_type,
+    display_name,
+    handle
+) VALUES (
+  $1, $2, $3, $4, $5
+) ON CONFLICT (id) DO UPDATE
+SET display_name = EXCLUDED.display_name,
+  handle = EXCLUDED.handle
+`
+
+type UpsertDirectoryEntryParams struct {
+	ID          uuid.UUID
+	TargetID    uuid.UUID
+	TargetType  string
+	DisplayName string
+	Handle      string
+}
+
+func (q *Queries) UpsertDirectoryEntry(ctx context.Context, arg UpsertDirectoryEntryParams) error {
+	_, err := q.db.Exec(ctx, upsertDirectoryEntry,
+		arg.ID,
+		arg.TargetID,
+		arg.TargetType,
+		arg.DisplayName,
+		arg.Handle,
+	)
 	return err
 }
 

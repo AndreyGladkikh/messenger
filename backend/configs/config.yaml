@@ -16,3 +16,6 @@ HttpServer:
   Addr: :3000
 
 FrontendUrl: http://localhost:3000
+
+RabbitMq:
+  Addr: amqp://app:secret@localhost:5672/

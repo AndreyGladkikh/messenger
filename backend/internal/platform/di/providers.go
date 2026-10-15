@@ -6,8 +6,13 @@ import (
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
-	cnvLookup "messenger/messenger/internal/conversations/infra/lookup"
+	cnvIdentity "messenger/messenger/internal/conversations/infra/identity"
 	cnvRepo "messenger/messenger/internal/conversations/infra/persistence/repository"
+	drctrCommand "messenger/messenger/internal/directory/app/command"
+	drctrQuery "messenger/messenger/internal/directory/app/query"
+	"messenger/messenger/internal/directory/domain/entry"
+	drctrIdentity "messenger/messenger/internal/directory/infra/identity"
+	drctrPrstnc "messenger/messenger/internal/directory/infra/persistence"
 	idCommand "messenger/messenger/internal/identity/app/command"
 	authPasswordPort "messenger/messenger/internal/identity/app/password"
 	idQuery "messenger/messenger/internal/identity/app/query"
@@ -15,18 +20,18 @@ import (
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/identity/domain/model/user"
 	authPasswordAdapter "messenger/messenger/internal/identity/infra/password"
-	idQueryReader "messenger/messenger/internal/identity/infra/persistence/reader"
-	authRepository "messenger/messenger/internal/identity/infra/persistence/repository"
+	idReader "messenger/messenger/internal/identity/infra/persistence/reader"
+	idRepository "messenger/messenger/internal/identity/infra/persistence/repository"
 	authTokenAdapter "messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/outbox_relay"
-	"messenger/messenger/internal/platform/postgres"
+	pg "messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/redis"
-	"messenger/messenger/internal/platform/repository"
+	baseRepository "messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/store"
 	"messenger/messenger/internal/platform/transactions"
@@ -65,48 +70,64 @@ var OutboxRelaySet = wire.NewSet(
 var CommonSet = wire.NewSet(
 	config.Load,
 
+	logger.New,
+
+	// pg.NewPool,
+	transactions.NewManager,
 	sqlc.New,
 	store.NewStore,
-	Repositories,
+	// Repositories,
+	Persistence,
+
+	redis.NewRedis,
 
 	CommandHandlers,
 	QueryHandlers,
 	EventHandlers,
 
-	postgres.NewPool,
-	transactions.NewManager,
-
-	redis.NewRedis,
-
 	event.NewEventService,
-
-	logger.New,
 	pubsub.NewPubSub,
 	pubsub.NewChatEventsPubSub,
 	cnvService.NewDirectConversationResolver,
 	cnvService.NewMessageSender,
-	cnvLookup.NewParticipantLookup,
-	idQueryReader.NewReader,
+	cnvIdentity.NewParticipantLookup,
+	idReader.NewReader,
+	drctrIdentity.NewUserLookup,
+	drctrCommand.NewTargetLookup,
+	// dirQueryService.NewQueryService,
+
+	// wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
+	wire.Bind(new(chateventspublisher.ChatEventsPublisher), new(*pubsub.ChatEventsPubSub)),
+	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
+	wire.Bind(new(idQuery.Reader), new(*idReader.Reader)),
+	wire.Bind(new(drctrCommand.UserLookup), new(*drctrIdentity.UserLookup)),
+	// wire.Bind(new(dirQuery.Searcher), new(*dirQueryService.QueryService)),
+)
+
+var Persistence = wire.NewSet(
+	pg.NewPool,
+	Repositories,
+	drctrPrstnc.NewQueryService,
 
 	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
-	wire.Bind(new(chateventspublisher.ChatEventsPublisher), new(*pubsub.ChatEventsPubSub)),
-	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvLookup.ParticipantLookup)),
-	wire.Bind(new(idQuery.Reader), new(*idQueryReader.Reader)),
+	wire.Bind(new(drctrQuery.Searcher), new(*drctrPrstnc.QueryService)),
 )
 
 var Repositories = wire.NewSet(
-	repository.NewRepository,
+	baseRepository.NewRepository,
 	cnvRepo.NewConversationRepository,
 	cnvRepo.NewMembershipRepository,
 	cnvRepo.NewMessageRepository,
-	authRepository.NewUserRepository,
-	authRepository.NewSessionRepository,
+	idRepository.NewUserRepository,
+	idRepository.NewSessionRepository,
+	drctrPrstnc.NewEntryRepository,
 
-	wire.Bind(new(message.Repository), new(*cnvRepo.MessageRepository)),
 	wire.Bind(new(conversation.Repository), new(*cnvRepo.ConversationRepository)),
 	wire.Bind(new(membership.Repository), new(*cnvRepo.MembershipRepository)),
-	wire.Bind(new(user.Repository), new(*authRepository.UserRepository)),
-	wire.Bind(new(session.Repository), new(*authRepository.SessionRepository)),
+	wire.Bind(new(message.Repository), new(*cnvRepo.MessageRepository)),
+	wire.Bind(new(user.Repository), new(*idRepository.UserRepository)),
+	wire.Bind(new(session.Repository), new(*idRepository.SessionRepository)),
+	wire.Bind(new(entry.Repository), new(*drctrPrstnc.EntryRepository)),
 )
 
 var CommandHandlers = wire.NewSet(
@@ -115,10 +136,12 @@ var CommandHandlers = wire.NewSet(
 	idCommand.NewRefreshUserTokensHandler,
 	cnvCommand.NewSendMessageHandler,
 	cnvCommand.NewSendFirstDirectMessageHandler,
+	drctrCommand.NewRegisterEntryHandler,
 )
 
 var QueryHandlers = wire.NewSet(
 	idQuery.NewGetAccountHandler,
+	drctrQuery.NewSearchHandler,
 )
 
 var EventHandlers = wire.NewSet()

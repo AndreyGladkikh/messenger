@@ -56,7 +56,7 @@ func NewRouter(
 
 	// ###
 	ah := apiHandler.(*ApiHandler)
-	mux.Post("/sendMessage", ah.SendMsg)
+	mux.Post("/test", ah.Test)
 	// ###
 
 	return mux, nil

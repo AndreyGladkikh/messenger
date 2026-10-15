@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	// "messenger/messenger/internal/directory/domain/entry"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/transactions"
+	// srchProjection "messenger/messenger/internal/search/app/projection"
 	apevent "messenger/messenger/internal/shared/app/event"
 	"messenger/messenger/internal/shared/domain"
 	"strings"
@@ -16,6 +18,7 @@ import (
 	"time"
 
 	"uuid"
+	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
 var ErrFatal = errors.New("fatal error")
@@ -44,6 +47,7 @@ type OutboxRelay struct {
 	logger               *logger.Logger
 	qs                   *sqlc.Queries
 	eventHandlerRegistry *event.HandlerRegistry
+	amqpConnection *rmq.AmqpConnection
 }
 
 func NewOutboxRelay(
@@ -138,6 +142,30 @@ func (r *OutboxRelay) executeEventHandlers(ctx context.Context, outboxEvent sqlc
 	return nil
 }
 
+// func (r *OutboxRelay) executeEventHandlersV2(ctx context.Context, outboxEvent sqlc.Outbox) error {
+// 	eventEnvelope, err := event.TranslateOutboxMsgToEventEnvelope(outboxEvent)
+// 	if err != nil {
+// 		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)
+// 	}
+
+// 	eventHandlers := handlersRegistry[eventEnvelope.Event.Name()]
+
+// 	var errs []error
+// 	var wg sync.WaitGroup
+// 	for _, handler := range eventHandlers {
+// 		wg.Go(func() {
+// 			if err := r.runHandler(ctx, outboxEvent.EventID, eventEnvelope, handler); err != nil {
+// 				errs = append(errs, fmt.Errorf("failed to execute handler %q: %w", handler.Name(), err))
+// 			}
+// 		})
+// 	}
+// 	wg.Wait()
+// 	if len(errs) > 0 {
+// 		return &EventHandlingError{errs}
+// 	}
+// 	return nil
+// }
+
 func (r *OutboxRelay) calcNextRetry() time.Time {
 	return time.Now().Add(5 * time.Second)
 }
@@ -154,3 +182,57 @@ func (r *OutboxRelay) runHandler(ctx context.Context, eventID uuid.UUID, envelop
 		return handler.Handle(ctx, envelope)
 	})
 }
+
+// func (r *OutboxRelay) runHandlerV2(ctx context.Context, eventID uuid.UUID, envelope apevent.Envelope[domain.Event], handler event.Handler) error {
+// 	return r.txManager.WithTransaction(ctx, func(ctx context.Context) error {
+// 		err := r.eventService.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
+// 		if err != nil && !errors.Is(err, event.ErrHandlerAlreadyExecuted) {
+// 			return err
+// 		}
+// 		if errors.Is(err, event.ErrHandlerAlreadyExecuted) {
+// 			return nil
+// 		}
+// 		return handler.Handle(ctx, envelope)
+// 	})
+// }
+
+// var handlersRegistry = map[string][]Handler[any] {
+// 	entry.EntryRegisteredEventName: {
+// 		DirectoryEntryRegisteredSearchCreateIndexHandler,
+// 	},
+// }
+
+// type Handler[E any] interface {
+// 	Name() string
+// 	Handle(ctx context.Context, eventEnvlp apevent.Envelope[E]) error
+// }
+
+// type DirectoryEntryRegisteredSearchCreateIndexHandler struct {
+// 	CreateGlobalSearchIndexHandler *srchProjection.CreateGlobalSearchIndexHandler
+// }
+
+// func NewDirectoryEntryRegisteredSearchCreateIndexHandler(
+// 	CreateGlobalSearchIndexHandler *srchProjection.CreateGlobalSearchIndexHandler,
+// ) *DirectoryEntryRegisteredSearchCreateIndexHandler {
+// 	return &DirectoryEntryRegisteredSearchCreateIndexHandler{
+// 		CreateGlobalSearchIndexHandler: CreateGlobalSearchIndexHandler,
+// 	}
+// }
+
+// func (*DirectoryEntryRegisteredSearchCreateIndexHandler) Name() string {
+// 	return "bc:search.event:directory_entry_registered.handler:create_index"
+// }
+
+// func (h *DirectoryEntryRegisteredSearchCreateIndexHandler) Handle(ctx context.Context, eventEnvlp apevent.Envelope[entry.EntryRegistered]) error {
+// 	err := h.CreateGlobalSearchIndexHandler.Handle(ctx, srchProjection.CreateGlobalSearchIndex{
+// 		ID: eventEnvlp.Event.TargetID,
+// 		Type: eventEnvlp.Event.TargetType.String(),
+// 		DisplayName: eventEnvlp.Event.DisplayName,
+// 		Handle: eventEnvlp.Event.Handle,
+// 	})
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }

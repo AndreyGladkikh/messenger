@@ -203,6 +203,20 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (IdentityUse
 	return i, err
 }
 
+const handleExists = `-- name: HandleExists :one
+SELECT EXISTS(
+    SELECT 1 FROM directory.entries
+    WHERE handle = $1
+)
+`
+
+func (q *Queries) HandleExists(ctx context.Context, handle string) (bool, error) {
+	row := q.db.QueryRow(ctx, handleExists, handle)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const listConversationIDsForUser = `-- name: ListConversationIDsForUser :many
 SELECT id FROM conversations.conversations
 WHERE id = ANY(
@@ -307,6 +321,44 @@ func (q *Queries) ListMessagesForConversation(ctx context.Context, arg ListMessa
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchDirectoryEntry = `-- name: SearchDirectoryEntry :many
+SELECT target_id, target_type, display_name, handle 
+FROM directory.entries
+WHERE ts_vec @@ to_tsquery('russian', $1)
+`
+
+type SearchDirectoryEntryRow struct {
+	TargetID    uuid.UUID
+	TargetType  string
+	DisplayName string
+	Handle      string
+}
+
+func (q *Queries) SearchDirectoryEntry(ctx context.Context, toTsquery string) ([]SearchDirectoryEntryRow, error) {
+	rows, err := q.db.Query(ctx, searchDirectoryEntry, toTsquery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchDirectoryEntryRow
+	for rows.Next() {
+		var i SearchDirectoryEntryRow
+		if err := rows.Scan(
+			&i.TargetID,
+			&i.TargetType,
+			&i.DisplayName,
+			&i.Handle,
 		); err != nil {
 			return nil, err
 		}

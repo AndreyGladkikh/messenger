@@ -13,13 +13,13 @@ tags:
   - name: me
     description: Current user info
 paths:
-  /auth/user/register:
+  /auth/user:
     post:
       tags:
         - auth
       summary: Register a new user.
       description: Register a new user.
-      operationId: register
+      operationId: registerUser
       parameters:
         - name: User-Agent
           in: header
@@ -62,7 +62,7 @@ paths:
         - auth
       summary: Log in.
       description: Log in.
-      operationId: login
+      operationId: loginUser
       parameters:
         - name: User-Agent
           in: header
@@ -177,6 +177,41 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
       security:
         - bearerHttpAuthentication: []
+  /directory/entry:
+    post:
+      tags:
+        - directory
+      summary: Register a new directory entry.
+      description: Register a new directory entry.
+      operationId: registerDirectoryEntry
+      requestBody:
+        description: Register a new directory entry
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryEntry'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
   /me/chats:
     get:
       tags:
@@ -268,6 +303,25 @@ components:
               type: string
             sentAt:
               type: string
+
+    DirectoryEntry:
+      required:
+        - targetId
+        - targetType
+        - handle
+        - displayName
+      type: object
+      properties:
+        targetId:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+        targetType:
+          type: string
+        handle:
+          type: string
+        displayName:
+          type: string
 
     ProblemDetails:
       type: object

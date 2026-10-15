@@ -104,6 +104,15 @@ type ConversationsMessageFile struct {
 	Name      pgtype.Text
 }
 
+type DirectoryEntry struct {
+	ID          uuid.UUID
+	TargetID    uuid.UUID
+	TargetType  string
+	DisplayName string
+	Handle      string
+	TsVec       interface{}
+}
+
 type IdentityAccount struct {
 	ID        uuid.UUID
 	Type      AccountType

@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"uuid"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -40,6 +41,14 @@ type ChatListViewItem struct {
 type Credentials struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
+}
+
+// DirectoryEntry defines model for DirectoryEntry.
+type DirectoryEntry struct {
+	DisplayName string    `json:"displayName"`
+	Handle      string    `json:"handle"`
+	TargetId    uuid.UUID `json:"targetId"`
+	TargetType  string    `json:"targetType"`
 }
 
 // ErrorDetail An object to provide explicit details on a problem towards an API consumer.
@@ -117,8 +126,13 @@ type ServiceUnavailable = ProblemDetails
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = ProblemDetails
 
-// LoginParams defines parameters for Login.
-type LoginParams struct {
+// RegisterUserParams defines parameters for RegisterUser.
+type RegisterUserParams struct {
+	UserAgent string `json:"User-Agent"`
+}
+
+// LoginUserParams defines parameters for LoginUser.
+type LoginUserParams struct {
 	UserAgent string `json:"User-Agent"`
 }
 
@@ -128,31 +142,32 @@ type RefreshTokensParams struct {
 	RefreshToken string `form:"refresh_token" json:"refresh_token"`
 }
 
-// RegisterParams defines parameters for Register.
-type RegisterParams struct {
-	UserAgent string `json:"User-Agent"`
-}
+// RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
+type RegisterUserJSONRequestBody = Credentials
 
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody = Credentials
+// LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
+type LoginUserJSONRequestBody = Credentials
 
-// RegisterJSONRequestBody defines body for Register for application/json ContentType.
-type RegisterJSONRequestBody = Credentials
+// RegisterDirectoryEntryJSONRequestBody defines body for RegisterDirectoryEntry for application/json ContentType.
+type RegisterDirectoryEntryJSONRequestBody = DirectoryEntry
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetMe Get current user info.
 	// (GET /auth/me)
 	GetMe(w http.ResponseWriter, r *http.Request)
-	// Login Log in.
+	// RegisterUser Register a new user.
+	// (POST /auth/user)
+	RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams)
+	// LoginUser Log in.
 	// (POST /auth/user/login)
-	Login(w http.ResponseWriter, r *http.Request, params LoginParams)
+	LoginUser(w http.ResponseWriter, r *http.Request, params LoginUserParams)
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/user/refreshTokens)
 	RefreshTokens(w http.ResponseWriter, r *http.Request, params RefreshTokensParams)
-	// Register Register a new user.
-	// (POST /auth/user/register)
-	Register(w http.ResponseWriter, r *http.Request, params RegisterParams)
+	// RegisterDirectoryEntry Register a new directory entry.
+	// (POST /directory/entry)
+	RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request)
 	// GetMyChatList Get current user chat list.
 	// (GET /me/chats)
 	GetMyChatList(w http.ResponseWriter, r *http.Request)
@@ -168,9 +183,15 @@ func (_ Unimplemented) GetMe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Login Log in.
+// RegisterUser Register a new user.
+// (POST /auth/user)
+func (_ Unimplemented) RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// LoginUser Log in.
 // (POST /auth/user/login)
-func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request, params LoginParams) {
+func (_ Unimplemented) LoginUser(w http.ResponseWriter, r *http.Request, params LoginUserParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -180,9 +201,9 @@ func (_ Unimplemented) RefreshTokens(w http.ResponseWriter, r *http.Request, par
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Register Register a new user.
-// (POST /auth/user/register)
-func (_ Unimplemented) Register(w http.ResponseWriter, r *http.Request, params RegisterParams) {
+// RegisterDirectoryEntry Register a new directory entry.
+// (POST /directory/entry)
+func (_ Unimplemented) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -215,14 +236,14 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 	handler.ServeHTTP(w, r)
 }
 
-// Login operation middleware
-func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+// RegisterUser operation middleware
+func (siw *ServerInterfaceWrapper) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params LoginParams
+	var params RegisterUserParams
 
 	headers := r.Header
 
@@ -250,7 +271,52 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(w, r, params)
+		siw.Handler.RegisterUser(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LoginUser operation middleware
+func (siw *ServerInterfaceWrapper) LoginUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LoginUserParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "User-Agent" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("User-Agent")]; found {
+		var UserAgent string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "User-Agent", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", valueList[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User-Agent", Err: err})
+			return
+		}
+
+		params.UserAgent = UserAgent
+
+	} else {
+		err := fmt.Errorf("Header parameter User-Agent is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "User-Agent", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LoginUser(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -298,42 +364,11 @@ func (siw *ServerInterfaceWrapper) RefreshTokens(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// Register operation middleware
-func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params RegisterParams
-
-	headers := r.Header
-
-	// ------------- Required header parameter "User-Agent" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("User-Agent")]; found {
-		var UserAgent string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "User-Agent", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", valueList[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User-Agent", Err: err})
-			return
-		}
-
-		params.UserAgent = UserAgent
-
-	} else {
-		err := fmt.Errorf("Header parameter User-Agent is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "User-Agent", Err: err})
-		return
-	}
+// RegisterDirectoryEntry operation middleware
+func (siw *ServerInterfaceWrapper) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Register(w, r, params)
+		siw.Handler.RegisterDirectoryEntry(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -471,16 +506,19 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/user/register", wrapper.Register)
+		r.Post(options.BaseURL+"/auth/user", wrapper.RegisterUser)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/user/login", wrapper.Login)
+		r.Post(options.BaseURL+"/auth/user/login", wrapper.LoginUser)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/user/refreshTokens", wrapper.RefreshTokens)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth/me", wrapper.GetMe)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/directory/entry", wrapper.RegisterDirectoryEntry)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/me/chats", wrapper.GetMyChatList)
@@ -657,18 +695,18 @@ func (response GetMe503ApplicationProblemPlusJSONResponse) VisitGetMeResponse(w 
 	return err
 }
 
-type LoginRequestObject struct {
-	Params LoginParams
-	Body   *LoginJSONRequestBody
+type RegisterUserRequestObject struct {
+	Params RegisterUserParams
+	Body   *RegisterUserJSONRequestBody
 }
 
-type LoginResponseObject interface {
-	VisitLoginResponse(w http.ResponseWriter) error
+type RegisterUserResponseObject interface {
+	VisitRegisterUserResponse(w http.ResponseWriter) error
 }
 
-type Login200JSONResponse Tokens
+type RegisterUser200JSONResponse Tokens
 
-func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser200JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -680,11 +718,11 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	return err
 }
 
-type Login400ApplicationProblemPlusJSONResponse struct {
+type RegisterUser400ApplicationProblemPlusJSONResponse struct {
 	BadRequestApplicationProblemPlusJSONResponse
 }
 
-func (response Login400ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser400ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -696,11 +734,11 @@ func (response Login400ApplicationProblemPlusJSONResponse) VisitLoginResponse(w 
 	return err
 }
 
-type Login401ApplicationProblemPlusJSONResponse struct {
+type RegisterUser401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response Login401ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser401ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -712,11 +750,11 @@ func (response Login401ApplicationProblemPlusJSONResponse) VisitLoginResponse(w 
 	return err
 }
 
-type Login403ApplicationProblemPlusJSONResponse struct {
+type RegisterUser403ApplicationProblemPlusJSONResponse struct {
 	ForbiddenApplicationProblemPlusJSONResponse
 }
 
-func (response Login403ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser403ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -728,11 +766,11 @@ func (response Login403ApplicationProblemPlusJSONResponse) VisitLoginResponse(w 
 	return err
 }
 
-type Login404ApplicationProblemPlusJSONResponse struct {
+type RegisterUser404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
 
-func (response Login404ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser404ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -744,11 +782,11 @@ func (response Login404ApplicationProblemPlusJSONResponse) VisitLoginResponse(w 
 	return err
 }
 
-type Login409ApplicationProblemPlusJSONResponse struct {
+type RegisterUser409ApplicationProblemPlusJSONResponse struct {
 	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
 }
 
-func (response Login409ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser409ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -760,11 +798,11 @@ func (response Login409ApplicationProblemPlusJSONResponse) VisitLoginResponse(w 
 	return err
 }
 
-type Login422ApplicationProblemPlusJSONResponse struct {
+type RegisterUser422ApplicationProblemPlusJSONResponse struct {
 	BusinessRuleViolationApplicationProblemPlusJSONResponse
 }
 
-func (response Login422ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser422ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -776,11 +814,11 @@ func (response Login422ApplicationProblemPlusJSONResponse) VisitLoginResponse(w 
 	return err
 }
 
-type Login500ApplicationProblemPlusJSONResponse struct {
+type RegisterUser500ApplicationProblemPlusJSONResponse struct {
 	ServerErrorApplicationProblemPlusJSONResponse
 }
 
-func (response Login500ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser500ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -792,11 +830,162 @@ func (response Login500ApplicationProblemPlusJSONResponse) VisitLoginResponse(w 
 	return err
 }
 
-type Login503ApplicationProblemPlusJSONResponse struct {
+type RegisterUser503ApplicationProblemPlusJSONResponse struct {
 	ServiceUnavailableApplicationProblemPlusJSONResponse
 }
 
-func (response Login503ApplicationProblemPlusJSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+func (response RegisterUser503ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUserRequestObject struct {
+	Params LoginUserParams
+	Body   *LoginUserJSONRequestBody
+}
+
+type LoginUserResponseObject interface {
+	VisitLoginUserResponse(w http.ResponseWriter) error
+}
+
+type LoginUser200JSONResponse Tokens
+
+func (response LoginUser200JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser400ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser401ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser403ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser404ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser409ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser422ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser500ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response LoginUser503ApplicationProblemPlusJSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -958,34 +1147,27 @@ func (response RefreshTokens503ApplicationProblemPlusJSONResponse) VisitRefreshT
 	return err
 }
 
-type RegisterRequestObject struct {
-	Params RegisterParams
-	Body   *RegisterJSONRequestBody
+type RegisterDirectoryEntryRequestObject struct {
+	Body *RegisterDirectoryEntryJSONRequestBody
 }
 
-type RegisterResponseObject interface {
-	VisitRegisterResponse(w http.ResponseWriter) error
+type RegisterDirectoryEntryResponseObject interface {
+	VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error
 }
 
-type Register200JSONResponse Tokens
-
-func (response Register200JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
+type RegisterDirectoryEntry201Response struct {
 }
 
-type Register400ApplicationProblemPlusJSONResponse struct {
+func (response RegisterDirectoryEntry201Response) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
+	return nil
+}
+
+type RegisterDirectoryEntry400ApplicationProblemPlusJSONResponse struct {
 	BadRequestApplicationProblemPlusJSONResponse
 }
 
-func (response Register400ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry400ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -997,11 +1179,11 @@ func (response Register400ApplicationProblemPlusJSONResponse) VisitRegisterRespo
 	return err
 }
 
-type Register401ApplicationProblemPlusJSONResponse struct {
+type RegisterDirectoryEntry401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response Register401ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry401ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1013,11 +1195,11 @@ func (response Register401ApplicationProblemPlusJSONResponse) VisitRegisterRespo
 	return err
 }
 
-type Register403ApplicationProblemPlusJSONResponse struct {
+type RegisterDirectoryEntry403ApplicationProblemPlusJSONResponse struct {
 	ForbiddenApplicationProblemPlusJSONResponse
 }
 
-func (response Register403ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry403ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1029,11 +1211,11 @@ func (response Register403ApplicationProblemPlusJSONResponse) VisitRegisterRespo
 	return err
 }
 
-type Register404ApplicationProblemPlusJSONResponse struct {
+type RegisterDirectoryEntry404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
 
-func (response Register404ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry404ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1045,11 +1227,11 @@ func (response Register404ApplicationProblemPlusJSONResponse) VisitRegisterRespo
 	return err
 }
 
-type Register409ApplicationProblemPlusJSONResponse struct {
+type RegisterDirectoryEntry409ApplicationProblemPlusJSONResponse struct {
 	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
 }
 
-func (response Register409ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry409ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1061,11 +1243,11 @@ func (response Register409ApplicationProblemPlusJSONResponse) VisitRegisterRespo
 	return err
 }
 
-type Register422ApplicationProblemPlusJSONResponse struct {
+type RegisterDirectoryEntry422ApplicationProblemPlusJSONResponse struct {
 	BusinessRuleViolationApplicationProblemPlusJSONResponse
 }
 
-func (response Register422ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry422ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1077,11 +1259,11 @@ func (response Register422ApplicationProblemPlusJSONResponse) VisitRegisterRespo
 	return err
 }
 
-type Register500ApplicationProblemPlusJSONResponse struct {
+type RegisterDirectoryEntry500ApplicationProblemPlusJSONResponse struct {
 	ServerErrorApplicationProblemPlusJSONResponse
 }
 
-func (response Register500ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry500ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1093,11 +1275,11 @@ func (response Register500ApplicationProblemPlusJSONResponse) VisitRegisterRespo
 	return err
 }
 
-type Register503ApplicationProblemPlusJSONResponse struct {
+type RegisterDirectoryEntry503ApplicationProblemPlusJSONResponse struct {
 	ServiceUnavailableApplicationProblemPlusJSONResponse
 }
 
-func (response Register503ApplicationProblemPlusJSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response RegisterDirectoryEntry503ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1263,15 +1445,18 @@ type StrictServerInterface interface {
 	// GetMe Get current user info.
 	// (GET /auth/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
-	// Login Log in.
+	// RegisterUser Register a new user.
+	// (POST /auth/user)
+	RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error)
+	// LoginUser Log in.
 	// (POST /auth/user/login)
-	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+	LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error)
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/user/refreshTokens)
 	RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error)
-	// Register Register a new user.
-	// (POST /auth/user/register)
-	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
+	// RegisterDirectoryEntry Register a new directory entry.
+	// (POST /directory/entry)
+	RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error)
 	// GetMyChatList Get current user chat list.
 	// (GET /me/chats)
 	GetMyChatList(ctx context.Context, request GetMyChatListRequestObject) (GetMyChatListResponseObject, error)
@@ -1340,13 +1525,13 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Login operation middleware
-func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request, params LoginParams) {
-	var request LoginRequestObject
+// RegisterUser operation middleware
+func (sh *strictHandler) RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams) {
+	var request RegisterUserRequestObject
 
 	request.Params = params
 
-	var body LoginJSONRequestBody
+	var body RegisterUserJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1354,18 +1539,51 @@ func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request, params Lo
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Login(ctx, request.(LoginRequestObject))
+		return sh.ssi.RegisterUser(ctx, request.(RegisterUserRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Login")
+		handler = middleware(handler, "RegisterUser")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(LoginResponseObject); ok {
-		if err := validResponse.VisitLoginResponse(w); err != nil {
+	} else if validResponse, ok := response.(RegisterUserResponseObject); ok {
+		if err := validResponse.VisitRegisterUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LoginUser operation middleware
+func (sh *strictHandler) LoginUser(w http.ResponseWriter, r *http.Request, params LoginUserParams) {
+	var request LoginUserRequestObject
+
+	request.Params = params
+
+	var body LoginUserJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LoginUser(ctx, request.(LoginUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LoginUser")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LoginUserResponseObject); ok {
+		if err := validResponse.VisitLoginUserResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1399,13 +1617,11 @@ func (sh *strictHandler) RefreshTokens(w http.ResponseWriter, r *http.Request, p
 	}
 }
 
-// Register operation middleware
-func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request, params RegisterParams) {
-	var request RegisterRequestObject
+// RegisterDirectoryEntry operation middleware
+func (sh *strictHandler) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request) {
+	var request RegisterDirectoryEntryRequestObject
 
-	request.Params = params
-
-	var body RegisterJSONRequestBody
+	var body RegisterDirectoryEntryJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -1413,18 +1629,18 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request, params
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Register(ctx, request.(RegisterRequestObject))
+		return sh.ssi.RegisterDirectoryEntry(ctx, request.(RegisterDirectoryEntryRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Register")
+		handler = middleware(handler, "RegisterDirectoryEntry")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RegisterResponseObject); ok {
-		if err := validResponse.VisitRegisterResponse(w); err != nil {
+	} else if validResponse, ok := response.(RegisterDirectoryEntryResponseObject); ok {
+		if err := validResponse.VisitRegisterDirectoryEntryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1461,65 +1677,67 @@ func (sh *strictHandler) GetMyChatList(w http.ResponseWriter, r *http.Request) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"L0y+Zw/NSmMPMbbsNYlcNUvRcoX5RdbyvwMA",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

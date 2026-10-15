@@ -7,5 +7,7 @@ import (
 func NewEventHandlerRegistry() *event.HandlerRegistry {
 	r := event.NewRegistry()
 
+	// r.RegisterEventHandler[]()
+
 	return r
 }

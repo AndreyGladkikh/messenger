@@ -22,10 +22,10 @@ func (r *HandlerRegistry) HandlersForEvent(event domain.Event) []Handler {
 	return slices.Clone(r.handlers[event.Name()])
 }
 
-func RegisterEventHandler[E domain.Event](r *HandlerRegistry, handler event.Handler[E]) {
-	var e E
-	adaptedHandler := &ApEventHandlerAdapter[E]{handler}
-	r.handlers[e.Name()] = append(r.handlers[e.Name()], adaptedHandler)
+func (r *HandlerRegistry) RegisterEventHandler[E domain.Event](handler event.Handler[any]) {
+	// var e E
+	// adaptedHandler := &ApEventHandlerAdapter[E]{handler}
+	// r.handlers[e.Name()] = append(r.handlers[eventName], adaptedHandler)
 }
 
 type Handler interface {

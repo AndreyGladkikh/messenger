@@ -26,7 +26,7 @@ func NewTransactionMiddlewareContainer(
 }
 
 func (c *TransactionMiddlewareContainer) Middleware(next commandbus.CommandHandler) commandbus.CommandHandler {
-	f := func(ctx context.Context, command command.Command) (response any, err error) {
+	return commandbus.HandlerFunc(func(ctx context.Context, command command.Command) (response any, err error) {
 		ctx = uow.NewContext(ctx, uow.New())
 
 		err = c.txManager.WithTransaction(ctx, func(ctx context.Context) error {
@@ -43,8 +43,7 @@ func (c *TransactionMiddlewareContainer) Middleware(next commandbus.CommandHandl
 		})
 
 		return
-	}
-	return commandbus.HandlerFunc(f)
+	})
 }
 
 func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context) error {

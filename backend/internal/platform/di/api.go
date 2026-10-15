@@ -2,6 +2,7 @@ package di
 
 import (
 	cnvCommand "messenger/messenger/internal/conversations/app/command"
+	drctrCommand "messenger/messenger/internal/directory/app/command"
 	idCommand "messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/commandbus/middlewares"
@@ -35,6 +36,7 @@ func BuildCommandBus(
 	refreshSessionHandler *idCommand.RefreshUserTokensHandler,
 	sendFirstDirectMsgHandler *cnvCommand.SendFirstDirectMessageHandler,
 	sendMsgHandler *cnvCommand.SendMessageHandler,
+	registerEntryHandler *drctrCommand.RegisterEntryHandler,
 ) *commandbus.Bus {
 	bus := commandbus.NewBus()
 
@@ -51,6 +53,7 @@ func BuildCommandBus(
 	bus.RegisterHandler(refreshSessionHandler)
 	bus.RegisterHandler(sendFirstDirectMsgHandler)
 	bus.RegisterHandler(sendMsgHandler)
+	bus.RegisterHandler(registerEntryHandler)
 
 	return bus
 }

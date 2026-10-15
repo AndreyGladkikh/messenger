@@ -9,8 +9,12 @@ package di
 import (
 	command2 "messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/app/service"
-	"messenger/messenger/internal/conversations/infra/lookup"
+	identity1 "messenger/messenger/internal/conversations/infra/identity"
 	repository3 "messenger/messenger/internal/conversations/infra/persistence/repository"
+	command3 "messenger/messenger/internal/directory/app/command"
+	query2 "messenger/messenger/internal/directory/app/query"
+	"messenger/messenger/internal/directory/infra/identity"
+	postgres2 "messenger/messenger/internal/directory/infra/persistence"
 	"messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/infra/password"
@@ -61,14 +65,20 @@ func InitializeApi() (*Api, func(), error) {
 	membershipRepository := repository3.NewMembershipRepository(repositoryRepository)
 	readerReader := reader.NewReader(storeStore)
 	getAccountHandler := query.NewGetAccountHandler(readerReader)
-	bus := querybus.InitBus(getAccountHandler)
-	participantLookup := lookup.NewParticipantLookup(bus)
+	queryService := postgres2.NewQueryService(storeStore)
+	searchHandler := query2.NewSearchHandler(queryService)
+	bus := querybus.InitBus(getAccountHandler, searchHandler)
+	participantLookup := identity1.NewParticipantLookup(bus)
 	directConversationResolver := service.NewDirectConversationResolver(conversationRepository, membershipRepository, participantLookup)
 	messageRepository := repository3.NewMessageRepository(repositoryRepository)
 	messageSender := service.NewMessageSender(membershipRepository, messageRepository)
 	sendFirstDirectMessageHandler := command2.NewSendFirstDirectMessageHandler(directConversationResolver, messageSender)
 	sendMessageHandler := command2.NewSendMessageHandler(conversationRepository, messageSender)
-	commandbusBus := BuildCommandBus(manager, loggerLogger, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler)
+	entryRepository := postgres2.NewEntryRepository(repositoryRepository)
+	userLookup := identity.NewUserLookup(bus)
+	targetLookup := command3.NewTargetLookup(userLookup)
+	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
+	commandbusBus := BuildCommandBus(manager, loggerLogger, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler, registerEntryHandler)
 	apiHandler := http.NewApiHandler(commandbusBus, bus)
 	errorHandler := http.NewErrorHandler(configConfig, loggerLogger)
 	client, cleanup2, err := redis.NewRedis(configConfig)

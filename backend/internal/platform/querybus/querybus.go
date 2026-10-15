@@ -3,8 +3,9 @@ package querybus
 import (
 	"context"
 	"fmt"
-	query1 "messenger/messenger/internal/identity/app/query"
-	"messenger/messenger/internal/shared/app/query"
+	"messenger/messenger/internal/directory/app/query"
+	idQuery "messenger/messenger/internal/identity/app/query"
+	appQuery "messenger/messenger/internal/shared/app/query"
 )
 
 type Bus struct {
@@ -18,7 +19,7 @@ func NewBus() *Bus {
 	}
 }
 
-func (b *Bus) Dispatch[R any](ctx context.Context, q query.Query) (R, error) {
+func (b *Bus) Dispatch[R any](ctx context.Context, q appQuery.Query) (R, error) {
 	var zero R
 
 	handler, ok := b.handlers[q.Name()]
@@ -39,7 +40,7 @@ func (b *Bus) Dispatch[R any](ctx context.Context, q query.Query) (R, error) {
 	return typedResponse, nil
 }
 
-func (b *Bus) RegisterHandler[Q query.Query, R any](handler query.Handler[Q, R]) error {
+func (b *Bus) RegisterHandler[Q appQuery.Query, R any](handler appQuery.Handler[Q, R]) error {
 	var q Q
 
 	var adapted QueryHandler = AppQueryHandlerAdapter[Q, R]{handler: handler}
@@ -62,15 +63,15 @@ func (b *Bus) Use(middleware Middleware) {
 	b.middlewares = append(b.middlewares, middleware)
 }
 
-type QueryHandler query.Handler[query.Query, any]
+type QueryHandler appQuery.Handler[appQuery.Query, any]
 
-var _ QueryHandler = AppQueryHandlerAdapter[query.Query, any]{}
+var _ QueryHandler = AppQueryHandlerAdapter[appQuery.Query, any]{}
 
-type AppQueryHandlerAdapter[Q query.Query, R any] struct {
-	handler query.Handler[Q, R]
+type AppQueryHandlerAdapter[Q appQuery.Query, R any] struct {
+	handler appQuery.Handler[Q, R]
 }
 
-func (a AppQueryHandlerAdapter[Q, R]) Handle(ctx context.Context, q query.Query) (any, error) {
+func (a AppQueryHandlerAdapter[Q, R]) Handle(ctx context.Context, q appQuery.Query) (any, error) {
 	var qTP Q
 
 	typedQuery, ok := q.(Q)
@@ -83,20 +84,22 @@ func (a AppQueryHandlerAdapter[Q, R]) Handle(ctx context.Context, q query.Query)
 
 var _ QueryHandler = HandlerFunc(nil)
 
-type HandlerFunc func(ctx context.Context, q query.Query) (any, error)
+type HandlerFunc func(ctx context.Context, q appQuery.Query) (any, error)
 
-func (f HandlerFunc) Handle(ctx context.Context, q query.Query) (any, error) {
+func (f HandlerFunc) Handle(ctx context.Context, q appQuery.Query) (any, error) {
 	return f(ctx, q)
 }
 
 type Middleware func(next QueryHandler) QueryHandler
 
 func InitBus(
-	getAccountHandler *query1.GetAccountHandler,
+	getAccountHandler *idQuery.GetAccountHandler,
+	searchDirectoryEntryHandler *query.SearchHandler,
 ) *Bus {
 	b := NewBus()
 
 	b.RegisterHandler(getAccountHandler)
+	b.RegisterHandler(searchDirectoryEntryHandler)
 
 	return b
 }
