@@ -1,99 +1,109 @@
 package config
 
 import (
-	"fmt"
+	"flag"
 	"log"
-	"messenger/messenger/internal/platform/utils"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 )
 
+var appenv string
+
 type Config struct {
 	Env         string
+	Auth        AuthConfig
 	FrontendUrl string
-	Database    *DatabaseConfig
-	Cache       *CacheConfig
-	HttpServer  *HttpServerConfig
-	RabbitMq  *RabbitMqConfig
+	Database    struct {
+		Default DatabaseConfig
+	}
+	Cache       CacheConfig
+	HttpServer  HttpServerConfig
+	Mq          struct {
+		Default MqConfig
+	}
+}
+
+type AuthConfig struct {
+	Jwt struct {
+		PrivateKeyPath string
+		PublicKeyPath  string
+	}
 }
 
 type DatabaseConfig struct {
-	Driver   string
-	Schema   string
-	Host     string
-	Port     uint16
-	Name     string
-	User     string
-	Password string
+	Dsn string
 }
 
 type CacheConfig struct {
-	DSN string
+	Dsn string
+}
+
+type MqConfig struct {
+	Dsn string
 }
 
 type HttpServerConfig struct {
 	Addr string
 }
 
-type RabbitMqConfig struct {
-	Addr string
-}
-
-func Load() *Config {
-	projRoot, err := utils.LoadProjectRoot()
-	if err != nil {
-		log.Fatal(fmt.Errorf("failed to load project root: %w", err))
+func Load() Config {
+	appenv = os.Getenv("APP_ENV")
+	if "" == appenv {
+		appenv = "local"
 	}
 
-	loadEnv()
+	envPath := flag.String("env", ".env", "path to env file")
+	configPath := flag.String("config", "configs/config.yaml", "path to config")
+	flag.Parse()
+
+	if err := godotenv.Load(*envPath); err != nil {
+		log.Println(".env file not loaded")
+	}
 
 	k := koanf.New(".")
 
-	if err := k.Load(file.Provider(projRoot+"/configs/config.yaml"), yaml.Parser()); err != nil {
+	if err := k.Load(file.Provider(*configPath), yaml.Parser()); err != nil {
 		log.Fatal(err.Error())
 	}
 
-	var cfg *Config
+	k.Load(env.Provider(".", env.Opt{
+		Prefix: "APP_",
+		TransformFunc: func(k, v string) (string, any) {
+			k = strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(k, "APP_")), "__", ".")
+
+			if strings.Contains(v, " ") {
+				return k, strings.Split(v, " ")
+			}
+
+			return k, v
+		},
+	}), nil)
+
+	cfg := Config{Env: appenv}
 
 	if err := k.Unmarshal("", &cfg); err != nil {
 		log.Fatal(err.Error())
 	}
 
-	loadSecrets(cfg)
-
 	return cfg
 }
 
-func loadEnv() {
-	projRoot := utils.ProjectRoot()
+// func loadSecrets(cfg *Config) {
+// 	dbUser := os.Getenv("DATABASE_USER")
+// 	cfg.Database.User = dbUser
 
-	env := os.Getenv("MESSENGER_ENV")
-	if "" == env {
-		env = "dev"
-	}
+// 	dbPass := os.Getenv("DATABASE_PASSWORD")
+// 	cfg.Database.Password = dbPass
 
-	err := godotenv.Load(projRoot + "/.env")
-	if err != nil {
-		log.Fatalf("error loading .env file: %v", err)
-	}
+// 	rmqUser := os.Getenv("RABBITMQ_USER")
+// 	cfg.Mq.User = rmqUser
 
-	godotenv.Load(projRoot + "/.env." + env)
-
-	if "test" != env {
-		godotenv.Load(projRoot + "/.env.local")
-	}
-
-	godotenv.Load(projRoot + "./env." + env + ".local")
-}
-
-func loadSecrets(cfg *Config) {
-	dbUser := os.Getenv("DATABASE_USER")
-	cfg.Database.User = dbUser
-
-	dbPass := os.Getenv("DATABASE_PASSWORD")
-	cfg.Database.Password = dbPass
-}
+// 	rmqPass := os.Getenv("RABBITMQ_PASSWORD")
+// 	cfg.Mq.Password = rmqPass
+// }

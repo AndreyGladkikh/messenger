@@ -11,8 +11,8 @@ import (
 	"messenger/messenger/internal/identity/app/token"
 	authDomain "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/domain/model/session"
+	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/transport/http/cookies"
-	"messenger/messenger/internal/platform/utils"
 	"net/http"
 	"os"
 	"time"
@@ -30,10 +30,10 @@ type Service struct {
 	jwtVerifyKey crypto.PublicKey
 }
 
-func NewService() (*Service, error) {
-	projRoot := utils.ProjectRoot()
-
-	signBytes, err := os.ReadFile(projRoot + "/keys/private.pem")
+func NewService(
+	cfg config.Config,
+) (*Service, error) {
+	signBytes, err := os.ReadFile(cfg.Auth.Jwt.PrivateKeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func NewService() (*Service, error) {
 		return nil, err
 	}
 
-	verifyBytes, err := os.ReadFile(projRoot + "/keys/public.pem")
+	verifyBytes, err := os.ReadFile(cfg.Auth.Jwt.PublicKeyPath)
 	if err != nil {
 		return nil, err
 	}

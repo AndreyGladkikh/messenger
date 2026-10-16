@@ -9,9 +9,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedis(cfg *config.Config) (*redis.Client, func(), error) {
+func NewRedis(cfg config.Config) (*redis.Client, func(), error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     cfg.Cache.Dsn,
 		Password: "", // no password
 		DB:       0,  // use default DB
 		Protocol: 2,

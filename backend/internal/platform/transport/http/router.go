@@ -17,7 +17,7 @@ func NewRouter(
 	errorHandler *ErrorHandler,
 	tokenService *token.Service,
 	wsHandler *WebsocketHandler,
-) (http.Handler, error) {
+) (*chi.Mux, error) {
 	oas, err := GetSpec()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load http server specification: %w", err)

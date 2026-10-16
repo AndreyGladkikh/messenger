@@ -1,3 +1,10 @@
 .idea
-dev
-backend/keys
+
+.env
+.env.*
+!.env.example
+
+/backend/configs/config.*
+!/backend/configs/config.yaml
+
+/backend/keys

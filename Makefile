@@ -6,23 +6,33 @@ api_url := localhost:$(api_port)
 front_port := 3000
 front_url := localhost:$(front_port)
 
-run:
-	cd backend && go run ./cmd/api/main.go
+test:
+	cd backend && go test ./... -v
 
-init: create_keys generate
+run:
+	cd backend && APP_ENV=local go run ./cmd/api/main.go -config=../../backend/configs/config.yaml -env=../../backend/.env
+
+init: generate_keys generate_code
 	cd backend && \
 	go mod download && \
 	migrate
 
-create_keys:
+init_local: init
 	cd backend && \
-	openssl genpkey -algorithm Ed25519 -out ./keys/backend/private.pem && \
-	openssl pkey -in ./keys/backend/private.pem -pubout -out ./keys/backend/public.pem
+	[ ! -f ".env" ] && cp ".env.example" ".env"
 
-generate:
+generate_keys:
 	cd backend && \
-	go generate ./... && \
+	openssl genpkey -algorithm Ed25519 -out ./keys/private.pem && \
+	openssl pkey -in ./keys/backend/private.pem -pubout -out ./keys/public.pem
+
+generate_code:
+	cd backend && \
 	go tool sqlc generate && \
+	go tool wire ./cmd/consumer/ && \
+	go tool wire ./internal/app/api/ && \
+	go tool wire ./internal/platform/di/ && \
+	go generate ./... && \
 	go mod tidy
 
 lint:

@@ -173,7 +173,7 @@ type Register200JSONResponseCustom struct {
 	RegisterUser200JSONResponse
 }
 
-func (response Register200JSONResponseCustom) VisitRegisterResponse(w http.ResponseWriter) error {
+func (response Register200JSONResponseCustom) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	setAuthCookies(w, response.AccessToken, response.RefreshToken)
 	return response.RegisterUser200JSONResponse.VisitRegisterUserResponse(w)
 }
@@ -182,7 +182,7 @@ type Login200JSONResponseCustom struct {
 	LoginUser200JSONResponse
 }
 
-func (response Login200JSONResponseCustom) VisitLoginResponse(w http.ResponseWriter) error {
+func (response Login200JSONResponseCustom) VisitLoginUserResponse(w http.ResponseWriter) error {
 	setAuthCookies(w, response.AccessToken, response.RefreshToken)
 	return response.LoginUser200JSONResponse.VisitLoginUserResponse(w)
 }

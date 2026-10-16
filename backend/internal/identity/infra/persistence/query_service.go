@@ -1,4 +1,4 @@
-package reader
+package persistence
 
 import (
 	"context"
@@ -10,19 +10,19 @@ import (
 	"uuid"
 )
 
-type Reader struct {
+type QueryService struct {
 	*store.Store
 }
 
-func NewReader(
+func NewQueryService(
 	store *store.Store,
-) *Reader {
-	return &Reader{
+) *QueryService {
+	return &QueryService{
 		Store: store,
 	}
 }
 
-func (r *Reader) GetAccount(ctx context.Context, id uuid.UUID) (query.AccountView, error) {
+func (r *QueryService) GetAccount(ctx context.Context, id uuid.UUID) (query.AccountView, error) {
 	var zero query.AccountView
 
 	acc, err := r.Queries(ctx).GetAccount(ctx, id)

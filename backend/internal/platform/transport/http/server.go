@@ -15,7 +15,7 @@ type Server struct {
 }
 
 func NewServer(
-	cfg *config.Config,
+	cfg config.Config,
 	logger *logger.Logger,
 	router http.Handler,
 ) (*Server, error) {

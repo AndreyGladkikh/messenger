@@ -23,12 +23,12 @@ var (
 )
 
 type ErrorHandler struct {
-	cfg    *config.Config
+	cfg    config.Config
 	logger *logger.Logger
 }
 
 func NewErrorHandler(
-	cfg *config.Config,
+	cfg config.Config,
 	logger *logger.Logger,
 ) *ErrorHandler {
 	return &ErrorHandler{

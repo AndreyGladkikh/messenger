@@ -1,21 +1,9 @@
 Auth:
   Jwt:
-    PrivateKey: /etc/app/keys/jwt-private.pem
-    PublicKey: /etc/app/keys/jwt-public.pem
-
-Database:
-  Driver: pgx
-  Schema: postgres
-  Host: localhost
-  Port: 5432
-  Name: app
-  User:
-  Password:
+    PrivateKeyPath: ../../keys/private.pem
+    PublicKeyPath: ../../keys/public.pem
 
 HttpServer:
   Addr: :3000
 
 FrontendUrl: http://localhost:3000
-
-RabbitMq:
-  Addr: amqp://app:secret@localhost:5672/

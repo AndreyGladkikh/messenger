@@ -20,7 +20,7 @@ import (
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/identity/domain/model/user"
 	authPasswordAdapter "messenger/messenger/internal/identity/infra/password"
-	idReader "messenger/messenger/internal/identity/infra/persistence/reader"
+	idReader "messenger/messenger/internal/identity/infra/persistence"
 	idRepository "messenger/messenger/internal/identity/infra/persistence/repository"
 	authTokenAdapter "messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/config"
@@ -37,7 +37,9 @@ import (
 	"messenger/messenger/internal/platform/transactions"
 	"messenger/messenger/internal/platform/transport/http"
 	"messenger/messenger/internal/shared/app/chateventspublisher"
+	netHttp "net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -59,6 +61,7 @@ var ApiSet = wire.NewSet(
 	wire.Bind(new(authPasswordPort.Hasher), new(*authPasswordAdapter.Hasher)),
 	wire.Bind(new(authTokenPort.Service), new(*authTokenAdapter.Service)),
 	wire.Bind(new(http.StrictServerInterface), new(*http.ApiHandler)),
+	wire.Bind(new(netHttp.Handler), new(*chi.Mux)),
 )
 
 var OutboxRelaySet = wire.NewSet(
@@ -91,7 +94,7 @@ var CommonSet = wire.NewSet(
 	cnvService.NewDirectConversationResolver,
 	cnvService.NewMessageSender,
 	cnvIdentity.NewParticipantLookup,
-	idReader.NewReader,
+	idReader.NewQueryService,
 	drctrIdentity.NewUserLookup,
 	drctrCommand.NewTargetLookup,
 	// dirQueryService.NewQueryService,
@@ -99,7 +102,7 @@ var CommonSet = wire.NewSet(
 	// wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 	wire.Bind(new(chateventspublisher.ChatEventsPublisher), new(*pubsub.ChatEventsPubSub)),
 	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
-	wire.Bind(new(idQuery.Reader), new(*idReader.Reader)),
+	wire.Bind(new(idQuery.Reader), new(*idReader.QueryService)),
 	wire.Bind(new(drctrCommand.UserLookup), new(*drctrIdentity.UserLookup)),
 	// wire.Bind(new(dirQuery.Searcher), new(*dirQueryService.QueryService)),
 )

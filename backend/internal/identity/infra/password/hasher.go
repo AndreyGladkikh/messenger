@@ -36,7 +36,7 @@ var (
 type Hasher struct {
 }
 
-func NewHasher(config *config.Config) *Hasher {
+func NewHasher(cfg config.Config) *Hasher {
 	return &Hasher{}
 }
 
