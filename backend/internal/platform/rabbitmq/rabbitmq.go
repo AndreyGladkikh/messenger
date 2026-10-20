@@ -10,7 +10,7 @@ import (
 
 func NewConnection(cfg config.Config) (*rmq.AmqpConnection, func(), error) {
 	ctx := context.Background()
-	env := rmq.NewEnvironment(cfg.Mq.Default.Dsn, nil)
+	env := rmq.NewEnvironment(cfg.Mq.Dsn, nil)
 	conn, err := env.NewConnection(ctx)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)

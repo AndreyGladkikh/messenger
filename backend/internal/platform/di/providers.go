@@ -71,6 +71,7 @@ var OutboxRelaySet = wire.NewSet(
 )
 
 var CommonSet = wire.NewSet(
+	wire.FieldsOf(new(config.Config), "Database", "Migrations"),
 	config.Load,
 
 	logger.New,

@@ -37,10 +37,10 @@ import (
 
 // Injectors from wire.go:
 
-func Initialize() (*App, func(), error) {
+func Initialize(cfg config.Config) (*App, func(), error) {
 	loggerLogger := logger.New()
-	configConfig := config.Load()
-	pool, cleanup, err := postgres.NewPool(configConfig)
+	database := cfg.Database
+	pool, cleanup, err := postgres.NewPool(database)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,8 +51,8 @@ func Initialize() (*App, func(), error) {
 	repositoryRepository := repository.NewRepository(storeStore)
 	userRepository := repository2.NewUserRepository(repositoryRepository)
 	sessionRepository := repository2.NewSessionRepository(repositoryRepository)
-	hasher := password.NewHasher(configConfig)
-	tokenService, err := token.NewService(configConfig)
+	hasher := password.NewHasher(cfg)
+	tokenService, err := token.NewService(cfg)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -79,8 +79,8 @@ func Initialize() (*App, func(), error) {
 	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
 	commandbusBus := app.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler, registerEntryHandler)
 	apiHandler := http.NewApiHandler(commandbusBus, bus)
-	errorHandler := http.NewErrorHandler(configConfig, loggerLogger)
-	client, cleanup2, err := redis.NewRedis(configConfig)
+	errorHandler := http.NewErrorHandler(cfg, loggerLogger)
+	client, cleanup2, err := redis.NewRedis(cfg)
 	if err != nil {
 		cleanup()
 		return nil, nil, err

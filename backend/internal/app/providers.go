@@ -42,8 +42,7 @@ import (
 )
 
 var AppSet = wire.NewSet(
-	config.Load,
-
+	wire.FieldsOf(new(config.Config), "Database", "Migrations"),
 	logger.New,
 	Persistence,
 	InitCommandBus,
@@ -56,6 +55,7 @@ var AppSet = wire.NewSet(
 	pubsub.NewPubSub,
 	pubsub.NewChatEventsPubSub,
 	cnvService.NewDirectConversationResolver,
+	// wire.Struct(new(cnvService.DirectConversationResolver), "*"),
 	cnvService.NewMessageSender,
 	cnvIdentity.NewParticipantLookup,
 	drctrIdentity.NewUserLookup,

@@ -41,7 +41,8 @@ import (
 func InitializeApi() (*Api, func(), error) {
 	configConfig := config.Load()
 	loggerLogger := logger.New()
-	pool, cleanup, err := postgres.NewPool(configConfig)
+	database := configConfig.Database
+	pool, cleanup, err := postgres.NewPool(database)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -113,7 +114,8 @@ func InitializeApi() (*Api, func(), error) {
 
 func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 	configConfig := config.Load()
-	pool, cleanup, err := postgres.NewPool(configConfig)
+	database := configConfig.Database
+	pool, cleanup, err := postgres.NewPool(database)
 	if err != nil {
 		return nil, nil, err
 	}

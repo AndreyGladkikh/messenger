@@ -13,7 +13,7 @@ tags:
   - name: me
     description: Current user info
 paths:
-  /auth/user:
+  /auth/users:
     post:
       tags:
         - auth

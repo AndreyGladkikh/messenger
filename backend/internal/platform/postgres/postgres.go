@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPool(cfg config.Config) (*pgxpool.Pool, func(), error) {
-	pgxPoolConfig, err := pgxpool.ParseConfig(cfg.Database.Default.Dsn)
+func NewPool(cfg config.Database) (*pgxpool.Pool, func(), error) {
+	pgxPoolConfig, err := pgxpool.ParseConfig(cfg.Dsn)
 	if err != nil {
 		return nil, func() {}, fmt.Errorf("failed to parse pgx pool config: %w", err)
 	}

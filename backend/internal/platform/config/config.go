@@ -13,62 +13,77 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
-var appenv string
+type (
+	Env         string
+	FrontendUrl string
+)
+
+const (
+	EnvLocal Env = "local"
+	EnvDev   Env = "dev"
+	EnvStage Env = "stage"
+	EnvProd  Env = "prod"
+)
 
 type Config struct {
-	Env         string
-	Auth        AuthConfig
-	FrontendUrl string
-	Database    struct {
-		Default DatabaseConfig
-	}
-	Cache       CacheConfig
-	HttpServer  HttpServerConfig
-	Mq          struct {
-		Default MqConfig
-	}
+	Env         Env
+	Auth        Auth
+	FrontendUrl FrontendUrl
+	Database    Database
+	Migrations  Migrations
+	Cache       Cache
+	HttpServer  HttpServer
+	Mq          Mq
 }
 
-type AuthConfig struct {
+type Auth struct {
 	Jwt struct {
 		PrivateKeyPath string
 		PublicKeyPath  string
 	}
 }
 
-type DatabaseConfig struct {
+type Database struct {
+	Dsn            string
+	MigrationsPath *string
+}
+
+type Cache struct {
 	Dsn string
 }
 
-type CacheConfig struct {
+type Mq struct {
 	Dsn string
 }
 
-type MqConfig struct {
-	Dsn string
-}
-
-type HttpServerConfig struct {
+type HttpServer struct {
 	Addr string
 }
 
+type Migrations struct {
+	DBDSN string
+	Path  string
+}
+
 func Load() Config {
-	appenv = os.Getenv("APP_ENV")
-	if "" == appenv {
-		appenv = "local"
+	appenv := Env(os.Getenv("APP_ENV"))
+	switch appenv {
+	case EnvLocal, EnvDev, EnvStage, EnvProd:
+	default:
+		appenv = EnvLocal
 	}
 
-	envPath := flag.String("env", ".env", "path to env file")
-	configPath := flag.String("config", "configs/config.yaml", "path to config")
+	envFilePath := flag.String("env", ".env", "path to env file")
+	configFilePath := flag.String("config", "configs/config.yaml", "path to config file")
 	flag.Parse()
 
-	if err := godotenv.Load(*envPath); err != nil {
+	if err := godotenv.Load(*envFilePath); err != nil {
 		log.Println(".env file not loaded")
 	}
 
 	k := koanf.New(".")
 
-	if err := k.Load(file.Provider(*configPath), yaml.Parser()); err != nil {
+	if err := k.Load(file.Provider(*configFilePath), yaml.Parser()); err != nil {
 		log.Fatal(err.Error())
 	}
 
@@ -93,17 +108,3 @@ func Load() Config {
 
 	return cfg
 }
-
-// func loadSecrets(cfg *Config) {
-// 	dbUser := os.Getenv("DATABASE_USER")
-// 	cfg.Database.User = dbUser
-
-// 	dbPass := os.Getenv("DATABASE_PASSWORD")
-// 	cfg.Database.Password = dbPass
-
-// 	rmqUser := os.Getenv("RABBITMQ_USER")
-// 	cfg.Mq.User = rmqUser
-
-// 	rmqPass := os.Getenv("RABBITMQ_PASSWORD")
-// 	cfg.Mq.Password = rmqPass
-// }

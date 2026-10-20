@@ -3,10 +3,12 @@
 package api
 
 import (
+	"messenger/messenger/internal/platform/config"
+
 	"github.com/google/wire"
 )
 
-func Initialize() (*App, func(), error) {
+func Initialize(cfg config.Config) (*App, func(), error) {
 	wire.Build(
 		AppSet,
 	)

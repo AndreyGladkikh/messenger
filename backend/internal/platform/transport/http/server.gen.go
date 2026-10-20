@@ -126,11 +126,6 @@ type ServiceUnavailable = ProblemDetails
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = ProblemDetails
 
-// RegisterUserParams defines parameters for RegisterUser.
-type RegisterUserParams struct {
-	UserAgent string `json:"User-Agent"`
-}
-
 // LoginUserParams defines parameters for LoginUser.
 type LoginUserParams struct {
 	UserAgent string `json:"User-Agent"`
@@ -142,11 +137,16 @@ type RefreshTokensParams struct {
 	RefreshToken string `form:"refresh_token" json:"refresh_token"`
 }
 
-// RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
-type RegisterUserJSONRequestBody = Credentials
+// RegisterUserParams defines parameters for RegisterUser.
+type RegisterUserParams struct {
+	UserAgent string `json:"User-Agent"`
+}
 
 // LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
 type LoginUserJSONRequestBody = Credentials
+
+// RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
+type RegisterUserJSONRequestBody = Credentials
 
 // RegisterDirectoryEntryJSONRequestBody defines body for RegisterDirectoryEntry for application/json ContentType.
 type RegisterDirectoryEntryJSONRequestBody = DirectoryEntry
@@ -156,15 +156,15 @@ type ServerInterface interface {
 	// GetMe Get current user info.
 	// (GET /auth/me)
 	GetMe(w http.ResponseWriter, r *http.Request)
-	// RegisterUser Register a new user.
-	// (POST /auth/user)
-	RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams)
 	// LoginUser Log in.
 	// (POST /auth/user/login)
 	LoginUser(w http.ResponseWriter, r *http.Request, params LoginUserParams)
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/user/refreshTokens)
 	RefreshTokens(w http.ResponseWriter, r *http.Request, params RefreshTokensParams)
+	// RegisterUser Register a new user.
+	// (POST /auth/users)
+	RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams)
 	// RegisterDirectoryEntry Register a new directory entry.
 	// (POST /directory/entry)
 	RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request)
@@ -183,12 +183,6 @@ func (_ Unimplemented) GetMe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// RegisterUser Register a new user.
-// (POST /auth/user)
-func (_ Unimplemented) RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // LoginUser Log in.
 // (POST /auth/user/login)
 func (_ Unimplemented) LoginUser(w http.ResponseWriter, r *http.Request, params LoginUserParams) {
@@ -198,6 +192,12 @@ func (_ Unimplemented) LoginUser(w http.ResponseWriter, r *http.Request, params 
 // RefreshTokens Refresh access tokens.
 // (POST /auth/user/refreshTokens)
 func (_ Unimplemented) RefreshTokens(w http.ResponseWriter, r *http.Request, params RefreshTokensParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// RegisterUser Register a new user.
+// (POST /auth/users)
+func (_ Unimplemented) RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -227,51 +227,6 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMe(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// RegisterUser operation middleware
-func (siw *ServerInterfaceWrapper) RegisterUser(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params RegisterUserParams
-
-	headers := r.Header
-
-	// ------------- Required header parameter "User-Agent" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("User-Agent")]; found {
-		var UserAgent string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "User-Agent", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", valueList[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User-Agent", Err: err})
-			return
-		}
-
-		params.UserAgent = UserAgent
-
-	} else {
-		err := fmt.Errorf("Header parameter User-Agent is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "User-Agent", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RegisterUser(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -355,6 +310,51 @@ func (siw *ServerInterfaceWrapper) RefreshTokens(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RefreshTokens(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RegisterUser operation middleware
+func (siw *ServerInterfaceWrapper) RegisterUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RegisterUserParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "User-Agent" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("User-Agent")]; found {
+		var UserAgent string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "User-Agent", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", valueList[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User-Agent", Err: err})
+			return
+		}
+
+		params.UserAgent = UserAgent
+
+	} else {
+		err := fmt.Errorf("Header parameter User-Agent is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "User-Agent", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RegisterUser(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -506,7 +506,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/user", wrapper.RegisterUser)
+		r.Post(options.BaseURL+"/auth/users", wrapper.RegisterUser)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/auth/user/login", wrapper.LoginUser)
@@ -684,157 +684,6 @@ type GetMe503ApplicationProblemPlusJSONResponse struct {
 }
 
 func (response GetMe503ApplicationProblemPlusJSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(503)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUserRequestObject struct {
-	Params RegisterUserParams
-	Body   *RegisterUserJSONRequestBody
-}
-
-type RegisterUserResponseObject interface {
-	VisitRegisterUserResponse(w http.ResponseWriter) error
-}
-
-type RegisterUser200JSONResponse Tokens
-
-func (response RegisterUser200JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser400ApplicationProblemPlusJSONResponse struct {
-	BadRequestApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser400ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(400)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser401ApplicationProblemPlusJSONResponse struct {
-	UnauthorizedApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser401ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser403ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser404ApplicationProblemPlusJSONResponse struct {
-	NotFoundApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser404ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser409ApplicationProblemPlusJSONResponse struct {
-	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser409ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser422ApplicationProblemPlusJSONResponse struct {
-	BusinessRuleViolationApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser422ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser500ApplicationProblemPlusJSONResponse struct {
-	ServerErrorApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser500ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type RegisterUser503ApplicationProblemPlusJSONResponse struct {
-	ServiceUnavailableApplicationProblemPlusJSONResponse
-}
-
-func (response RegisterUser503ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1147,6 +996,157 @@ func (response RefreshTokens503ApplicationProblemPlusJSONResponse) VisitRefreshT
 	return err
 }
 
+type RegisterUserRequestObject struct {
+	Params RegisterUserParams
+	Body   *RegisterUserJSONRequestBody
+}
+
+type RegisterUserResponseObject interface {
+	VisitRegisterUserResponse(w http.ResponseWriter) error
+}
+
+type RegisterUser200JSONResponse Tokens
+
+func (response RegisterUser200JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser400ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser401ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser403ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser404ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser409ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser422ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser500ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response RegisterUser503ApplicationProblemPlusJSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RegisterDirectoryEntryRequestObject struct {
 	Body *RegisterDirectoryEntryJSONRequestBody
 }
@@ -1445,15 +1445,15 @@ type StrictServerInterface interface {
 	// GetMe Get current user info.
 	// (GET /auth/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
-	// RegisterUser Register a new user.
-	// (POST /auth/user)
-	RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error)
 	// LoginUser Log in.
 	// (POST /auth/user/login)
 	LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error)
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/user/refreshTokens)
 	RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error)
+	// RegisterUser Register a new user.
+	// (POST /auth/users)
+	RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error)
 	// RegisterDirectoryEntry Register a new directory entry.
 	// (POST /directory/entry)
 	RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error)
@@ -1525,39 +1525,6 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// RegisterUser operation middleware
-func (sh *strictHandler) RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams) {
-	var request RegisterUserRequestObject
-
-	request.Params = params
-
-	var body RegisterUserJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RegisterUser(ctx, request.(RegisterUserRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RegisterUser")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RegisterUserResponseObject); ok {
-		if err := validResponse.VisitRegisterUserResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // LoginUser operation middleware
 func (sh *strictHandler) LoginUser(w http.ResponseWriter, r *http.Request, params LoginUserParams) {
 	var request LoginUserRequestObject
@@ -1610,6 +1577,39 @@ func (sh *strictHandler) RefreshTokens(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RefreshTokensResponseObject); ok {
 		if err := validResponse.VisitRefreshTokensResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RegisterUser operation middleware
+func (sh *strictHandler) RegisterUser(w http.ResponseWriter, r *http.Request, params RegisterUserParams) {
+	var request RegisterUserRequestObject
+
+	request.Params = params
+
+	var body RegisterUserJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RegisterUser(ctx, request.(RegisterUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegisterUser")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegisterUserResponseObject); ok {
+		if err := validResponse.VisitRegisterUserResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1731,13 +1731,13 @@ var swaggerSpec = []string{
 	"aakeCUWSANc2dSMToW1nB/FJPl5dI3Dyo8WwDXrBHUhl5RgeDY+OUTyRAqcpC0bBs6Pjo6GpXfTcKNPo",
 	"eGCLkBl4vm36N+ji1QfJVH5UI1vXV7yK7LQ3EDQeRpwMhx3thKKNUBb/axW4eq2apayGPPBbsthNZuA7",
 	"zeKyXYq8TofDtijqNjqoPP8wS45XL6k1XMyiZ6sXlY1rs+J09QrX3DULzlYv8LdJcfXJyRqK8F4iPPaC",
-	"5+uosdp9NGuerbem0XOrHq7mLWD72fjps3njZ0Ntl6trOlPmkMcjrhdglYtsLHZwpnFeobyfBmLuCJJQ",
-	"wuHekF0GTzHpVtnv+l3BZjbgDQY4tX8+A9MSKR1fywyq7bQmSD7byaD0i7wVtDY4OxtflZ6LB14XxbO+",
-	"QgVLMj/ueHJ0CZcnAE+w/8vD3iG5BXU1HDcgPHCtQT+QX4sZYXwZu69x2V8VuLHZ9BNan9B6SLSW0OoE",
-	"aLWoUl0R10wjtHIXpHwxt0ptCbuNLgLOcp8LYG0t61wwOS9+MhxJShmi3pwBoRBfGJRnQD7zN+3KxY2O",
-	"gSfkPSFvX3GyBSseIEbFjdYA3JXWOimvW0fMuvbst3FldpiA12DicfZu8deIhcfLKnkC0FN9uQ4wCti5",
-	"oRx7CQzcS4SVXRqcSWKmbHs3oQyD0Qz8PZtF8dAgOGBkqb2xeIovT/BYr/3iHLkKDdt8eXQ/NJFweQdy",
-	"oeemh41fbeXXDnphcjQb6Co9dYxvj70mkYtmF6hcYb4MffzvAA==",
+	"5+uosdp9NGuerbem0XOrHq7mLWD72fjps3njZ0Ntl6trOlPmkMcjrhdglYtsLHZw5sD1FVKhPCB6LWaE",
+	"8WXUvMZlt8p+ze/KNCO2NwTg1P75DEwjpHR3LTOoNtGa0PhsJ4PSL/IG0NqQ7Gx3VTotHlDFZtNLgj7u",
+	"eEh0SZTH+ieE/+UR7kBbQquG0iZAqxmZagfqOzuN0EojWS3j9l2N2hJ2GyUIznJvjTExl3UuGNmLnwxH",
+	"klKGqDdnQCjEFwblGZDP/E27XHOjY+AJeU/I2w/yWrHSBcRO7GGbBSShhMO9icA+5NlJf9WgeVG8gC9U",
+	"8BQ/n1B8WBR7UefBcFRcaQ3A3WmtA2S3jph17Zhu3JkdBn8NJh5X7xZ/DTweL6vkCT5PBeY6wChg54Zy",
+	"7CUwcE8RVrZpcCaJmbL93YQyTChn4G/aLIqXBsEB40rtkcVTdHmCx3r9F+fIVWjY7suj+6GJhMs7kAs9",
+	"N01s/Gwrv3fQC1Nn2WS10lTH+PbYaxK5aLaByhXm09DH/w4A",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
