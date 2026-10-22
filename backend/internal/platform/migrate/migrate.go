@@ -9,8 +9,8 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func New(cfg config.Migrations) (*migrate.Migrate, func(), error) {
-	m, err := migrate.New(fmt.Sprintf("file://%s", cfg.Path), cfg.DBDSN)
+func New(cfg config.Config) (*migrate.Migrate, func(), error) {
+	m, err := migrate.New(fmt.Sprintf("file://%s", cfg.Migrations.Path), cfg.Migrations.DBDSN)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create migrate: %w", err)
 	}

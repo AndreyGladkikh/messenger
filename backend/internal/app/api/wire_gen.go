@@ -39,8 +39,7 @@ import (
 
 func Initialize(cfg config.Config) (*App, func(), error) {
 	loggerLogger := logger.New()
-	database := cfg.Database
-	pool, cleanup, err := postgres.NewPool(database)
+	pool, cleanup, err := postgres.NewPool(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -79,7 +78,8 @@ func Initialize(cfg config.Config) (*App, func(), error) {
 	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
 	commandbusBus := app.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler, registerEntryHandler)
 	apiHandler := http.NewApiHandler(commandbusBus, bus)
-	errorHandler := http.NewErrorHandler(cfg, loggerLogger)
+	problemTypesRegistry := http.NewProblemTypesRegistry(cfg)
+	errorHandler := http.NewErrorHandler(cfg, loggerLogger, problemTypesRegistry)
 	client, cleanup2, err := redis.NewRedis(cfg)
 	if err != nil {
 		cleanup()

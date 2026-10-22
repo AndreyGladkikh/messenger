@@ -2,7 +2,7 @@ package api
 
 import (
 	"messenger/messenger/internal/app"
-	platformHttp "messenger/messenger/internal/platform/transport/http"
+	appHttp "messenger/messenger/internal/platform/transport/http"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -24,11 +24,12 @@ func NewApp(
 var AppSet = wire.NewSet(
 	NewApp,
 	app.AppSet,
-	platformHttp.NewRouter,
-	platformHttp.NewApiHandler,
-	platformHttp.NewErrorHandler,
-	platformHttp.NewWebsocketHandler,
+	appHttp.NewRouter,
+	appHttp.NewApiHandler,
+	appHttp.NewErrorHandler,
+	appHttp.NewWebsocketHandler,
+	appHttp.NewProblemTypesRegistry,
 
 	wire.Bind(new(http.Handler), new(*chi.Mux)),
-	wire.Bind(new(platformHttp.StrictServerInterface), new(*platformHttp.ApiHandler)),
+	wire.Bind(new(appHttp.StrictServerInterface), new(*appHttp.ApiHandler)),
 )

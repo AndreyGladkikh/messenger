@@ -3,12 +3,11 @@ package http
 import (
 	"context"
 	"fmt"
-	authDomain "messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/identity/app"
 	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/transport/http/cookies"
 	"messenger/messenger/internal/platform/transport/http/headers"
-	"messenger/messenger/internal/shared/app/apperr"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -71,15 +70,15 @@ func isCookiePresentInRequest(r *http.Request, cookieName string) bool {
 	return err == nil
 }
 
-func FirewallMiddleware(oas *openapi3.T, errHandler *ErrorHandler) func(next http.Handler) http.Handler {
+func RequestValidator(oas *openapi3.T, errHandler *ErrorHandler) func(next http.Handler) http.Handler {
 	validator := oapimiddleware.OapiRequestValidatorWithOptions(oas,
 		&oapimiddleware.Options{
 			Options: openapi3filter.Options{
+				MultiError: true,
 				AuthenticationFunc: func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 					a, err := auth.AuthFromContext(ctx)
 					if err != nil {
-						err = fmt.Errorf("%w: %w", authDomain.ErrUnauthorized, err)
-						return apperr.Map(err)
+						return app.ErrNeedLogin
 					}
 
 					if input.SecuritySchemeName != string(a.Method) {

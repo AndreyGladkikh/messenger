@@ -7,7 +7,7 @@ import (
 	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/identity/domain/model/user"
-	"messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/platform/repository"
 )
 
 const LogoutUserCommandName = "LogoutUser"
@@ -31,10 +31,10 @@ type LogoutUserHandler struct {
 
 func (h *LogoutUserHandler) Handle(ctx context.Context, cmd LogoutUser) (any, error) {
 	session, err := h.sessionRepo.GetByRefreshTokenHash(ctx, h.tokenService.HashRefreshToken(cmd.RefreshToken))
-	if err != nil && !errors.Is(err, domain.ErrNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return nil, err
 	}
-	if errors.Is(err, domain.ErrNotFound) || session.IsExpired() || session.IsRevoked() {
+	if errors.Is(err, repository.ErrNotFound) || session.IsExpired() || session.IsRevoked() {
 		return nil, nil
 	}
 

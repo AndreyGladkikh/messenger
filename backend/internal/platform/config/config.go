@@ -14,8 +14,7 @@ import (
 )
 
 type (
-	Env         string
-	FrontendUrl string
+	Env string
 )
 
 const (
@@ -26,14 +25,15 @@ const (
 )
 
 type Config struct {
-	Env         Env
-	Auth        Auth
-	FrontendUrl FrontendUrl
-	Database    Database
-	Migrations  Migrations
-	Cache       Cache
-	HttpServer  HttpServer
-	Mq          Mq
+	Env                 Env
+	Auth                Auth
+	FrontendUrl         string
+	ProblemsRegistryUrl string
+	Database            Database
+	Migrations          Migrations
+	Cache               Cache
+	HttpServer          HttpServer
+	Mq                  Mq
 }
 
 type Auth struct {

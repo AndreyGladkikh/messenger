@@ -3,8 +3,8 @@ package command
 import (
 	"context"
 	"messenger/messenger/internal/directory/domain/entry"
+	"messenger/messenger/internal/shared/app/apperr"
 	"messenger/messenger/internal/shared/app/command"
-	"messenger/messenger/internal/shared/domain"
 	"uuid"
 )
 
@@ -54,7 +54,7 @@ func (h *RegisterEntryHandler) Handle(ctx context.Context, qry RegisterEntry) (a
 	}
 
 	if !exists {
-		return nil, domain.ErrNotFound
+		return nil, apperr.NewNotFound("Entry target doesn't exist")
 	}
 
 	entr := entry.New(

@@ -7,6 +7,7 @@ import (
 	"messenger/messenger/internal/shared/app/command"
 )
 
+// todo remove
 func ErrorMapping(next commandbus.CommandHandler) commandbus.CommandHandler {
 	return commandbus.HandlerFunc(func(ctx context.Context, command command.Command) (any, error) {
 		response, err := next.Handle(ctx, command)

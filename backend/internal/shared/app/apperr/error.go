@@ -1,31 +1,53 @@
 package apperr
 
 import (
+	"maps"
 	"errors"
 	"messenger/messenger/internal/directory/domain/entry"
-	auth "messenger/messenger/internal/identity/domain/model"
-	"messenger/messenger/internal/identity/domain/model/user"
-	"messenger/messenger/internal/identity/infra/token"
-	"messenger/messenger/internal/shared/domain"
 )
 
+type kind int
+
+func (k kind) String() string {
+	return kindName[k]
+}
+
 const (
-	CodeUnsupportableDirectoryEntryTargetType       = "UNSUPPORTABLE_DIRECTORY_ENTRY_TARGET_TYPE"
-	CodeInvalidCredentials       = "INVALID_CREDENTIALS"
-	CodeInvalidToken             = "INVALID_TOKEN"
-	CodeUnauthorized             = "UNAUTHORIZED"
-	CodeAlreadyExists            = "ALREADY_EXISTS"
-	CodeUserNotFound             = "USER_NOT_FOUND"
-	CodeLoginAlreadyExists       = "LOGIN_ALREADY_EXISTS"
-	CodeChatNotFound             = "CHAT_NOT_FOUND"
-	CodeChatDeleted              = "CHAT_DELETED"
-	CodePrivateChatAlreadyExists = "PRIVATE_CHAT_ALREADY_EXISTS"
-	CodeNotFound                 = "NOT_FOUND"
+	KindInvalidArgument kind = iota
+	KindUnauthenticated
+	KindPermissionDenied
+	KindNotFound
+	KindAlreadyExists
+	KindDomain
+)
+
+var kindName = map[kind]string{
+	KindInvalidArgument:  "Invalid argument",
+	KindUnauthenticated:  "Unauthenticated",
+	KindPermissionDenied: "Permission denied",
+	KindNotFound:         "Not found",
+	KindAlreadyExists:    "Already exists",
+	KindDomain:           "Business rule violation",
+}
+
+const (
+	CodeUnsupportableDirectoryEntryTargetType = "UNSUPPORTABLE_DIRECTORY_ENTRY_TARGET_TYPE"
+	CodeInvalidCredentials                    = "INVALID_CREDENTIALS"
+	CodeInvalidToken                          = "INVALID_TOKEN"
+	CodeUnauthorized                          = "UNAUTHORIZED"
+	CodeAlreadyExists                         = "ALREADY_EXISTS"
+	CodeUserNotFound                          = "USER_NOT_FOUND"
+	CodeLoginAlreadyExists                    = "LOGIN_ALREADY_EXISTS"
+	CodeChatNotFound                          = "CHAT_NOT_FOUND"
+	CodeChatDeleted                           = "CHAT_DELETED"
+	CodePrivateChatAlreadyExists              = "PRIVATE_CHAT_ALREADY_EXISTS"
+	CodeNotFound                              = "NOT_FOUND"
 )
 
 type Error struct {
-	Code    string
+	Kind    kind
 	Message string
+	Code    string
 	Details map[string]any
 	Wrapped error
 }
@@ -38,6 +60,71 @@ func (e *Error) Unwrap() error {
 	return e.Wrapped
 }
 
+func New(msg string, opts ...Option) *Error {
+	err := &Error{
+		Message: msg,
+		Details: make(map[string]any),
+	}
+
+	for _, opt := range opts {
+		opt(err)
+	}
+
+	return err
+}
+
+func NewUnauthenticated(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindUnauthenticated))
+	return New(msg, opts...)
+}
+
+func NewPermissionDenied(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindPermissionDenied))
+	return New(msg, opts...)
+}
+
+func NewNotFound(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindNotFound))
+	return New(msg, opts...)
+}
+
+func NewAlreadyExists(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindAlreadyExists))
+	return New(msg, opts...)
+}
+
+func NewInvalidArgument(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindInvalidArgument))
+	return New(msg, opts...)
+}
+
+type Option func(*Error)
+
+func WithCause(cause error) Option {
+	return func(err *Error) {
+		err.Wrapped = cause
+	}
+}
+
+func WithKind(k kind) Option {
+	return func(err *Error) {
+		err.Kind = k
+	}
+}
+
+func WithCode(code string) Option {
+	return func(err *Error) {
+		err.Code = code
+	}
+}
+
+func WithDetails(details map[string]any) Option {
+	return func(err *Error) {
+		maps.Copy(err.Details, details)
+	}
+}
+
+// todo remove
 func Map(err error) error {
 	if err == nil {
 		return nil
@@ -54,103 +141,6 @@ func Map(err error) error {
 			Wrapped: err,
 		}
 	}
-	if errors.Is(err, token.ErrInvalidToken) {
-		return &Error{
-			Code:    CodeInvalidToken,
-			Message: "Invalid access token",
-			Wrapped: err,
-		}
-	}
-	if errors.Is(err, auth.ErrInvalidCredantials) {
-		return &Error{
-			Code:    CodeInvalidCredentials,
-			Message: "Invalid credentials",
-			Wrapped: err,
-		}
-	}
-	if errors.Is(err, auth.ErrUnauthorized) {
-		return &Error{
-			Code:    CodeUnauthorized,
-			Message: "Authentication failed",
-			Wrapped: err,
-		}
-	}
-	if errors.Is(err, user.ErrNotFound) {
-		return &Error{
-			Code:    CodeUserNotFound,
-			Message: "User not found",
-			Wrapped: err,
-		}
-	}
-	if errors.Is(err, user.ErrLoginAlreadyExists) {
-		return &Error{
-			Code:    CodeLoginAlreadyExists,
-			Message: "Login already exists",
-			Wrapped: err,
-		}
-	}
-	if errors.Is(err, domain.ErrNotFound) {
-		return &Error{
-			Code:    CodeNotFound,
-			Message: "Not found",
-			Wrapped: err,
-		}
-	}
-	if errors.Is(err, domain.ErrAlreadyExists) {
-		return &Error{
-			Code:    CodeAlreadyExists,
-			Message: "Already exists",
-			Wrapped: err,
-		}
-	}
-	
+
 	return err
-}
-
-func Translate(err error) *Error {
-	return &Error{
-		Code:    code(err),
-		Message: message(err),
-		Details: details(err),
-		Wrapped: err,
-	}
-}
-
-func code(err error) string {
-	switch {
-	case errors.Is(err, user.ErrNotFound):
-		return "USER_NOT_FOUND"
-	case errors.Is(err, user.ErrLoginAlreadyExists):
-		return "LOGIN_ALREADY_EXISTS"
-	case errors.Is(err, domain.ErrNotFound):
-		return "NOT_FOUND"
-	default:
-		return ""
-	}
-}
-
-func message(err error) string {
-	switch {
-	case errors.Is(err, auth.ErrInvalidCredantials):
-		return "Неверный логин или пароль"
-	case errors.Is(err, token.ErrInvalidToken):
-		return "Невалидный токен авторизации"
-	case errors.Is(err, auth.ErrUnauthorized):
-		return "Аутентификация не удалась"
-	case errors.Is(err, user.ErrNotFound):
-		return "Пользователь не найден"
-	case errors.Is(err, user.ErrLoginAlreadyExists):
-		return "Пользователь с таким логином уже существует"
-	case errors.Is(err, domain.ErrNotFound):
-		return "Ресурс не найден"
-	default:
-		return "Непредвиденная ошибка"
-	}
-}
-
-func details(err error) map[string]any {
-	switch {
-	default:
-		return nil
-	}
 }

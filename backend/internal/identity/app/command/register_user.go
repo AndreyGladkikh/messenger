@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"messenger/messenger/internal/identity/app"
 	"messenger/messenger/internal/identity/app/password"
 	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/model/session"
@@ -57,7 +58,7 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUser) (Reg
 		return RegisterUserResponse{}, err
 	}
 	if exists {
-		return RegisterUserResponse{}, user.ErrLoginAlreadyExists
+		return RegisterUserResponse{}, app.ErrUserAlreadyExists
 	}
 
 	passHash, err := h.passHasher.Hash(cmd.Password)

@@ -8,7 +8,7 @@ import (
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
-	"messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/shared/app/apperr"
 	"uuid"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -33,7 +33,7 @@ func (c *ConversationRepository) GetDirectBetween(ctx context.Context, participa
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, domain.ErrNotFound
+		return nil, apperr.NewNotFound("Direct conversation betwenn participants doesn't exist", apperr.WithCause(repository.ErrNotFound))
 	}
 
 	return conversation.Rehydrate(
@@ -80,7 +80,7 @@ func (c *ConversationRepository) SaveDirect(ctx context.Context, cnv *conversati
 	})
 	if err != nil {
 		if err, ok := errors.AsType[*pgconn.PgError](err); ok && err.Code == postgres.UniqueViolationErrCode && err.ConstraintName == "direct_conversations_conversation_id_key" {
-			return domain.ErrAlreadyExists
+			return apperr.NewAlreadyExists("Direct conversation already exists")
 		}
 		return err
 	}

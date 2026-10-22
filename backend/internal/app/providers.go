@@ -25,7 +25,6 @@ import (
 	idTokenImpl "messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/commandbus/middlewares"
-	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	pg "messenger/messenger/internal/platform/postgres"
@@ -42,7 +41,6 @@ import (
 )
 
 var AppSet = wire.NewSet(
-	wire.FieldsOf(new(config.Config), "Database", "Migrations"),
 	logger.New,
 	Persistence,
 	InitCommandBus,
@@ -127,7 +125,7 @@ func InitCommandBus(
 	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.Recoverer)
 	bus.Use(loggingMiddlewareContainer.Middleware)
-	bus.Use(middlewares.ErrorMapping)
+	// bus.Use(middlewares.ErrorMapping)
 
 	bus.RegisterHandler(registerUserHandler)
 	bus.RegisterHandler(loginUserHandler)

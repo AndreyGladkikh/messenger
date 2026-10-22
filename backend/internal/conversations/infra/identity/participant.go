@@ -5,7 +5,7 @@ import (
 	"errors"
 	"messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/platform/querybus"
-	"messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/shared/app/apperr"
 	"uuid"
 )
 
@@ -24,7 +24,7 @@ func NewParticipantLookup(
 func (p *ParticipantLookup) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 	_, err := p.qryBus.Dispatch[query.AccountView](ctx, query.GetAccount{ID: id})
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
+		if err, ok := errors.AsType[*apperr.Error](err); ok && err.Kind == apperr.KindNotFound {
 			return false, nil
 		}
 		return false, err

@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/domain/model/message"
-	authDomain "messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/identity/app"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/store"
-	"messenger/messenger/internal/shared/app/apperr"
 	"net/http"
 	"sync"
 	"time"
@@ -56,7 +55,7 @@ func NewWebsocketHandler(
 func (h *WebsocketHandler) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	a, err := auth.AuthFromContext(r.Context())
 	if err != nil {
-		err = fmt.Errorf("%w: %w", authDomain.ErrUnauthorized, err)
+		err = fmt.Errorf("%w: %w", app.ErrNeedLogin, err)
 		http.Error(w, "failed to accept websocket connection: unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -261,9 +260,22 @@ func withData(data any) wsMessageOption {
 	}
 }
 
+type err struct {
+
+}
+
+// todo implement
+func (e *err) Error() string {
+	return "not implemented"
+}
+
+func mapErr(e error) *err {
+	return &err{}
+}
+
 func withError(err error) wsMessageOption {
 	return func(m *WSMessage) error {
-		errData := apperr.Translate(err)
+		errData := mapErr(err)
 
 		jsonErrorData, err := json.Marshal(errData)
 		if err != nil {

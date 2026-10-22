@@ -2,15 +2,14 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
-	"messenger/messenger/internal/identity/domain/model"
+	"messenger/messenger/internal/shared/app/apperr"
 	"uuid"
 )
 
-var ErrSenderNotParticipantOfConversation = fmt.Errorf("%w: sender is not a participant in conversation", model.ErrForbidden)
+var ErrSenderNotParticipantOfConversation = apperr.NewPermissionDenied("Sender is not a participant in conversation")
 
 type MessageSender struct {
 	membershipRepository membership.Repository

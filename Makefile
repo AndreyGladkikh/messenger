@@ -7,7 +7,7 @@ front_port := 3000
 front_url := localhost:$(front_port)
 
 test:
-	cd backend && go test ./... -v
+	cd backend && go test ./...
 
 run:
 	cd backend && APP_ENV=local go run ./cmd/api/main.go -config=../../backend/configs/config.yaml -env=../../backend/.env

@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"messenger/messenger/internal/identity/app/query"
+	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/store"
-	"messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/shared/app/apperr"
 	"uuid"
 )
 
@@ -28,7 +29,7 @@ func (r *QueryService) GetAccount(ctx context.Context, id uuid.UUID) (query.Acco
 	acc, err := r.Queries(ctx).GetAccount(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return zero, domain.ErrNotFound
+			return zero, apperr.NewNotFound("Account not found by id", apperr.WithCause(repository.ErrNotFound))
 		}
 		return zero, err
 	}

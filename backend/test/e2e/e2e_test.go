@@ -4,16 +4,19 @@ import (
 	"context"
 	"encoding/json/v2"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"strings"
 	"uuid"
 
 	"messenger/messenger/internal/app/api"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/migrate"
 	"messenger/messenger/internal/platform/postgres"
-	pltfrmHttp "messenger/messenger/internal/platform/transport/http"
+	appHttp "messenger/messenger/internal/platform/transport/http"
 	"messenger/messenger/internal/platform/transport/http/cookies"
+	"messenger/messenger/internal/shared/app/apperr"
 	"messenger/messenger/test/testhelpers"
 
 	"net/http"
@@ -22,19 +25,21 @@ import (
 
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 
 	"golang.org/x/net/publicsuffix"
 )
 
 var (
-	pgContainer    *testhelpers.PostgresContainer
-	redisContainer *testhelpers.RedisContainer
-	rmqContainer   *testhelpers.RabbitMQContainer
-	pgAdmin        *pgxpool.Pool
+	pgContainer          *testhelpers.PostgresContainer
+	redisContainer       *testhelpers.RedisContainer
+	rmqContainer         *testhelpers.RabbitMQContainer
+	pgAdmin              *pgxpool.Pool
+	problemTypesRegistry appHttp.ProblemTypesRegistry
+	problemsRegistryUrl  = "https://problems-registry.messenger.com"
 )
 
 func TestMain(m *testing.M) {
@@ -66,7 +71,7 @@ func setup() (func(), error) {
 		return nil, err
 	}
 
-	migrator, migratorCleanup, err := migrate.New(config.Migrations{DBDSN: pgContainer.MigrationsConnectionString, Path: "../../db/migrations"})
+	migrator, migratorCleanup, err := migrate.New(config.Config{Migrations: config.Migrations{DBDSN: pgContainer.MigrationsConnectionString, Path: "../../db/migrations"}})
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +81,12 @@ func setup() (func(), error) {
 	migratorCleanup()
 
 	var pgAdminCleanup func()
-	pgAdmin, pgAdminCleanup, err = postgres.NewPool(config.Database{Dsn: pgContainer.AdminConnectionString})
+	pgAdmin, pgAdminCleanup, err = postgres.NewPool(config.Config{Database: config.Database{Dsn: pgContainer.AdminConnectionString}})
 	if err != nil {
 		return nil, err
 	}
+
+	problemTypesRegistry = appHttp.NewProblemTypesRegistry(config.Config{ProblemsRegistryUrl: problemsRegistryUrl})
 
 	return func() {
 		pgAdminCleanup()
@@ -96,15 +103,17 @@ func setup() (func(), error) {
 }
 
 func initApi(t *testing.T) (*httptest.Server, *httpClient) {
-	testDBName := pgx.Identifier{fmt.Sprintf("test_%s", uuid.New().String())}.Sanitize()
+	testDBName := fmt.Sprintf("test_%s", strings.ReplaceAll(uuid.New().String(), "-", ""))
+
 	_, err := pgAdmin.Exec(context.Background(), fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s", testDBName, pgContainer.TemplateDBName))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	pgConnString, err := pgContainer.ConnectionString(testDBName)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	cfg := config.Config{
-		Env: config.EnvLocal,
+		Env:                 config.EnvLocal,
+		ProblemsRegistryUrl: problemsRegistryUrl,
 		Auth: config.Auth{
 			Jwt: struct {
 				PrivateKeyPath string
@@ -115,18 +124,27 @@ func initApi(t *testing.T) (*httptest.Server, *httpClient) {
 			},
 		},
 		Database: config.Database{Dsn: pgConnString},
-		Cache: config.Cache{Dsn: redisContainer.ConnectionString},
-		Mq: config.Mq{Dsn: rmqContainer.ConnectionString},
+		Cache:    config.Cache{Dsn: redisContainer.ConnectionString},
+		Mq:       config.Mq{Dsn: rmqContainer.ConnectionString},
 	}
 
-	appApi, cleanup, err := api.Initialize(cfg)
-	assert.NoError(t, err)
-	t.Cleanup(cleanup)
+	appApi, apiCleanup, err := api.Initialize(cfg)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		apiCleanup()
+
+		_, err := pgAdmin.Exec(
+			context.Background(),
+			fmt.Sprintf("DROP DATABASE %s WITH (FORCE)", testDBName),
+		)
+		require.NoError(t, err)
+	})
 
 	server := httptest.NewTestServer(t, appApi.HttpHandler)
 
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	server.Client().Jar = jar
 
@@ -135,14 +153,14 @@ func initApi(t *testing.T) (*httptest.Server, *httpClient) {
 	}
 }
 
-func TestRegisterUserSuccess(t *testing.T) {
+func TestRegisterUser_Success(t *testing.T) {
 	_, client := initApi(t)
 
-	resp, err := client.registerUser("alice", "foo")
-	assert.NoError(t, err)
+	resp, err := client.registerUser("alice", "TestPass123!")
+	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	assert.Equal(t, resp.StatusCode, 200)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	respCookies := resp.Cookies()
 	assert.NotEmpty(t, respCookies)
@@ -156,14 +174,177 @@ func TestRegisterUserSuccess(t *testing.T) {
 			refreshTokenCookie = c
 		}
 	}
-	assert.NotNil(t, accessTokenCookie)
+	require.NotNil(t, accessTokenCookie)
 	assert.NotEmpty(t, accessTokenCookie.Value)
-	assert.NotNil(t, refreshTokenCookie)
+	require.NotNil(t, refreshTokenCookie)
 	assert.NotEmpty(t, refreshTokenCookie.Value)
 
-	var data pltfrmHttp.Tokens
-	err = json.UnmarshalRead(resp.Body, &data)
-	assert.NoError(t, err)
-	assert.NotNil(t, data.AccessToken)
-	assert.NotNil(t, data.RefreshToken)
+	body := decode[appHttp.Tokens](t, resp.Body)
+	assert.NotNil(t, body.AccessToken)
+	assert.NotNil(t, body.RefreshToken)
+}
+
+func TestRegisterUser_LoginAlreadyExists(t *testing.T) {
+	_, client := initApi(t)
+
+	login := "alice"
+	pass := "TestPass123!"
+
+	resp, err := client.registerUser(login, pass)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, err = client.registerUser(login, pass)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+
+	body := decode[appHttp.ProblemDetails](t, resp.Body)
+	assert.Equal(t, problemTypesRegistry.AlreadyExists, *body.Type)
+	assert.Equal(t, apperr.KindAlreadyExists.String(), body.Title)
+}
+
+func TestLoginUser_Success(t *testing.T) {
+	_, client := initApi(t)
+
+	login := "alice"
+	pass := "TestPass123!"
+
+	resp, err := client.registerUser(login, pass)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, err = client.loginUser(login, pass)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	body := decode[appHttp.Tokens](t, resp.Body)
+	assert.NotNil(t, body.AccessToken)
+	assert.NotNil(t, body.RefreshToken)
+
+	respCookies := resp.Cookies()
+	assert.NotEmpty(t, respCookies)
+
+	var accessTokenCookie, refreshTokenCookie *http.Cookie
+	for _, c := range respCookies {
+		switch c.Name {
+		case cookies.AccessToken:
+			accessTokenCookie = c
+		case cookies.RefreshToken:
+			refreshTokenCookie = c
+		}
+	}
+	require.NotNil(t, accessTokenCookie)
+	assert.NotEmpty(t, accessTokenCookie.Value)
+	require.NotNil(t, refreshTokenCookie)
+	assert.NotEmpty(t, refreshTokenCookie.Value)
+}
+
+func TestLoginUser_NonExistentUser(t *testing.T) {
+	_, client := initApi(t)
+
+	resp, err := client.loginUser("alice", "TestPass123!")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+	body := decode[appHttp.ProblemDetails](t, resp.Body)
+	assert.Equal(t, problemTypesRegistry.Blank, *body.Type)
+	assert.NotNil(t, apperr.KindUnauthenticated, body.Title)
+}
+
+func TestLoginUser_WrongPassword(t *testing.T) {
+	_, client := initApi(t)
+
+	resp, err := client.registerUser("alice", "TestPass123!")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, err = client.loginUser("alice", "WrongPass123!")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+	body := decode[appHttp.ProblemDetails](t, resp.Body)
+	assert.Equal(t, problemTypesRegistry.Blank, *body.Type)
+	assert.NotNil(t, apperr.KindUnauthenticated, body.Title)
+}
+
+func TestRefreshUserTokens_Success(t *testing.T) {
+	_, client := initApi(t)
+
+	resp, err := client.registerUser("alice", "TestPass123!")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body := decode[appHttp.Tokens](t, resp.Body)
+
+	firstAccessToken := body.AccessToken
+	firstRefreshToken := body.RefreshToken
+
+	resp, err = client.refreshUserTokens()
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	body = decode[appHttp.Tokens](t, resp.Body)
+	assert.NotNil(t, body.AccessToken)
+	assert.NotNil(t, body.RefreshToken)
+
+	assert.NotEqual(t, body.AccessToken, firstAccessToken)
+	assert.NotEqual(t, body.RefreshToken, firstRefreshToken)
+
+	respCookies := resp.Cookies()
+	assert.NotEmpty(t, respCookies)
+
+	var accessTokenCookie, refreshTokenCookie *http.Cookie
+	for _, c := range respCookies {
+		switch c.Name {
+		case cookies.AccessToken:
+			accessTokenCookie = c
+		case cookies.RefreshToken:
+			refreshTokenCookie = c
+		}
+	}
+	require.NotNil(t, accessTokenCookie)
+	assert.NotEmpty(t, accessTokenCookie.Value)
+	require.NotNil(t, refreshTokenCookie)
+	assert.NotEmpty(t, refreshTokenCookie.Value)
+}
+
+func TestMalformedRequest(t *testing.T) {
+	_, client := initApi(t)
+
+	resp, err := client.doRequest(http.MethodPost, "auth/users", &httpRequestOpts{Body: map[string]string{"wrongField": "alice"}})
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body := decode[appHttp.ProblemDetails](t, resp.Body)
+	assert.Equal(t, problemTypesRegistry.ValidationError, *body.Type)
+	assert.Equal(t, "Validation error", body.Title)
+}
+
+// func validateErrorResponse(t *testing.T, resp *http.Response) {
+
+// }
+
+func decode[T any](t *testing.T, data io.Reader) T {
+	var decoded T
+	err := json.UnmarshalRead(data, &decoded)
+	require.NoError(t, err)
+	return decoded
 }

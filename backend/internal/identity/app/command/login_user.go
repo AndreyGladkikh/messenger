@@ -3,11 +3,12 @@ package command
 import (
 	"context"
 	"errors"
+	"messenger/messenger/internal/identity/app"
 	"messenger/messenger/internal/identity/app/password"
 	"messenger/messenger/internal/identity/app/token"
-	"messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/identity/domain/model/user"
+	"messenger/messenger/internal/platform/repository"
 	"net/netip"
 )
 
@@ -54,11 +55,11 @@ func NewLoginUserHandler(
 
 func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUser) (LoginUserResponse, error) {
 	u, err := h.userRepo.GetByLogin(ctx, cmd.Login)
-	if err != nil && !errors.Is(err, user.ErrNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return LoginUserResponse{}, err
 	}
-	if errors.Is(err, user.ErrNotFound) {
-		return LoginUserResponse{}, model.ErrInvalidCredantials
+	if errors.Is(err, repository.ErrNotFound) {
+		return LoginUserResponse{}, app.ErrInvalidCredantials
 	}
 
 	eq, err := h.passHasher.Compare(cmd.Password, u.PasswordHash)
@@ -66,7 +67,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUser) (LoginUser
 		return LoginUserResponse{}, err
 	}
 	if !eq {
-		return LoginUserResponse{}, model.ErrInvalidCredantials
+		return LoginUserResponse{}, app.ErrInvalidCredantials
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()

@@ -41,7 +41,8 @@ func NewRouter(
 	mux.Use(middleware.Recoverer)
 
 	mux.Group(func(r chi.Router) {
-		r.Use(FirewallMiddleware(oas, errorHandler))
+		r.Use(RequestValidator(oas, errorHandler))
+
 		HandlerFromMux(NewStrictHandlerWithOptions(
 			apiHandler,
 			nil,
@@ -55,6 +56,7 @@ func NewRouter(
 	mux.Get("/ws", wsHandler.handlerFunc)
 
 	// ###
+	// todo rm
 	ah := apiHandler.(*ApiHandler)
 	mux.Post("/test", ah.Test)
 	// ###

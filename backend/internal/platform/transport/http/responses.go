@@ -34,30 +34,30 @@ type ResponseBody struct {
 	Error  *apperr.Error  `json:"error,omitempty"`
 }
 
-func NewResponse(response any, err error, opts ...Option) *Response {
-	httpStatus := defaultHttpStatus
-	status := "success"
-	if err != nil {
-		err = apperr.Translate(err)
+// func NewResponse(response any, err error, opts ...Option) *Response {
+// 	httpStatus := defaultHttpStatus
+// 	status := "success"
+// 	if err != nil {
+// 		err = apperr.Translate(err)
 
-		httpStatus = getErrorStatus(err)
-		status = "error"
-	}
+// 		httpStatus = getErrorStatus(err)
+// 		status = "error"
+// 	}
 
-	r := &Response{
-		response:    response,
-		err:         err,
-		status:      status,
-		contentType: defaultContentType,
-		httpStatus:  httpStatus,
-	}
+// 	r := &Response{
+// 		response:    response,
+// 		err:         err,
+// 		status:      status,
+// 		contentType: defaultContentType,
+// 		httpStatus:  httpStatus,
+// 	}
 
-	for _, opt := range opts {
-		opt(r)
-	}
+// 	for _, opt := range opts {
+// 		opt(r)
+// 	}
 
-	return r
-}
+// 	return r
+// }
 
 func (r *Response) WriteTo(w http.ResponseWriter) {
 	w.Header().Set(headers.ContentType, r.contentType)
@@ -104,19 +104,19 @@ func (r ResponseNew) isError() bool {
 	return r.Error != nil
 }
 
-func NewResponseNew(data any, err error) ResponseNew {
-	var response ResponseNew
+// func NewResponseNew(data any, err error) ResponseNew {
+// 	var response ResponseNew
 
-	if err == nil {
-		response.Status = ResponseStatusSuccess
-		response.Data = data
-	} else {
-		response.Status = ResponseStatusError
-		response.Error = apperr.Translate(err)
-	}
+// 	if err == nil {
+// 		response.Status = ResponseStatusSuccess
+// 		response.Data = data
+// 	} else {
+// 		response.Status = ResponseStatusError
+// 		response.Error = apperr.Translate(err)
+// 	}
 
-	return response
-}
+// 	return response
+// }
 
 type HTTPResponse struct {
 	response    ResponseNew
@@ -124,26 +124,26 @@ type HTTPResponse struct {
 	status      int
 }
 
-func NewHTTPResponse(data any, err error, opts ...OptionNew) *HTTPResponse {
-	response := NewResponseNew(data, err)
+// func NewHTTPResponse(data any, err error, opts ...OptionNew) *HTTPResponse {
+// 	response := NewResponseNew(data, err)
 
-	httpResponse := &HTTPResponse{
-		response:    response,
-		contentType: defaultContentType,
-	}
+// 	httpResponse := &HTTPResponse{
+// 		response:    response,
+// 		contentType: defaultContentType,
+// 	}
 
-	if response.isError() {
-		httpResponse.status = getErrorStatus(response.Error)
-	} else {
-		httpResponse.status = http.StatusOK
-	}
+// 	if response.isError() {
+// 		httpResponse.status = getErrorStatus(response.Error)
+// 	} else {
+// 		httpResponse.status = http.StatusOK
+// 	}
 
-	for _, opt := range opts {
-		opt(httpResponse)
-	}
+// 	for _, opt := range opts {
+// 		opt(httpResponse)
+// 	}
 
-	return httpResponse
-}
+// 	return httpResponse
+// }
 
 func (r *HTTPResponse) WriteTo(w http.ResponseWriter) {
 	w.Header().Set(headers.ContentType, r.contentType)
@@ -177,20 +177,20 @@ type WSResponse struct {
 	timeout     time.Duration
 }
 
-func NewWSResponse(data any, err error, opts ...WSResponseOption) *WSResponse {
-	response := NewResponseNew(data, err)
+// func NewWSResponse(data any, err error, opts ...WSResponseOption) *WSResponse {
+// 	response := NewResponseNew(data, err)
 
-	httpResponse := &WSResponse{
-		response:    response,
-		contentType: defaultContentType,
-	}
+// 	httpResponse := &WSResponse{
+// 		response:    response,
+// 		contentType: defaultContentType,
+// 	}
 
-	for _, opt := range opts {
-		opt(httpResponse)
-	}
+// 	for _, opt := range opts {
+// 		opt(httpResponse)
+// 	}
 
-	return httpResponse
-}
+// 	return httpResponse
+// }
 
 func (r *WSResponse) WriteTo(c *websocket.Conn) {
 	// err := json.NewEncoder(w).Encode(r.response)

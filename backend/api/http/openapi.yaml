@@ -56,7 +56,7 @@ paths:
           $ref: '#/components/responses/ServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /auth/user/login:
+  /auth/users/login:
     post:
       tags:
         - auth
@@ -99,7 +99,7 @@ paths:
           $ref: '#/components/responses/ServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /auth/user/refreshTokens:
+  /auth/users/refreshTokens:
     post:
       parameters:
         - name: refresh_token
@@ -177,7 +177,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
       security:
         - bearerHttpAuthentication: []
-  /directory/entry:
+  /directory/entries:
     post:
       tags:
         - directory
@@ -323,6 +323,7 @@ components:
         displayName:
           type: string
 
+    # RFC 9457
     ProblemDetails:
       type: object
       properties:

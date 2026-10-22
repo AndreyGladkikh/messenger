@@ -3,10 +3,10 @@ package command
 import (
 	"context"
 	"errors"
+	"messenger/messenger/internal/identity/app"
 	"messenger/messenger/internal/identity/app/token"
-	"messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/domain/model/session"
-	sharedDomain "messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/platform/repository"
 )
 
 const RefreshUserTokensCommandName = "RefreshUserTokens"
@@ -43,11 +43,11 @@ func NewRefreshUserTokensHandler(
 
 func (h *RefreshUserTokensHandler) Handle(ctx context.Context, cmd RefreshUserTokens) (RefreshUserTokensResponse, error) {
 	ses, err := h.sessionRepo.GetByRefreshTokenHash(ctx, h.tokenService.HashRefreshToken(cmd.RefreshToken))
-	if err != nil && !errors.Is(err, sharedDomain.ErrNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return RefreshUserTokensResponse{}, err
 	}
-	if errors.Is(err, sharedDomain.ErrNotFound) {
-		return RefreshUserTokensResponse{}, model.ErrUnauthorized
+	if errors.Is(err, repository.ErrNotFound) {
+		return RefreshUserTokensResponse{}, app.ErrInvalidCredantials
 	}
 
 	refreshToken := h.tokenService.GenerateRefreshToken()

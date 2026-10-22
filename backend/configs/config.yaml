@@ -7,3 +7,4 @@ HttpServer:
   Addr: :3000
 
 FrontendUrl: http://localhost:3000
+ProblemsRegistryUrl: https://problems-registry.messenger.com

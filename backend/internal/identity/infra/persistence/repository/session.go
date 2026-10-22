@@ -7,7 +7,7 @@ import (
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
-	sharedDomain "messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/shared/app/apperr"
 )
 
 type SessionRepository struct {
@@ -26,7 +26,7 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, sharedDomain.ErrNotFound
+		return nil, apperr.NewNotFound("Session not found by refresh token", apperr.WithCause(repository.ErrNotFound))
 	}
 
 	return session.Rehydrate(

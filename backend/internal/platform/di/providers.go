@@ -57,6 +57,7 @@ var ApiSet = wire.NewSet(
 	querybus.InitBus,
 	authPasswordAdapter.NewHasher,
 	authTokenAdapter.NewService,
+	http.NewProblemTypesRegistry,
 
 	wire.Bind(new(authPasswordPort.Hasher), new(*authPasswordAdapter.Hasher)),
 	wire.Bind(new(authTokenPort.Service), new(*authTokenAdapter.Service)),
@@ -71,7 +72,6 @@ var OutboxRelaySet = wire.NewSet(
 )
 
 var CommonSet = wire.NewSet(
-	wire.FieldsOf(new(config.Config), "Database", "Migrations"),
 	config.Load,
 
 	logger.New,

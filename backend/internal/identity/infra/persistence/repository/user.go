@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"messenger/messenger/internal/identity/app"
 	"messenger/messenger/internal/identity/domain/model/user"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/shared/app/apperr"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -42,7 +44,7 @@ func (r *UserRepository) Save(ctx context.Context, u *user.User) error {
 	})
 	if err != nil {
 		if err, ok := errors.AsType[*pgconn.PgError](err); ok && err.Code == postgres.UniqueViolationErrCode && err.ConstraintName == "users_login_key" {
-			return user.ErrLoginAlreadyExists
+			return app.ErrUserAlreadyExists
 		}
 		return err
 	}
@@ -55,7 +57,7 @@ func (r *UserRepository) GetByLogin(ctx context.Context, login string) (*user.Us
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, user.ErrNotFound
+		return nil, apperr.NewNotFound("User not found by login", apperr.WithCause(repository.ErrNotFound))
 	}
 
 	return user.Rehydrate(

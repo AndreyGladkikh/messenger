@@ -41,8 +41,7 @@ import (
 func InitializeApi() (*Api, func(), error) {
 	configConfig := config.Load()
 	loggerLogger := logger.New()
-	database := configConfig.Database
-	pool, cleanup, err := postgres.NewPool(database)
+	pool, cleanup, err := postgres.NewPool(configConfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -81,7 +80,8 @@ func InitializeApi() (*Api, func(), error) {
 	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
 	commandbusBus := BuildCommandBus(manager, loggerLogger, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler, registerEntryHandler)
 	apiHandler := http.NewApiHandler(commandbusBus, bus)
-	errorHandler := http.NewErrorHandler(configConfig, loggerLogger)
+	problemTypesRegistry := http.NewProblemTypesRegistry(configConfig)
+	errorHandler := http.NewErrorHandler(configConfig, loggerLogger, problemTypesRegistry)
 	client, cleanup2, err := redis.NewRedis(configConfig)
 	if err != nil {
 		cleanup()
@@ -114,8 +114,7 @@ func InitializeApi() (*Api, func(), error) {
 
 func InitializeOutboxRelay() (*outbox_relay.OutboxRelay, func(), error) {
 	configConfig := config.Load()
-	database := configConfig.Database
-	pool, cleanup, err := postgres.NewPool(database)
+	pool, cleanup, err := postgres.NewPool(configConfig)
 	if err != nil {
 		return nil, nil, err
 	}

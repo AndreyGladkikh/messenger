@@ -3,26 +3,21 @@ package http
 import (
 	"context"
 	"encoding/json/v2"
-	"fmt"
 
-	// cnvCommand "messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/directory/app/command"
 	"messenger/messenger/internal/directory/app/query"
+	"messenger/messenger/internal/identity/app"
 	idCommand "messenger/messenger/internal/identity/app/command"
 	idQuery "messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/app/token"
-	authDomain "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/transport/http/cookies"
-	"messenger/messenger/internal/shared/app/apperr"
 	"net/http"
 	"net/netip"
 	"time"
-
-	// "uuid"
 
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -163,8 +158,7 @@ func (h *ApiHandler) RegisterUser(ctx context.Context, request RegisterUserReque
 func getAuth(ctx context.Context) (auth.Auth, error) {
 	a, err := auth.AuthFromContext(ctx)
 	if err != nil {
-		err = fmt.Errorf("%w: %w", authDomain.ErrUnauthorized, err)
-		return auth.Auth{}, apperr.Map(err)
+		return auth.Auth{}, app.ErrNeedLogin
 	}
 	return a, nil
 }

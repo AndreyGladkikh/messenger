@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
-	"messenger/messenger/internal/shared/domain"
+	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/shared/app/apperr"
 	"uuid"
 )
 
@@ -42,7 +42,7 @@ func (d *DirectConversationResolver) FindOrCreate(
 	if err == nil {
 		return cnv, nil
 	}
-	if !errors.Is(err, domain.ErrNotFound) {
+	if !errors.Is(err, repository.ErrNotFound) {
 		return nil, err
 	}
 
@@ -60,7 +60,7 @@ func (d *DirectConversationResolver) FindOrCreate(
 		}
 
 		if !exists {
-			return nil, fmt.Errorf("participant doesnt exist: %w", domain.ErrNotFound)
+			return nil, apperr.NewNotFound("Participant doesn't exist")
 		}
 
 		membership := membership.New(

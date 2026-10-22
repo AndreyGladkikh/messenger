@@ -9,10 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"messenger/messenger/internal/identity/app/token"
-	authDomain "messenger/messenger/internal/identity/domain/model"
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/transport/http/cookies"
+	"messenger/messenger/internal/shared/app/apperr"
 	"net/http"
 	"os"
 	"time"
@@ -23,7 +23,7 @@ import (
 	"github.com/golang-jwt/jwt/v5/request"
 )
 
-var ErrInvalidToken = fmt.Errorf("%w: invalid token", authDomain.ErrUnauthorized)
+var ErrInvalidToken = apperr.NewUnauthenticated("Invalid token")
 
 type Service struct {
 	jwtSignKey   crypto.PrivateKey
