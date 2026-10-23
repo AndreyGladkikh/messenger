@@ -29,7 +29,7 @@ func (c *httpClient) doRequest(method, url string, opts *httpRequestOpts) (*http
 	if opts == nil {
 		opts = new(httpRequestOpts)
 	}
-	
+
 	if opts.Timeout == 0 {
 		// todo remove 10000
 		opts.Timeout = time.Second * 10000
@@ -55,7 +55,7 @@ func (c *httpClient) doRequest(method, url string, opts *httpRequestOpts) (*http
 	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("http://www.example.com/%s", url), body)
+	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("https://www.example.com/%s", url), body)
 	if err != nil {
 		return nil, err
 	}

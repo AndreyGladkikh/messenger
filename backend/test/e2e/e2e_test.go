@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 	"uuid"
 
 	"messenger/messenger/internal/app/api"
@@ -294,18 +295,20 @@ func TestRefreshUserTokens_Success(t *testing.T) {
 	firstAccessToken := body.AccessToken
 	firstRefreshToken := body.RefreshToken
 
+	time.Sleep(time.Second)
+
 	resp, err = client.refreshUserTokens()
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	body = decode[appHttp.Tokens](t, resp.Body)
-	assert.NotNil(t, body.AccessToken)
-	assert.NotNil(t, body.RefreshToken)
+	assert.NotEmpty(t, body.AccessToken)
+	assert.NotEmpty(t, body.RefreshToken)
 
-	assert.NotEqual(t, body.AccessToken, firstAccessToken)
-	assert.NotEqual(t, body.RefreshToken, firstRefreshToken)
+	assert.NotEqual(t, firstAccessToken, body.AccessToken)
+	assert.NotEqual(t, firstRefreshToken, body.RefreshToken)
 
 	respCookies := resp.Cookies()
 	assert.NotEmpty(t, respCookies)
