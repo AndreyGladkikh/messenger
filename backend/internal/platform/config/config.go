@@ -78,7 +78,7 @@ func Load() Config {
 	flag.Parse()
 
 	if err := godotenv.Load(*envFilePath); err != nil {
-		log.Println(".env file not loaded")
+		log.Println(".env file not loaded, use system env vars")
 	}
 
 	k := koanf.New(".")
@@ -87,7 +87,7 @@ func Load() Config {
 		log.Fatal(err.Error())
 	}
 
-	k.Load(env.Provider(".", env.Opt{
+	err := k.Load(env.Provider(".", env.Opt{
 		Prefix: "APP_",
 		TransformFunc: func(k, v string) (string, any) {
 			k = strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(k, "APP_")), "__", ".")
@@ -99,6 +99,9 @@ func Load() Config {
 			return k, v
 		},
 	}), nil)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	cfg := Config{Env: appenv}
 
