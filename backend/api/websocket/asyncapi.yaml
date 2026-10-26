@@ -1,7 +1,7 @@
 asyncapi: 3.1.0
 info:
   title: Chatique WebSocket API
-  version: 1.0.0
+  version: 0.1.1
   description: |-
     The Smartylighting Streetlights API allows you to remotely manage the city
     lights.
@@ -36,7 +36,7 @@ operations:
     channel:
       $ref: '#/channels/root'
     messages:
-      - $ref: '#/channels/root/messages/sendMessage'
+      - $ref: '#/channels/root/messages/messageSent'
 components:
   messages:
     sendMessage:
