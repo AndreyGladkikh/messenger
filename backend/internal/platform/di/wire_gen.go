@@ -34,6 +34,7 @@ import (
 	"messenger/messenger/internal/platform/store"
 	"messenger/messenger/internal/platform/transactions"
 	"messenger/messenger/internal/platform/transport/http"
+	"messenger/messenger/internal/platform/transport/websocket"
 )
 
 // Injectors from wire.go:
@@ -89,8 +90,14 @@ func InitializeApi() (*Api, func(), error) {
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(client)
 	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
-	websocketHandler := http.NewWebsocketHandler(loggerLogger, commandbusBus, bus, storeStore, chatEventsPubSub)
-	mux, err := http.NewRouter(apiHandler, errorHandler, tokenService, websocketHandler)
+	handler := &websocket.Handler{
+		Logger:           loggerLogger,
+		CommandBus:       commandbusBus,
+		QueryBus:         bus,
+		Store:            storeStore,
+		PeerEventsPubSub: chatEventsPubSub,
+	}
+	mux, err := http.NewRouter(apiHandler, errorHandler, tokenService, handler)
 	if err != nil {
 		cleanup3()
 		cleanup2()

@@ -3,6 +3,7 @@ package api
 import (
 	"messenger/messenger/internal/app"
 	appHttp "messenger/messenger/internal/platform/transport/http"
+	"messenger/messenger/internal/platform/transport/websocket"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -27,7 +28,7 @@ var AppSet = wire.NewSet(
 	appHttp.NewRouter,
 	appHttp.NewApiHandler,
 	appHttp.NewErrorHandler,
-	appHttp.NewWebsocketHandler,
+	wire.Struct(new(websocket.Handler), "*"),
 	appHttp.NewProblemTypesRegistry,
 
 	wire.Bind(new(http.Handler), new(*chi.Mux)),

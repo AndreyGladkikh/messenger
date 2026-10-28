@@ -103,6 +103,7 @@ var CommandHandlers = wire.NewSet(
 
 var QueryHandlers = wire.NewSet(
 	idQry.NewGetAccountHandler,
+	wire.Struct(new(idQry.GetUserIDByLoginHandler), "*"),
 	drctrQry.NewSearchHandler,
 )
 

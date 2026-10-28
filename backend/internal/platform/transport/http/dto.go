@@ -1,10 +1,10 @@
 package http
 
-import (
-	"bytes"
+// import (
+// 	"bytes"
 
-	"uuid"
-)
+// 	"uuid"
+// )
 
 // type Credentials struct {
 // 	Login    string `json:"login"`
@@ -19,22 +19,22 @@ import (
 // 	Credentials
 // }
 
-type Chat struct {
-	Kind string `json:"kind"`
-	Name string `json:"name"`
-}
+// type Chat struct {
+// 	Kind string `json:"kind"`
+// 	Name string `json:"name"`
+// }
 
-type CreatePrivateChatRequest struct {
-	ChatWithUserID uuid.UUID `json:"chatWithUserId"`
-}
+// type CreatePrivateChatRequest struct {
+// 	ChatWithUserID uuid.UUID `json:"chatWithUserId"`
+// }
 
-type Message struct {
-	Body             string          `json:"body"`
-	ChatID           uuid.UUID       `json:"chatId"`
-	ReplyToMessageID *uuid.UUID      `json:"replyToMessageId"`
-	Attachments      []*bytes.Buffer `json:"attachments"`
-}
+// type Message struct {
+// 	Body             string          `json:"body"`
+// 	ChatID           uuid.UUID       `json:"chatId"`
+// 	ReplyToMessageID *uuid.UUID      `json:"replyToMessageId"`
+// 	Attachments      []*bytes.Buffer `json:"attachments"`
+// }
 
-type SendMessageRequest struct {
-	Message
-}
+// type SendMessageRequest struct {
+// 	Message
+// }

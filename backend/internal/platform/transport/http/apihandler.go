@@ -3,8 +3,10 @@ package http
 import (
 	"context"
 	"encoding/json/v2"
+	"uuid"
 
-	"messenger/messenger/internal/directory/app/command"
+	"messenger/messenger/internal/conversations/app/command"
+	drctrCmd "messenger/messenger/internal/directory/app/command"
 	"messenger/messenger/internal/directory/app/query"
 	"messenger/messenger/internal/identity/app"
 	idCommand "messenger/messenger/internal/identity/app/command"
@@ -101,7 +103,7 @@ func (h *ApiHandler) LoginUser(ctx context.Context, request LoginUserRequestObje
 }
 
 func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error) {
-	cmd := command.RegisterEntry{
+	cmd := drctrCmd.RegisterEntry{
 		TargetID: request.Body.TargetId,
 		TargetType: request.Body.TargetType,
 		DisplayName: request.Body.DisplayName,
@@ -142,7 +144,7 @@ func (h *ApiHandler) RegisterUser(ctx context.Context, request RegisterUserReque
 		Login:     request.Body.Login,
 		Password:  request.Body.Password,
 		IP:        ip,
-		UserAgent: request.Params.UserAgent,
+		UserAgent: *request.Params.UserAgent,
 	}
 	response, err := h.commandBus.Dispatch[idCommand.RegisterUserResponse](ctx, command)
 	if err != nil {
@@ -155,6 +157,46 @@ func (h *ApiHandler) RegisterUser(ctx context.Context, request RegisterUserReque
 	}, nil
 }
 
+func (h *ApiHandler) CreateDirectConversation(ctx context.Context, request CreateDirectConversationRequestObject) (CreateDirectConversationResponseObject, error) {
+	a, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	command := command.SendFirstDirectMessage{
+		Sender: a.Principal.Subject.ID,
+		Recipient: request.Body.ParticipantId,
+		Body: request.Body.FirstMessage.Body,
+	}
+	resp, err := h.commandBus.Dispatch[uuid.UUID](ctx, command)
+	if err != nil {
+		return nil, err
+	}
+
+	return CreateDirectConversation201JSONResponse{
+		Id: resp,
+	}, nil
+}
+
+func (h *ApiHandler) SendMessage(ctx context.Context, request SendMessageRequestObject) (SendMessageResponseObject, error) {
+	a, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	command := command.SendMessage{
+		SenderID: a.Principal.Subject.ID,
+		ConversationID: request.ConversationId,
+		Body: request.Body.Body,
+	}
+	_, err = h.commandBus.Dispatch[any](ctx, command)
+	if err != nil {
+		return nil, err
+	}
+
+	return SendMessage201Response{}, nil
+}
+
 func getAuth(ctx context.Context) (auth.Auth, error) {
 	a, err := auth.AuthFromContext(ctx)
 	if err != nil {
@@ -164,12 +206,12 @@ func getAuth(ctx context.Context) (auth.Auth, error) {
 }
 
 type Register200JSONResponseCustom struct {
-	RegisterUser200JSONResponse
+	RegisterUser201JSONResponse
 }
 
 func (response Register200JSONResponseCustom) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	setAuthCookies(w, response.AccessToken, response.RefreshToken)
-	return response.RegisterUser200JSONResponse.VisitRegisterUserResponse(w)
+	return response.RegisterUser201JSONResponse.VisitRegisterUserResponse(w)
 }
 
 type Login200JSONResponseCustom struct {
@@ -213,6 +255,7 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 	http.SetCookie(w, refreshTokenCookie)
 }
 
+// todo rm
 func (h *ApiHandler) Test(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 

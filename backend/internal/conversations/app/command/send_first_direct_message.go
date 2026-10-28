@@ -33,16 +33,16 @@ func NewSendFirstDirectMessageHandler(
 	}
 }
 
-func (h *SendFirstDirectMessageHandler) Handle(ctx context.Context, cmd SendFirstDirectMessage) (any, error) {
+func (h *SendFirstDirectMessageHandler) Handle(ctx context.Context, cmd SendFirstDirectMessage) (uuid.UUID, error) {
 	cnv, err := h.directConversationResolver.FindOrCreate(ctx, cmd.Sender, cmd.Recipient)
 	if err != nil {
-		return nil, err
+		return uuid.UUID{}, err
 	}
 
 	_, err = h.messageSender.Send(ctx, cmd.Sender, cnv, cmd.Body)
 	if err != nil {
-		return nil, err
+		return uuid.UUID{}, err
 	}
 
-	return nil, nil
+	return cnv.ID(), nil
 }

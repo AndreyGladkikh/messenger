@@ -36,6 +36,7 @@ import (
 	"messenger/messenger/internal/platform/store"
 	"messenger/messenger/internal/platform/transactions"
 	"messenger/messenger/internal/platform/transport/http"
+	"messenger/messenger/internal/platform/transport/websocket"
 	"messenger/messenger/internal/shared/app/chateventspublisher"
 	netHttp "net/http"
 
@@ -49,7 +50,7 @@ var ApiSet = wire.NewSet(
 
 	CommonSet,
 	http.NewServer,
-	http.NewWebsocketHandler,
+	wire.Struct(new(websocket.Handler), "*"),
 	http.NewErrorHandler,
 	http.NewRouter,
 	http.NewApiHandler,
@@ -145,6 +146,7 @@ var CommandHandlers = wire.NewSet(
 
 var QueryHandlers = wire.NewSet(
 	idQuery.NewGetAccountHandler,
+	wire.Struct(new(idQuery.GetUserIDByLoginHandler), "*"),
 	drctrQuery.NewSearchHandler,
 )
 

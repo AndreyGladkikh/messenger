@@ -161,7 +161,7 @@ func TestRegisterUser_Success(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	respCookies := resp.Cookies()
 	assert.NotEmpty(t, respCookies)
@@ -195,7 +195,7 @@ func TestRegisterUser_LoginAlreadyExists(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	resp, err = client.registerUser(login, pass)
 	require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestLoginUser_Success(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	resp, err = client.loginUser(login, pass)
 	require.NoError(t, err)
@@ -269,7 +269,7 @@ func TestLoginUser_WrongPassword(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	resp, err = client.loginUser("alice", "WrongPass123!")
 	require.NoError(t, err)
@@ -289,7 +289,7 @@ func TestRefreshUserTokens_Success(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, http.StatusCreated, resp.StatusCode)
 	body := decode[appHttp.Tokens](t, resp.Body)
 
 	firstAccessToken := body.AccessToken

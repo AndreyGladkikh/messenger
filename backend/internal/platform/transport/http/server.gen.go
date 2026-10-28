@@ -37,10 +37,21 @@ type ChatListViewItem struct {
 	UnreadCount int    `json:"unreadCount"`
 }
 
+// Conversation defines model for Conversation.
+type Conversation struct {
+	Id uuid.UUID `json:"id"`
+}
+
 // Credentials defines model for Credentials.
 type Credentials struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
+}
+
+// DirectConversation defines model for DirectConversation.
+type DirectConversation struct {
+	FirstMessage  FirstMessage `json:"firstMessage"`
+	ParticipantId uuid.UUID    `json:"participantId"`
 }
 
 // DirectoryEntry defines model for DirectoryEntry.
@@ -72,7 +83,18 @@ type ErrorDetail struct {
 // Errors An array of error details to accompany a problem details response.
 type Errors = []ErrorDetail
 
-// ProblemDetails defines model for ProblemDetails.
+// FirstMessage defines model for FirstMessage.
+type FirstMessage struct {
+	Body string `json:"body"`
+}
+
+// Message defines model for Message.
+type Message struct {
+	Body             string     `json:"body"`
+	ReplyToMessageId *uuid.UUID `json:"replyToMessageId,omitempty"`
+}
+
+// ProblemDetails Error representation according to RFC 9457
 type ProblemDetails struct {
 	// Code An API specific error code aiding the provider team understand the error based on their own potential taxonomy or registry.
 	Code *string `json:"code,omitempty"`
@@ -102,33 +124,33 @@ type Tokens struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
-// BadRequest defines model for BadRequest.
+// BadRequest Error representation according to RFC 9457
 type BadRequest = ProblemDetails
 
-// BusinessRuleViolation defines model for BusinessRuleViolation.
+// BusinessRuleViolation Error representation according to RFC 9457
 type BusinessRuleViolation = ProblemDetails
 
-// Forbidden defines model for Forbidden.
+// Forbidden Error representation according to RFC 9457
 type Forbidden = ProblemDetails
 
-// NotFound defines model for NotFound.
+// NotFound Error representation according to RFC 9457
 type NotFound = ProblemDetails
 
-// ResourceAlreadyExists defines model for ResourceAlreadyExists.
+// ResourceAlreadyExists Error representation according to RFC 9457
 type ResourceAlreadyExists = ProblemDetails
 
-// ServerError defines model for ServerError.
+// ServerError Error representation according to RFC 9457
 type ServerError = ProblemDetails
 
-// ServiceUnavailable defines model for ServiceUnavailable.
+// ServiceUnavailable Error representation according to RFC 9457
 type ServiceUnavailable = ProblemDetails
 
-// Unauthorized defines model for Unauthorized.
+// Unauthorized Error representation according to RFC 9457
 type Unauthorized = ProblemDetails
 
 // RegisterUserParams defines parameters for RegisterUser.
 type RegisterUserParams struct {
-	UserAgent string `json:"User-Agent"`
+	UserAgent *string `json:"User-Agent,omitempty"`
 }
 
 // LoginUserParams defines parameters for LoginUser.
@@ -148,6 +170,12 @@ type RegisterUserJSONRequestBody = Credentials
 // LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
 type LoginUserJSONRequestBody = Credentials
 
+// SendMessageJSONRequestBody defines body for SendMessage for application/json ContentType.
+type SendMessageJSONRequestBody = Message
+
+// CreateDirectConversationJSONRequestBody defines body for CreateDirectConversation for application/json ContentType.
+type CreateDirectConversationJSONRequestBody = DirectConversation
+
 // RegisterDirectoryEntryJSONRequestBody defines body for RegisterDirectoryEntry for application/json ContentType.
 type RegisterDirectoryEntryJSONRequestBody = DirectoryEntry
 
@@ -163,8 +191,14 @@ type ServerInterface interface {
 	// (POST /auth/users/login)
 	LoginUser(w http.ResponseWriter, r *http.Request, params LoginUserParams)
 	// RefreshTokens Refresh access tokens.
-	// (POST /auth/users/refreshTokens)
+	// (POST /auth/users/refresh-tokens)
 	RefreshTokens(w http.ResponseWriter, r *http.Request, params RefreshTokensParams)
+	// SendMessage Send message.
+	// (POST /conversations/{conversation_id}/messages)
+	SendMessage(w http.ResponseWriter, r *http.Request, conversationId uuid.UUID)
+	// CreateDirectConversation Create direct conversation.
+	// (POST /direct-conversations)
+	CreateDirectConversation(w http.ResponseWriter, r *http.Request)
 	// RegisterDirectoryEntry Register a new directory entry.
 	// (POST /directory/entries)
 	RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request)
@@ -196,8 +230,20 @@ func (_ Unimplemented) LoginUser(w http.ResponseWriter, r *http.Request, params 
 }
 
 // RefreshTokens Refresh access tokens.
-// (POST /auth/users/refreshTokens)
+// (POST /auth/users/refresh-tokens)
 func (_ Unimplemented) RefreshTokens(w http.ResponseWriter, r *http.Request, params RefreshTokensParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// SendMessage Send message.
+// (POST /conversations/{conversation_id}/messages)
+func (_ Unimplemented) SendMessage(w http.ResponseWriter, r *http.Request, conversationId uuid.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CreateDirectConversation Create direct conversation.
+// (POST /direct-conversations)
+func (_ Unimplemented) CreateDirectConversation(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -247,7 +293,7 @@ func (siw *ServerInterfaceWrapper) RegisterUser(w http.ResponseWriter, r *http.R
 
 	headers := r.Header
 
-	// ------------- Required header parameter "User-Agent" -------------
+	// ------------- Optional header parameter "User-Agent" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("User-Agent")]; found {
 		var UserAgent string
 		n := len(valueList)
@@ -256,18 +302,14 @@ func (siw *ServerInterfaceWrapper) RegisterUser(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", valueList[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		err = runtime.BindStyledParameterWithOptions("simple", "User-Agent", valueList[0], &UserAgent, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "User-Agent", Err: err})
 			return
 		}
 
-		params.UserAgent = UserAgent
+		params.UserAgent = &UserAgent
 
-	} else {
-		err := fmt.Errorf("Header parameter User-Agent is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "User-Agent", Err: err})
-		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -355,6 +397,46 @@ func (siw *ServerInterfaceWrapper) RefreshTokens(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RefreshTokens(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SendMessage operation middleware
+func (siw *ServerInterfaceWrapper) SendMessage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "conversation_id" -------------
+	var conversationId uuid.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "conversation_id", chi.URLParam(r, "conversation_id"), &conversationId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "conversation_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SendMessage(w, r, conversationId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateDirectConversation operation middleware
+func (siw *ServerInterfaceWrapper) CreateDirectConversation(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateDirectConversation(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -512,7 +594,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/users/login", wrapper.LoginUser)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/auth/users/refreshTokens", wrapper.RefreshTokens)
+		r.Post(options.BaseURL+"/auth/users/refresh-tokens", wrapper.RefreshTokens)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth/me", wrapper.GetMe)
@@ -522,6 +604,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/me/chats", wrapper.GetMyChatList)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/direct-conversations", wrapper.CreateDirectConversation)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/conversations/{conversation_id}/messages", wrapper.SendMessage)
 	})
 
 	return r
@@ -704,16 +792,16 @@ type RegisterUserResponseObject interface {
 	VisitRegisterUserResponse(w http.ResponseWriter) error
 }
 
-type RegisterUser200JSONResponse Tokens
+type RegisterUser201JSONResponse Tokens
 
-func (response RegisterUser200JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+func (response RegisterUser201JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1147,6 +1235,301 @@ func (response RefreshTokens503ApplicationProblemPlusJSONResponse) VisitRefreshT
 	return err
 }
 
+type SendMessageRequestObject struct {
+	ConversationId uuid.UUID `json:"conversation_id"`
+	Body           *SendMessageJSONRequestBody
+}
+
+type SendMessageResponseObject interface {
+	VisitSendMessageResponse(w http.ResponseWriter) error
+}
+
+type SendMessage201Response struct {
+}
+
+func (response SendMessage201Response) VisitSendMessageResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
+	return nil
+}
+
+type SendMessage400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage400ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendMessage401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage401ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendMessage403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage403ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendMessage404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage404ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendMessage409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage409ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendMessage422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage422ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendMessage500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage500ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendMessage503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response SendMessage503ApplicationProblemPlusJSONResponse) VisitSendMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversationRequestObject struct {
+	Body *CreateDirectConversationJSONRequestBody
+}
+
+type CreateDirectConversationResponseObject interface {
+	VisitCreateDirectConversationResponse(w http.ResponseWriter) error
+}
+
+type CreateDirectConversation201JSONResponse Conversation
+
+func (response CreateDirectConversation201JSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation400ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation401ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation403ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation404ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation409ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation422ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation500ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateDirectConversation503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response CreateDirectConversation503ApplicationProblemPlusJSONResponse) VisitCreateDirectConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RegisterDirectoryEntryRequestObject struct {
 	Body *RegisterDirectoryEntryJSONRequestBody
 }
@@ -1452,8 +1835,14 @@ type StrictServerInterface interface {
 	// (POST /auth/users/login)
 	LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error)
 	// RefreshTokens Refresh access tokens.
-	// (POST /auth/users/refreshTokens)
+	// (POST /auth/users/refresh-tokens)
 	RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error)
+	// SendMessage Send message.
+	// (POST /conversations/{conversation_id}/messages)
+	SendMessage(ctx context.Context, request SendMessageRequestObject) (SendMessageResponseObject, error)
+	// CreateDirectConversation Create direct conversation.
+	// (POST /direct-conversations)
+	CreateDirectConversation(ctx context.Context, request CreateDirectConversationRequestObject) (CreateDirectConversationResponseObject, error)
 	// RegisterDirectoryEntry Register a new directory entry.
 	// (POST /directory/entries)
 	RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error)
@@ -1617,6 +2006,70 @@ func (sh *strictHandler) RefreshTokens(w http.ResponseWriter, r *http.Request, p
 	}
 }
 
+// SendMessage operation middleware
+func (sh *strictHandler) SendMessage(w http.ResponseWriter, r *http.Request, conversationId uuid.UUID) {
+	var request SendMessageRequestObject
+
+	request.ConversationId = conversationId
+
+	var body SendMessageJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SendMessage(ctx, request.(SendMessageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SendMessage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SendMessageResponseObject); ok {
+		if err := validResponse.VisitSendMessageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateDirectConversation operation middleware
+func (sh *strictHandler) CreateDirectConversation(w http.ResponseWriter, r *http.Request) {
+	var request CreateDirectConversationRequestObject
+
+	var body CreateDirectConversationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateDirectConversation(ctx, request.(CreateDirectConversationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateDirectConversation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateDirectConversationResponseObject); ok {
+		if err := validResponse.VisitCreateDirectConversationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RegisterDirectoryEntry operation middleware
 func (sh *strictHandler) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request) {
 	var request RegisterDirectoryEntryRequestObject
@@ -1677,67 +2130,71 @@ func (sh *strictHandler) GetMyChatList(w http.ResponseWriter, r *http.Request) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"djkmqvbOVkhcfF783wA=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

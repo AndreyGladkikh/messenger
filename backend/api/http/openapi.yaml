@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Chat
+  title: Messenger
   description: |-
-    Chat is a messaging platform featuring message and file sharing, reactions, comments, and bot creation. WIP.
+    Messenger platform featuring message and file sharing, reactions, comments, and bot creation. WIP.
 
   contact:
     email: andrgladkikh@gmail.com
@@ -12,30 +12,31 @@ tags:
     description: Everything about identity and access
   - name: me
     description: Current user info
+  - name: directory
+    description: Searchable and viewable elemnts of messenger
+  - name: direct-conversations
+    description: Direct conversations
 paths:
   /auth/users:
     post:
       tags:
         - auth
       summary: Register a new user.
-      description: Register a new user.
       operationId: registerUser
       parameters:
         - name: User-Agent
           in: header
-          required: true
           schema:
             type: string
       requestBody:
-        description: Create a new user
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Credentials'
         required: true
       responses:
-        '200':
-          description: Successful operation
+        '201':
+          description: Access and refresh tokens
           content:
             application/json:
               schema:
@@ -61,7 +62,6 @@ paths:
       tags:
         - auth
       summary: Log in.
-      description: Log in.
       operationId: loginUser
       parameters:
         - name: User-Agent
@@ -70,7 +70,6 @@ paths:
           schema:
             type: string
       requestBody:
-        description: log in
         content:
           application/json:
             schema:
@@ -78,7 +77,7 @@ paths:
         required: true
       responses:
         '200':
-          description: Successful operation
+          description: Access and refresh tokens
           content:
             application/json:
               schema:
@@ -99,7 +98,7 @@ paths:
           $ref: '#/components/responses/ServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
-  /auth/users/refreshTokens:
+  /auth/users/refresh-tokens:
     post:
       parameters:
         - name: refresh_token
@@ -111,11 +110,10 @@ paths:
       tags:
         - auth
       summary: Refresh access tokens.
-      description: Refresh access tokens.
       operationId: refreshTokens
       responses:
         '200':
-          description: Successful operation
+          description: Access and refresh tokens
           content:
             application/json:
               schema:
@@ -142,23 +140,22 @@ paths:
         - auth
         - me
       summary: Get current user info.
-      description: Get current user info.
       operationId: getMe
       responses:
         '200':
-          description: Successful operation
+          description: Current user info
           content:
             application/json:
               schema:
                 type: object
+                required:
+                  - id
+                  - type
                 properties:
                   id:
                     type: string
                   type:
                     type: string
-                required:
-                  - id
-                  - type
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -182,10 +179,8 @@ paths:
       tags:
         - directory
       summary: Register a new directory entry.
-      description: Register a new directory entry.
       operationId: registerDirectoryEntry
       requestBody:
-        description: Register a new directory entry
         content:
           application/json:
             schema:
@@ -217,11 +212,10 @@ paths:
       tags:
         - me
       summary: Get current user chat list.
-      description: Get current chat list for main page.
       operationId: getMyChatList
       responses:
         '200':
-          description: Successful operation
+          description: Current user chats
           content:
             application/json:
               schema:
@@ -244,14 +238,92 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
       security:
         - bearerHttpAuthentication: []
+  /direct-conversations:
+    post:
+      tags:
+        - direct-conversations
+      summary: Create direct conversation.
+      operationId: createDirectConversation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectConversation'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
+  /conversations/{conversation_id}/messages:
+    post:
+      tags:
+        - conversations
+      summary: Send message.
+      operationId: sendMessage
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: uuid.UUID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
 
 components:
   schemas:
     Credentials:
+      type: object
       required:
         - login
         - password
-      type: object
       properties:
         login:
           type: string
@@ -259,10 +331,10 @@ components:
           type: string
 
     Tokens:
+      type: object
       required:
         - accessToken
         - refreshToken
-      type: object
       properties:
         accessToken:
           type: string
@@ -305,12 +377,12 @@ components:
               type: string
 
     DirectoryEntry:
+      type: object
       required:
         - targetId
         - targetType
         - handle
         - displayName
-      type: object
       properties:
         targetId:
           type: string
@@ -323,8 +395,52 @@ components:
         displayName:
           type: string
 
+    DirectConversation:
+      type: object
+      required:
+        - participantId
+        - firstMessage
+      properties:
+        participantId:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+        firstMessage:
+          $ref: "#/components/schemas/FirstMessage"
+
+    Conversation:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+
+    FirstMessage:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          type: string
+
+    Message:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          type: string
+        replyToMessageId:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+
     # RFC 9457
     ProblemDetails:
+      description: Error representation according to RFC 9457
       type: object
       properties:
         type:

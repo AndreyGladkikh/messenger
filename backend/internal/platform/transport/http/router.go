@@ -5,6 +5,7 @@ import (
 	"messenger/messenger/internal/identity/infra/token"
 	"messenger/messenger/internal/platform/transport/http/contenttype"
 	"messenger/messenger/internal/platform/transport/http/headers"
+	"messenger/messenger/internal/platform/transport/websocket"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -16,7 +17,7 @@ func NewRouter(
 	apiHandler StrictServerInterface,
 	errorHandler *ErrorHandler,
 	tokenService *token.Service,
-	wsHandler *WebsocketHandler,
+	wsHandler *websocket.Handler,
 ) (*chi.Mux, error) {
 	oas, err := GetSpec()
 	if err != nil {
@@ -53,7 +54,7 @@ func NewRouter(
 		), r)
 	})
 
-	mux.Get("/ws", wsHandler.handlerFunc)
+	mux.Get("/ws", wsHandler.ServeHTTP)
 
 	// ###
 	// todo rm

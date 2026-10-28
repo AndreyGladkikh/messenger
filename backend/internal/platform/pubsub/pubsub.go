@@ -2,7 +2,10 @@ package pubsub
 
 import (
 	"context"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
+	"fmt"
 	"messenger/messenger/internal/platform/logger"
 	"sync"
 
@@ -90,8 +93,29 @@ func (ps *PubSub) dispatch(m *redis.Message) {
 	}
 }
 
-func (ps *PubSub) Publish(ctx context.Context, channel string, message any) {
-	ps.redisClient.Publish(ctx, channel, message)
+// func (ps *PubSub) Publish(ctx context.Context, channel string, message any) {
+// 	ps.redisClient.Publish(ctx, channel, message)
+// }
+
+type Message struct {
+	Type string
+	Payload jsontext.Value
+}
+
+func (ps *PubSub) Publish(ctx context.Context, channel string, message Message) error {
+	env, err := json.Marshal(message)
+	if err != nil {
+		ps.logger.ErrorContext(ctx, "failed to publish message to redis pubsub",
+			"err", err,
+			"msg", message,
+			"channel", channel,
+		)
+		return fmt.Errorf("failed to publish message to redis pubsub: %w", err)
+	}
+
+	ps.redisClient.Publish(ctx, channel, env)
+	
+	return nil
 }
 
 func (ps *PubSub) Subscription(subscriberName string) *Subscription {
