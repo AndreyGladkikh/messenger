@@ -11,10 +11,10 @@ var _ event.Event = DirectConversationWithFirstMessageCreated{}
 
 type DirectConversationWithFirstMessageCreated struct {
 	ConversationID uuid.UUID `json:"conversationId"`
-	SenderID  uuid.UUID `json:"senderId"`
-	RecipientID  uuid.UUID `json:"recipientId"`
-	MessageID  uuid.UUID `json:"messageId"`
-	MessageBody  string `json:"messageBody"`
+	SenderID       uuid.UUID `json:"senderId"`
+	RecipientID    uuid.UUID `json:"recipientId"`
+	MessageID      uuid.UUID `json:"messageId"`
+	MessageBody    string    `json:"messageBody"`
 }
 
 func (d DirectConversationWithFirstMessageCreated) Name() string {

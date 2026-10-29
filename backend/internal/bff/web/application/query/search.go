@@ -16,11 +16,11 @@ type SearchResponse struct {
 }
 
 type GlobalSearchResultPeerItem struct {
-	ID           uuid.UUID
-	Type         string
+	ID        uuid.UUID
+	Type      string
 	AvatarUrl string
-	Title        string
-	Handle string
+	Title     string
+	Handle    string
 }
 
 type SearchHandler struct {

@@ -54,7 +54,7 @@ func newWSClient(t *testing.T, httpClient *httpClient) *wsClient {
 	}()
 
 	return &wsClient{
-		Conn: c,
+		Conn:    c,
 		receive: receive,
 	}
 }

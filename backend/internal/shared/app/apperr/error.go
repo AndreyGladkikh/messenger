@@ -1,8 +1,8 @@
 package apperr
 
 import (
-	"maps"
 	"errors"
+	"maps"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -50,7 +50,7 @@ type Error struct {
 	Message string
 	Code    string
 	Details map[string]any
-	Causes []error
+	Causes  []error
 }
 
 func (e *Error) Error() string {

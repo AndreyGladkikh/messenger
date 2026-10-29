@@ -31,7 +31,7 @@ func (p *Producer) Produce(ctx context.Context, payload any) error {
 	}
 
 	msg := Message{
-		Type: msgType,
+		Type:    msgType,
 		Payload: pl,
 	}
 
@@ -67,7 +67,7 @@ type ConversationEventsProducer struct {
 func NewConversationEventsProducer(rmqConn *rmq.AmqpConnection) (*ConversationEventsProducer, func(), error) {
 	xName := "conversation.events"
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err := rmqConn.Management().DeclareExchange(ctx, &rmq.TopicExchangeSpecification{Name: xName})
@@ -87,5 +87,3 @@ func NewConversationEventsProducer(rmqConn *rmq.AmqpConnection) (*ConversationEv
 		Producer: &Producer{publisher: publisher},
 	}, cleanup, nil
 }
-
-

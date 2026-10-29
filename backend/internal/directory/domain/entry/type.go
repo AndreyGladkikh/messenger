@@ -12,9 +12,9 @@ func (t TargetType) String() string {
 }
 
 const (
-	TargetTypeUser TargetType = "user"
-	TargetTypeBot TargetType = "bot"
-	TargetTypeGroup TargetType = "group"
+	TargetTypeUser    TargetType = "user"
+	TargetTypeBot     TargetType = "bot"
+	TargetTypeGroup   TargetType = "group"
 	TargetTypeChannel TargetType = "channel"
 )
 

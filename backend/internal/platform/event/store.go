@@ -24,9 +24,9 @@ func (s *Store) GetNextUnprocessedEvent(ctx context.Context) (Envelope, error) {
 	}
 
 	return Envelope{
-		ID: outbox.EventID,
-		Type: outbox.EventType,
+		ID:         outbox.EventID,
+		Type:       outbox.EventType,
 		OccurredAt: outbox.OccurredAt,
-		Payload: outbox.EventPayload,
+		Payload:    outbox.EventPayload,
 	}, nil
 }

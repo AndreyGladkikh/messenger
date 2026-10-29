@@ -72,7 +72,7 @@ func termWildcard(term string) string {
 
 func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetType) (query.EntryView, error) {
 	entryRow, err := q.Queries(ctx).GetDirectoryEntry(ctx, sqlc.GetDirectoryEntryParams{
-		TargetID: id,
+		TargetID:   id,
 		TargetType: typ.String(),
 	})
 	if err != nil {
@@ -80,9 +80,9 @@ func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetTy
 	}
 
 	return query.EntryView{
-		ID: id,
-		Type: typ.String(),
+		ID:          id,
+		Type:        typ.String(),
 		DisplayName: entryRow.DisplayName,
-		AvatarURL: entryRow.AvatarUrl,
+		AvatarURL:   entryRow.AvatarUrl,
 	}, nil
 }

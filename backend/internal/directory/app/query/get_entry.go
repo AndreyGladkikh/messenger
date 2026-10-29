@@ -10,7 +10,7 @@ import (
 var _ query.Query = GetEntry{}
 
 type GetEntry struct {
-	ID uuid.UUID
+	ID   uuid.UUID
 	Type string
 }
 

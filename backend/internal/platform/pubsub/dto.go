@@ -20,7 +20,7 @@ const DirectConversationCreatedName = "DirectConversationCreated"
 type DirectConversationCreated struct {
 	ConversationID  uuid.UUID
 	SenderAvatarUrl string
-	SenderID      uuid.UUID
+	SenderID        uuid.UUID
 	SenderName      string
 	MessageBody     string
 	MessageSentAt   time.Time

@@ -22,7 +22,7 @@ import (
 type httpClient struct {
 	*http.Client
 	server *httptest.Server
-	JWT *string
+	JWT    *string
 }
 
 func newHttpClient(t *testing.T, server *httptest.Server) *httpClient {

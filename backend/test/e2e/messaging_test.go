@@ -15,7 +15,7 @@ import (
 
 func TestSendMessage_Success(t *testing.T) {
 	server, _ := initApi(t)
-	
+
 	alice := newUser(t, server, "alice")
 	defer alice.wsClient.CloseNow()
 
@@ -29,7 +29,7 @@ func TestSendMessage_Success(t *testing.T) {
 
 	_, m, err := bob.wsClient.Read(context.Background())
 	require.NoError(t, err)
-	_=m
+	_ = m
 
 	// alice.wsClient.sendMessage(websocket.SendFirstDirectMessagePayload{
 	// 	Body: "Hi!",
@@ -38,7 +38,7 @@ func TestSendMessage_Success(t *testing.T) {
 
 	resp, err := alice.httpClient.createDirectConversationWithFirstMessage(appHttp.CreateDirectConversationJSONRequestBody{
 		ParticipantId: bob.id,
-		FirstMessage: appHttp.FirstMessage{Body: "Hi!"},
+		FirstMessage:  appHttp.FirstMessage{Body: "Hi!"},
 	})
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -57,14 +57,12 @@ func TestSendMessage_Success(t *testing.T) {
 		err = json.Unmarshal(m, &msg)
 		require.NoError(t, err)
 
-		// var 
+		// var
 
 		return true
-	}, time.Second, 10 * time.Millisecond)
-
-	
+	}, time.Second, 10*time.Millisecond)
 
 	// alice.wsClient
-	
+
 	// bob.wsClient.sendMessage()
 }

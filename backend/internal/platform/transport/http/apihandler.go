@@ -103,10 +103,10 @@ func (h *ApiHandler) LoginUser(ctx context.Context, request LoginUserRequestObje
 
 func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error) {
 	cmd := drctrCmd.RegisterEntry{
-		TargetID: request.Body.TargetId,
-		TargetType: request.Body.TargetType,
+		TargetID:    request.Body.TargetId,
+		TargetType:  request.Body.TargetType,
 		DisplayName: request.Body.DisplayName,
-		Handle: request.Body.Handle,
+		Handle:      request.Body.Handle,
 	}
 
 	_, err := h.commandBus.Dispatch[any](ctx, cmd)
@@ -163,9 +163,9 @@ func (h *ApiHandler) CreateDirectConversation(ctx context.Context, request Creat
 	}
 
 	cmd := cnvCmd.SendFirstDirectMessage{
-		Sender: a.Principal.Subject.ID,
+		Sender:    a.Principal.Subject.ID,
 		Recipient: request.Body.ParticipantId,
-		Body: request.Body.FirstMessage.Body,
+		Body:      request.Body.FirstMessage.Body,
 	}
 	resp, err := h.commandBus.Dispatch[cnvCmd.SendFirstDirectMessageResponse](ctx, cmd)
 	if err != nil {
@@ -184,9 +184,9 @@ func (h *ApiHandler) SendMessage(ctx context.Context, request SendMessageRequest
 	}
 
 	command := cnvCmd.SendMessage{
-		SenderID: a.Principal.Subject.ID,
+		SenderID:       a.Principal.Subject.ID,
 		ConversationID: request.ConversationId,
-		Body: request.Body.Body,
+		Body:           request.Body.Body,
 	}
 	_, err = h.commandBus.Dispatch[any](ctx, command)
 	if err != nil {

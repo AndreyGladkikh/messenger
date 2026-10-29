@@ -82,9 +82,9 @@ func (h *ErrorHandler) DefaultProblemDetails() ProblemDetails {
 	statusInternalServerError := http.StatusInternalServerError
 
 	return ProblemDetails{
-		Type: &h.problemTypesRegistry.Blank,
+		Type:   &h.problemTypesRegistry.Blank,
 		Status: &statusInternalServerError,
-		Title: http.StatusText(http.StatusInternalServerError),
+		Title:  http.StatusText(http.StatusInternalServerError),
 	}
 }
 
@@ -126,7 +126,7 @@ func (h *ErrorHandler) createFromRequestError(err error) ProblemDetails {
 		typ := h.problemTypesRegistry.ValidationError
 		title := "Validation error"
 		detail := err.Reason
-		
+
 		return ProblemDetails{
 			Type:   &typ,
 			Title:  title,

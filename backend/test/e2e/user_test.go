@@ -11,9 +11,9 @@ import (
 )
 
 type user struct {
-	id uuid.UUID
+	id         uuid.UUID
 	httpClient *httpClient
-	wsClient *wsClient
+	wsClient   *wsClient
 }
 
 func newUser(t *testing.T, server *httptest.Server, login string) *user {
@@ -27,7 +27,7 @@ func newUser(t *testing.T, server *httptest.Server, login string) *user {
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	registerBody := decode[appHttp.Tokens](t, resp.Body)
-	
+
 	httpClient.JWT = &registerBody.AccessToken
 
 	resp, err = httpClient.me()
@@ -42,8 +42,8 @@ func newUser(t *testing.T, server *httptest.Server, login string) *user {
 	wsClient := newWSClient(t, httpClient)
 
 	return &user{
-		id: id,
+		id:         id,
 		httpClient: httpClient,
-		wsClient: wsClient,
+		wsClient:   wsClient,
 	}
 }

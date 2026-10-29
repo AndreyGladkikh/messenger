@@ -7,7 +7,7 @@ import (
 
 type User struct {
 	domain.AggregateRoot
-	
+
 	id           uuid.UUID
 	Login        string
 	PasswordHash string

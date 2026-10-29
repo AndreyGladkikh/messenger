@@ -11,11 +11,11 @@ import (
 
 type UnitOfWork struct {
 	aggregatesMu sync.Mutex
-	aggregates map[string]domain.Aggregate
-	hooksMu sync.Mutex
-	hooks []Hook
-	eventsMu sync.Mutex
-	events []event.Event
+	aggregates   map[string]domain.Aggregate
+	hooksMu      sync.Mutex
+	hooks        []Hook
+	eventsMu     sync.Mutex
+	events       []event.Event
 }
 
 func New() *UnitOfWork {

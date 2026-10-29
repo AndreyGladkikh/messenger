@@ -12,7 +12,7 @@ import (
 type DirectConversationResolver struct {
 	conversationRepository conversation.Repository
 	membershipRepository   membership.Repository
-	participantLookup ParticipantLookup
+	participantLookup      ParticipantLookup
 }
 
 func NewDirectConversationResolver(
@@ -23,7 +23,7 @@ func NewDirectConversationResolver(
 	return &DirectConversationResolver{
 		conversationRepository: conversationRepository,
 		membershipRepository:   membershipRepository,
-		participantLookup: participantLookup,
+		participantLookup:      participantLookup,
 	}
 }
 
@@ -53,7 +53,7 @@ func (d *DirectConversationResolver) FindOrCreate(
 	}
 
 	for _, participantID := range participants.List() {
-		exists, err := d.participantLookup.Exists(ctx, participantID) 
+		exists, err := d.participantLookup.Exists(ctx, participantID)
 		if err != nil {
 			return nil, false, err
 		}

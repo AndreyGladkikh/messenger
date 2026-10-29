@@ -16,7 +16,7 @@ var _ rabbitmq.Consumer = (*UserDeliveryConsumer)(nil)
 
 type UserDeliveryConsumer struct {
 	UserPubSub *pubsub.UserEventsPubSub
-	QueryBus *querybus.Bus
+	QueryBus   *querybus.Bus
 }
 
 func (h *UserDeliveryConsumer) HandleMessage(ctx context.Context, msg rabbitmq.Message) error {
@@ -31,7 +31,7 @@ func (h *UserDeliveryConsumer) HandleMessage(ctx context.Context, msg rabbitmq.M
 		evnt := envlp.Event
 
 		entr, err := h.QueryBus.Dispatch[drctrQry.EntryView](ctx, drctrQry.GetEntry{
-			ID: evnt.SenderID,
+			ID:   evnt.SenderID,
 			Type: entry.TargetTypeUser.String(),
 		})
 		if err != nil {
@@ -39,18 +39,18 @@ func (h *UserDeliveryConsumer) HandleMessage(ctx context.Context, msg rabbitmq.M
 		}
 
 		payload, err := json.Marshal(pubsub.DirectConversationCreated{
-			ConversationID: evnt.ConversationID,
+			ConversationID:  evnt.ConversationID,
 			SenderAvatarUrl: *entr.AvatarURL,
-			SenderName: entr.DisplayName,
-			MessageBody: evnt.MessageBody,
-			MessageSentAt: envlp.OccurredAt,
+			SenderName:      entr.DisplayName,
+			MessageBody:     evnt.MessageBody,
+			MessageSentAt:   envlp.OccurredAt,
 		})
 		if err != nil {
 			return err
 		}
 
 		pubSubMsg := pubsub.Message{
-			Type: pubsub.DirectConversationCreatedName,
+			Type:    pubsub.DirectConversationCreatedName,
 			Payload: payload,
 		}
 

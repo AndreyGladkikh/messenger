@@ -39,9 +39,9 @@ func (e *EventHandlingError) AsStrings() []string {
 }
 
 type OutboxRelay struct {
-	EventService         *event.EventService
-	TXManager            *transactions.Manager
-	Logger               *logger.Logger
+	EventService               *event.EventService
+	TXManager                  *transactions.Manager
+	Logger                     *logger.Logger
 	ConversationEventsProducer *rabbitmq.ConversationEventsProducer
 }
 
@@ -89,7 +89,7 @@ func (r *OutboxRelay) processEvent() error {
 	case cnvEvnt.DirectConversationWithFirstMessageCreatedEventName:
 		err = r.ConversationEventsProducer.Produce(ctx, eventEnvelope)
 		if err != nil {
-			r.Logger.ErrorContext(ctx, "outbox relay: failed to produce message", 
+			r.Logger.ErrorContext(ctx, "outbox relay: failed to produce message",
 				"err", err,
 				"outboxID", outboxEvent.ID.String(),
 			)

@@ -23,7 +23,7 @@ func NewConnection(cfg config.Config) (*rmq.AmqpConnection, func(), error) {
 }
 
 type Message struct {
-	Type string
+	Type    string
 	Payload jsontext.Value
 }
 

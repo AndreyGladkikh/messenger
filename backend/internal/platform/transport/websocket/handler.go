@@ -29,11 +29,11 @@ var (
 var _ http.Handler = (*Handler)(nil)
 
 type Handler struct {
-	Logger           *logger.Logger
-	CommandBus       *commandbus.Bus
-	QueryBus         *querybus.Bus
-	Store            *store.Store
-	PubSub           *pubsub.PubSub
+	Logger     *logger.Logger
+	CommandBus *commandbus.Bus
+	QueryBus   *querybus.Bus
+	Store      *store.Store
+	PubSub     *pubsub.PubSub
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -284,12 +284,12 @@ func (h *Handler) readEventsLoop(ctx context.Context, subscription *pubsub.Subsc
 			switch p := payload.(type) {
 			case pubsub.DirectConversationCreated:
 				m, err := NewWSMessage(wsMessageTypeMessageSent, withData(DirectConversationStartedPayload{
-					ConversationId: p.ConversationID,
-					SenderId: p.SenderID,
+					ConversationId:    p.ConversationID,
+					SenderId:          p.SenderID,
 					SenderDisplayName: p.SenderName,
-					AvatarUrl: p.SenderAvatarUrl,
+					AvatarUrl:         p.SenderAvatarUrl,
 					Message: &MessagePayload{
-						Body: p.MessageBody,
+						Body:   p.MessageBody,
 						SentAt: p.MessageSentAt,
 					},
 				}))

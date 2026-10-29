@@ -42,6 +42,6 @@ func mapIdentityTypeToTarget(t string) (entry.TargetType, error) {
 	if !ok {
 		return "", fmt.Errorf("no target type corresponding to identity type %q", idT)
 	}
-	
+
 	return trgtT, nil
 }

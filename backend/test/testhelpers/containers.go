@@ -14,9 +14,9 @@ import (
 
 type PostgresContainer struct {
 	*postgres.PostgresContainer
-	TemplateDBName string
+	TemplateDBName             string
 	MigrationsConnectionString string
-	AdminConnectionString string
+	AdminConnectionString      string
 }
 
 type RedisContainer struct {
@@ -56,10 +56,10 @@ func CreatePostgresContainer(ctx context.Context) (*PostgresContainer, error) {
 	}
 
 	return &PostgresContainer{
-		PostgresContainer: pgContainer,
-		TemplateDBName: templateDBName,
+		PostgresContainer:          pgContainer,
+		TemplateDBName:             templateDBName,
 		MigrationsConnectionString: migrationsConnStr,
-		AdminConnectionString: adminConnStr,
+		AdminConnectionString:      adminConnStr,
 	}, nil
 }
 
@@ -89,8 +89,8 @@ func CreateRedisContainer(ctx context.Context) (*RedisContainer, error) {
 	}
 
 	return &RedisContainer{
-		RedisContainer: redisContainer,
-		ConnectionString:  connStr,
+		RedisContainer:   redisContainer,
+		ConnectionString: connStr,
 	}, nil
 }
 

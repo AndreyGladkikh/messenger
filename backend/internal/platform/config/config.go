@@ -44,7 +44,7 @@ type Auth struct {
 }
 
 type Database struct {
-	Dsn            string
+	Dsn string
 }
 
 type Cache struct {

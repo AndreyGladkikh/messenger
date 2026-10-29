@@ -12,7 +12,7 @@ import (
 
 type Api struct {
 	HttpHandler http.Handler
-	HttpServer *appHttp.Server
+	HttpServer  *appHttp.Server
 }
 
 var ApiSet = wire.NewSet(

@@ -13,10 +13,10 @@ var _ command.Command = RegisterEntry{}
 const RegisterEntryCommandName = "RegisterEntry"
 
 type RegisterEntry struct {
-	TargetID uuid.UUID
-	TargetType string
+	TargetID    uuid.UUID
+	TargetType  string
 	DisplayName string
-	Handle string
+	Handle      string
 }
 
 func (r RegisterEntry) IsCommand() {}
@@ -28,7 +28,7 @@ func (r RegisterEntry) Name() string {
 var _ command.Handler[RegisterEntry, any] = (*RegisterEntryHandler)(nil)
 
 type RegisterEntryHandler struct {
-	entryRepo entry.Repository
+	entryRepo    entry.Repository
 	targetLookup *TargetLookup
 }
 
@@ -37,7 +37,7 @@ func NewRegisterEntryHandler(
 	targetLookup *TargetLookup,
 ) *RegisterEntryHandler {
 	return &RegisterEntryHandler{
-		entryRepo: entryRepo,
+		entryRepo:    entryRepo,
 		targetLookup: targetLookup,
 	}
 }
@@ -89,7 +89,7 @@ func NewTargetLookup(
 }
 
 func (t *TargetLookup) Exists(ctx context.Context, id uuid.UUID, typ entry.TargetType) (bool, error) {
-	switch typ{
+	switch typ {
 	case entry.TargetTypeUser:
 		return t.userLookup.Exists(ctx, id)
 	default:
