@@ -3,6 +3,7 @@ package event
 import (
 	"encoding/json"
 	"fmt"
+	cnvEvnt "messenger/messenger/internal/conversations/app/event"
 	"messenger/messenger/internal/conversations/domain/model/message"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/shared/app/event"
@@ -11,6 +12,7 @@ import (
 type Decoder func([]byte) (event.Event, error)
 
 var decoders = map[string]Decoder{
+	cnvEvnt.DirectConversationWithFirstMessageCreatedEventName: decodeAs[cnvEvnt.DirectConversationWithFirstMessageCreated],
 	message.MessageSentEventName: decodeAs[message.MessageSent],
 }
 

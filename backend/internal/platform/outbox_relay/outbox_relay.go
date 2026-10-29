@@ -73,12 +73,7 @@ func (r *OutboxRelay) processEvent() error {
 		return nil
 	}
 
-	var (
-		status      event.Status
-		nextRetryAt time.Time
-		errs        []error
-	)
-
+	// todo refactor
 	eventEnvelope, err := event.TranslateOutboxMsgToEventEnvelope(outboxEvent)
 	if err != nil {
 		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)
@@ -95,6 +90,12 @@ func (r *OutboxRelay) processEvent() error {
 			)
 		}
 	}
+
+	var (
+		status      event.Status
+		nextRetryAt time.Time
+		errs        []error
+	)
 
 	if err != nil {
 		if errors.Is(err, ErrFatal) || outboxEvent.Attempts+1 >= retries {

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"messenger/messenger/internal/bootstrap/consumer"
@@ -23,13 +24,13 @@ func run() error {
 
 	cfg := config.Load()
 
+	cnsmrName := flag.Args()[0]
+
 	container, cleanup, err := consumer.Initialize(cfg)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-
-	cnsmrName := consumerNameRealtimeDeliveryUsers
 
 	// todo bootstrap
 	consCfg, ok := NewConsumerConfigs(Consumers{})[cnsmrName]
@@ -123,7 +124,7 @@ func NewConsumerConfigs(consumers Consumers) ConsumerConfigs {
 			exchanges: []xConfig{
 				{
 					name:        "conversation.events",
-					bindingKeys: []string{"peer:*"},
+					bindingKeys: []string{"peer.*"},
 				},
 			},
 			qName:       "realtime.deliver_peers",
@@ -133,7 +134,7 @@ func NewConsumerConfigs(consumers Consumers) ConsumerConfigs {
 			exchanges: []xConfig{
 				{
 					name:        "conversation.events",
-					bindingKeys: []string{"user:*"},
+					bindingKeys: []string{"user.*"},
 				},
 			},
 			qName: "realtime.deliver_users",

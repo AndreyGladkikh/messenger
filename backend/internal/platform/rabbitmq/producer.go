@@ -18,9 +18,13 @@ type Producer struct {
 func (p *Producer) Produce(ctx context.Context, payload any) error {
 	var msgType string
 
+	// todo refactor
 	switch t := payload.(type) {
-	case event.Envelope[cnvEvnt.DirectConversationWithFirstMessageCreated]:
-		msgType = t.Event.Name()
+	case event.Envelope[event.Event]:
+		switch tt := t.Event.(type) {
+		case cnvEvnt.DirectConversationWithFirstMessageCreated:
+			msgType = tt.Name()
+		}
 	default:
 		return fmt.Errorf("rabbitmq producer: failed to infer message type")
 	}
@@ -77,6 +81,7 @@ func NewConversationEventsProducer(rmqConn *rmq.AmqpConnection) (*ConversationEv
 
 	publisher, err := rmqConn.NewPublisher(ctx, &rmq.ExchangeAddress{
 		Exchange: xName,
+		Key: "user.asd",
 	}, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create publisher %q: %w", xName, err)

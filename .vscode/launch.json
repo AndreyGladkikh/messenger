@@ -5,7 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch outbox relay",
+            "name": "Launch Consumer",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/backend/cmd/consumer",
+            "args": [
+                "-config", "${workspaceFolder}/backend/configs/config.yaml",
+                "-env", "${workspaceFolder}/backend/.env",
+                "realtime:delivery:users"
+            ],
+            "env": {
+                "APP_ENV": "local"
+            }
+        },
+        {
+            "name": "Launch Outbox Relay",
             "type": "go",
             "request": "launch",
             "mode": "auto",
