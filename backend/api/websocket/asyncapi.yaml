@@ -20,25 +20,45 @@ channels:
   root:
     address: /
     messages:
-      sendMessage:
-        $ref: '#/components/messages/sendMessage'
-      sendFirstDirectMessage:
-        $ref: '#/components/messages/sendFirstDirectMessage'
+      typingStarted:
+        $ref: '#/components/messages/typingStarted'
+      typingStopped:
+        $ref: '#/components/messages/typingStopped'
+      directConversationStarted:
+        $ref: '#/components/messages/directConversationStarted'
       messageSent:
         $ref: '#/components/messages/messageSent'
 operations:
-  receiveSendMessage:
+  receiveTypingStarted:
     action: receive
     channel:
       $ref: '#/channels/root'
     messages:
-      - $ref: '#/channels/root/messages/sendMessage'
-  receiveSendFirstDirectMessage:
+      - $ref: '#/channels/root/messages/typingStarted'
+  sendTypingStarted:
+    action: send
+    channel:
+      $ref: '#/channels/root'
+    messages:
+      - $ref: '#/channels/root/messages/typingStarted'
+  receiveTypingStopped:
     action: receive
     channel:
       $ref: '#/channels/root'
     messages:
-      - $ref: '#/channels/root/messages/sendFirstDirectMessage'
+      - $ref: '#/channels/root/messages/typingStopped'
+  sendTypingStopped:
+    action: send
+    channel:
+      $ref: '#/channels/root'
+    messages:
+      - $ref: '#/channels/root/messages/typingStopped'
+  sendDirectConversationStarted:
+    action: send
+    channel:
+      $ref: '#/channels/root'
+    messages:
+      - $ref: '#/channels/root/messages/directConversationStarted'
   sendMessageSent:
     action: send
     channel:
@@ -47,79 +67,99 @@ operations:
       - $ref: '#/channels/root/messages/messageSent'
 components:
   messages:
-    sendMessage:
-      name: sendMessage
-      title: Send Message
+    typingStarted:
+      name: typingStarted
+      title: Typing Started
       payload:
-        $ref: '#/components/schemas/sendMessagePayload'
-    sendFirstDirectMessage:
-      name: sendFirstDirectMessage
-      title: Send First Direct Message
+        $ref: '#/components/schemas/typingStartedPayload'
+    typingStopped:
+      name: typingStopped
+      title: Typing Stopped
       payload:
-        $ref: '#/components/schemas/sendFirstDirectMessagePayload'
+        $ref: '#/components/schemas/typingStoppedPayload'
+    directConversationStarted:
+      name: directConversationStarted
+      title: Direct conversation started
+      payload:
+        $ref: '#/components/schemas/directConversationStartedPayload'
     messageSent:
       name: messageSent
       title: Message Sent
       payload:
         $ref: '#/components/schemas/messageSentPayload'
   schemas:
-    baseMessage:
+    # baseMessage:
+    #   type: object
+    #   properties:
+    #     id:
+    #       type: string
+    #     type:
+    #       type: string
+    #     data:
+    #       type: object
+    typingStartedPayload:
       type: object
+      required:
+        - typingId
+        - typingDisplayName
       properties:
-        id:
+        typingId:
           type: string
-        type:
+          format: uuid
+        typingDisplayName:
           type: string
-        data:
-          type: object
-    sendMessagePayload:
-      allOf:
-        - $ref: '#/components/schemas/baseMessage'
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                body:
-                  type: string
-                chatId:
-                  type: string
-                  format: uuid
-                replyToMessageId:
-                  type: string
-                  format: uuid
-    sendFirstDirectMessagePayload:
-      allOf:
-        - $ref: '#/components/schemas/baseMessage'
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                body:
-                  type: string
-                sender:
-                  type: string
-                  format: uuid
-                recipient:
-                  type: string
-                  format: uuid
+    typingStoppedPayload:
+      type: object
+      required:
+        - typingId
+      properties:
+        typingId:
+          type: string
+          format: uuid
+    directConversationStartedPayload:
+      type: object
+      required:
+        - conversationId
+        - senderId
+        - senderDisplayName
+        - avatarUrl
+        - message
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        senderDisplayName:
+          type: string
+        avatarUrl:
+          type: string
+        message:
+          $ref: '#/components/schemas/messagePayload'
+    messagePayload:
+      type: object
+      required:
+        - body
+        - sentAt
+      properties:
+        body:
+          type: string
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
     messageSentPayload:
       allOf:
-        - $ref: '#/components/schemas/baseMessage'
+        - $ref: '#/components/schemas/messagePayload'
         - type: object
+          required:
+            - conversationId
           properties:
-            data:
-              type: object
-              properties:
-                body:
-                  type: string
-                chatId:
-                  type: string
-                  format: uuid
-                replyToMessageId:
-                  type: string
-                  format: uuid
+            conversationId:
+              type: string
+              format: uuid
+            replyToMessageId:
+              type: string
+              format: uuid
     sentAt:
       type: string
       format: date-time

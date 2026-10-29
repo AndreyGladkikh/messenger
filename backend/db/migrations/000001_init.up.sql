@@ -93,6 +93,7 @@ CREATE TABLE directory.entries(
     target_type TEXT NOT NULL,
     display_name TEXT NOT NULL,
     handle TEXT NOT NULL UNIQUE,
+    avatar_url TEXT,
     ts_vec TSVECTOR GENERATED ALWAYS AS (
         to_tsvector('russian', coalesce(display_name, '')) ||
         to_tsvector('english', coalesce(display_name, '') || ' ' || coalesce(handle, '')) ||

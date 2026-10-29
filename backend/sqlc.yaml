@@ -42,3 +42,8 @@ sql:
               import: "time"
               type: "Time"
               pointer: true
+          - db_type: "text"
+            nullable: true
+            go_type:
+              type: "string"
+              pointer: true

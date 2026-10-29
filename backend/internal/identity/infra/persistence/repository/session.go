@@ -26,7 +26,7 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("Session not found by refresh token", apperr.WithCause(repository.ErrNotFound))
+		return nil, apperr.NewNotFound("Session not found by refresh token")
 	}
 
 	return session.Rehydrate(

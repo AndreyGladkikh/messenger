@@ -10,7 +10,8 @@ import (
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"messenger/messenger/internal/platform/di"
+	"messenger/messenger/internal/bootstrap/api"
+	"messenger/messenger/internal/platform/config"
 )
 
 func main() {
@@ -19,30 +20,28 @@ func main() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	api, cleanup, err := di.InitializeApi()
-	if cleanup != nil {
-		defer cleanup()
-	}
+	cfg := config.Load()
+
+	api, cleanup, err := api.Initialize(cfg)
 	if err != nil {
 		slog.Error("api: failed to init dependencies", "error", err)
 		return
 	}
-
-	httpServer := api.HttpServer
+	defer cleanup()
 
 	var wg sync.WaitGroup
 	errCh := make(chan error)
 
 	wg.Go(func() {
-		if err := httpServer.Run(ctx); err != nil {
+		if err := api.HttpServer.Run(ctx); err != nil {
 			errCh <- err
 		}
 	})
 
-	select {
-	case <-errCh:
+	wg.Go(func() {
+		<-errCh
 		cancel()
-	default:
-		wg.Wait()
-	}
+	})
+
+	wg.Wait()
 }

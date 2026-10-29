@@ -11,7 +11,7 @@ import (
 	"time"
 	"uuid"
 
-	"messenger/messenger/internal/app/api"
+	"messenger/messenger/internal/bootstrap/api"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/migrate"
 	"messenger/messenger/internal/platform/postgres"

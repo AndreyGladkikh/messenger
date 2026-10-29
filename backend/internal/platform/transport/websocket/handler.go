@@ -6,8 +6,6 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
-	"messenger/messenger/internal/conversations/app/command"
-	"messenger/messenger/internal/conversations/domain/model/message"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/logger"
@@ -36,8 +34,6 @@ type Handler struct {
 	QueryBus         *querybus.Bus
 	Store            *store.Store
 	PubSub           *pubsub.PubSub
-	PeerEventsPubSub *pubsub.ChatEventsPubSub
-	UserEventsPubSub *pubsub.UserEventsPubSub
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -171,39 +167,15 @@ func (h *Handler) initEventsSubscription(ctx context.Context) (*pubsub.Subscript
 
 // todo renemae to processClientMessage
 func (h *Handler) processWSMessage(ctx context.Context, m WSMessage) (any, error) {
-	a, _ := auth.AuthFromContext(ctx)
-
 	switch m.Type {
-	case wsMessageTypeSendFirstDirectMessage:
-		data, err := decodeWSMessagePayloadAs[SendFirstDirectMessagePayload](m.Payload)
-		if err != nil {
-			return nil, err
-		}
-
-		command := command.SendFirstDirectMessage{
-			Sender:    a.Principal.Subject.ID,
-			Recipient: data.RecipientID,
-			Body:      data.Body,
-		}
-		return h.CommandBus.Dispatch[any](ctx, command)
-	// case wsMessageTypeAddSubscription:
-	// 	data, err := decodeWSMessageDataAsType[map[string]any](m.Data)
-	// 	if err != nil {
-	// 		// todo handle
-	// 		return nil, err
-	// 	}
-	// 	sub := data["sub"].(string)
-
-	// 	_, err = h.pubSubHub.Subscribe(ctx, fmt.Sprintf("%s:%s:%s", userID, sessionID, sub), []string{sub})
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
+	case "Ping":
+		return "Pong", nil
 	default:
 		return nil, fmt.Errorf("unknown message type: %s", m.Type)
 	}
 }
 
-func decodeWSMessagePayloadAs[T any](data jsontext.Value) (T, error) {
+func decodeAs[T any](data jsontext.Value) (T, error) {
 	var result T
 	err := json.Unmarshal(data, &result)
 	if err != nil {
@@ -300,20 +272,38 @@ func (h *Handler) readEventsLoop(ctx context.Context, subscription *pubsub.Subsc
 				return err
 			}
 
-			switch msg.Type {
-			case message.MessageSentEventName:
-				m, err := NewWSMessage(wsMessageTypeMessageSent, withData(msg))
+			payload, err := pubsub.DecodeMessage(msg)
+			if err != nil {
+				h.Logger.ErrorContext(ctx, "failed to read subscription message",
+					"err", err,
+					"msg", msg,
+				)
+				return err
+			}
+
+			switch p := payload.(type) {
+			case pubsub.DirectConversationCreated:
+				m, err := NewWSMessage(wsMessageTypeMessageSent, withData(DirectConversationStartedPayload{
+					ConversationId: p.ConversationID,
+					SenderId: p.SenderID,
+					SenderDisplayName: p.SenderName,
+					AvatarUrl: p.SenderAvatarUrl,
+					Message: &MessagePayload{
+						Body: p.MessageBody,
+						SentAt: p.MessageSentAt,
+					},
+				}))
 				if err != nil {
 					return err
 				}
+
 				err = c.enqueueWrite(ctx, m)
 				if err != nil {
 					return err
 				}
-				continue
-			default:
-				continue
 			}
+
+			continue
 		}
 	}
 }

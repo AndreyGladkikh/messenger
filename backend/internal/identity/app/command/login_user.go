@@ -8,7 +8,7 @@ import (
 	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/identity/domain/model/user"
-	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/shared/app/apperr"
 	"net/netip"
 )
 
@@ -55,10 +55,10 @@ func NewLoginUserHandler(
 
 func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUser) (LoginUserResponse, error) {
 	u, err := h.userRepo.GetByLogin(ctx, cmd.Login)
-	if err != nil && !errors.Is(err, repository.ErrNotFound) {
+	if err != nil && !errors.Is(err, apperr.ErrNotFound) {
 		return LoginUserResponse{}, err
 	}
-	if errors.Is(err, repository.ErrNotFound) {
+	if errors.Is(err, apperr.ErrNotFound) {
 		return LoginUserResponse{}, app.ErrInvalidCredantials
 	}
 

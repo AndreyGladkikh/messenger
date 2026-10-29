@@ -60,10 +60,12 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, err error)
 	var pd ProblemDetails
 	if convert := h.converter(err); convert != nil {
 		pd = convert(err)
+	} else {
+		pd = h.DefaultProblemDetails()
 	}
 
-	w.WriteHeader(*pd.Status)
 	w.Header().Set(headers.ContentType, contenttype.ApplicationProblemPlusJson)
+	w.WriteHeader(*pd.Status)
 	e := json.NewEncoder(w).Encode(pd)
 	if e != nil {
 		h.logger.ErrorContext(
@@ -73,6 +75,16 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, err error)
 			"cause", e,
 		)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
+}
+
+func (h *ErrorHandler) DefaultProblemDetails() ProblemDetails {
+	statusInternalServerError := http.StatusInternalServerError
+
+	return ProblemDetails{
+		Type: &h.problemTypesRegistry.Blank,
+		Status: &statusInternalServerError,
+		Title: http.StatusText(http.StatusInternalServerError),
 	}
 }
 

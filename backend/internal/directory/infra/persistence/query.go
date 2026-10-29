@@ -6,11 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"messenger/messenger/internal/directory/app/query"
+	"messenger/messenger/internal/directory/domain/entry"
+	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/store"
+	"messenger/messenger/internal/shared/app/apperr"
 	"strings"
+	"uuid"
 )
 
 var _ query.Searcher = (*QueryService)(nil)
+var _ query.Reader = (*QueryService)(nil)
 
 type QueryService struct {
 	*store.Store
@@ -63,4 +68,21 @@ func (q *QueryService) Search(ctx context.Context, terms []query.SearchTerm) ([]
 
 func termWildcard(term string) string {
 	return fmt.Sprintf("%s:*", term)
+}
+
+func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetType) (query.EntryView, error) {
+	entryRow, err := q.Queries(ctx).GetDirectoryEntry(ctx, sqlc.GetDirectoryEntryParams{
+		TargetID: id,
+		TargetType: typ.String(),
+	})
+	if err != nil {
+		return query.EntryView{}, apperr.NewNotFound(fmt.Sprintf("Directory entry with id %q and type %q not found", id, typ.String()))
+	}
+
+	return query.EntryView{
+		ID: id,
+		Type: typ.String(),
+		DisplayName: entryRow.DisplayName,
+		AvatarURL: entryRow.AvatarUrl,
+	}, nil
 }

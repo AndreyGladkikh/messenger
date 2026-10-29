@@ -3,12 +3,11 @@ package http
 import (
 	"context"
 	"encoding/json/v2"
-	"uuid"
 
-	"messenger/messenger/internal/conversations/app/command"
+	cnvCmd "messenger/messenger/internal/conversations/app/command"
 	drctrCmd "messenger/messenger/internal/directory/app/command"
-	"messenger/messenger/internal/directory/app/query"
-	"messenger/messenger/internal/identity/app"
+	drctrQry "messenger/messenger/internal/directory/app/query"
+	idApp "messenger/messenger/internal/identity/app"
 	idCommand "messenger/messenger/internal/identity/app/command"
 	idQuery "messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/app/token"
@@ -163,18 +162,18 @@ func (h *ApiHandler) CreateDirectConversation(ctx context.Context, request Creat
 		return nil, err
 	}
 
-	command := command.SendFirstDirectMessage{
+	cmd := cnvCmd.SendFirstDirectMessage{
 		Sender: a.Principal.Subject.ID,
 		Recipient: request.Body.ParticipantId,
 		Body: request.Body.FirstMessage.Body,
 	}
-	resp, err := h.commandBus.Dispatch[uuid.UUID](ctx, command)
+	resp, err := h.commandBus.Dispatch[cnvCmd.SendFirstDirectMessageResponse](ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
 
 	return CreateDirectConversation201JSONResponse{
-		Id: resp,
+		Id: resp.ConversationID,
 	}, nil
 }
 
@@ -184,7 +183,7 @@ func (h *ApiHandler) SendMessage(ctx context.Context, request SendMessageRequest
 		return nil, err
 	}
 
-	command := command.SendMessage{
+	command := cnvCmd.SendMessage{
 		SenderID: a.Principal.Subject.ID,
 		ConversationID: request.ConversationId,
 		Body: request.Body.Body,
@@ -200,7 +199,7 @@ func (h *ApiHandler) SendMessage(ctx context.Context, request SendMessageRequest
 func getAuth(ctx context.Context) (auth.Auth, error) {
 	a, err := auth.AuthFromContext(ctx)
 	if err != nil {
-		return auth.Auth{}, app.ErrNeedLogin
+		return auth.Auth{}, idApp.ErrNeedLogin
 	}
 	return a, nil
 }
@@ -298,7 +297,7 @@ func (h *ApiHandler) Test(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qry := query.Search{
+	qry := drctrQry.Search{
 		Str: rqst.Search,
 	}
 

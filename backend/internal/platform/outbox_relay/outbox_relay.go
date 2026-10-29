@@ -5,20 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	// "messenger/messenger/internal/directory/domain/entry"
+
+	cnvEvnt "messenger/messenger/internal/conversations/app/event"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
-	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/transactions"
-	// srchProjection "messenger/messenger/internal/search/app/projection"
 	apevent "messenger/messenger/internal/shared/app/event"
-	"messenger/messenger/internal/shared/domain"
 	"strings"
-	"sync"
 	"time"
 
 	"uuid"
-	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
 var ErrFatal = errors.New("fatal error")
@@ -42,28 +39,10 @@ func (e *EventHandlingError) AsStrings() []string {
 }
 
 type OutboxRelay struct {
-	eventService         *event.EventService
-	txManager            *transactions.Manager
-	logger               *logger.Logger
-	qs                   *sqlc.Queries
-	eventHandlerRegistry *event.HandlerRegistry
-	amqpConnection *rmq.AmqpConnection
-}
-
-func NewOutboxRelay(
-	eventService *event.EventService,
-	txManager *transactions.Manager,
-	logger *logger.Logger,
-	qs *sqlc.Queries,
-	eventHandlerRegistry *event.HandlerRegistry,
-) *OutboxRelay {
-	return &OutboxRelay{
-		eventService:         eventService,
-		txManager:            txManager,
-		logger:               logger,
-		qs:                   qs,
-		eventHandlerRegistry: eventHandlerRegistry,
-	}
+	EventService         *event.EventService
+	TXManager            *transactions.Manager
+	Logger               *logger.Logger
+	ConversationEventsProducer *rabbitmq.ConversationEventsProducer
 }
 
 func (r *OutboxRelay) Run(ctx context.Context) error {
@@ -73,7 +52,7 @@ func (r *OutboxRelay) Run(ctx context.Context) error {
 			return ctx.Err()
 		default:
 			if err := r.processEvent(); err != nil {
-				r.logger.Error("outbox relay process failed", "error", err)
+				r.Logger.Error("outbox relay process failed", "error", err)
 				return fmt.Errorf("outbox relay process failed: %w", err)
 			}
 		}
@@ -83,7 +62,9 @@ func (r *OutboxRelay) Run(ctx context.Context) error {
 func (r *OutboxRelay) processEvent() error {
 	ctx := context.Background()
 
-	outboxEvent, err := r.eventService.GetNextUnprocessedEvent(ctx)
+	var err error
+
+	outboxEvent, err := r.EventService.GetNextUnprocessedEvent(ctx)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("failed to retreive event to process: %w", err)
 	}
@@ -97,7 +78,24 @@ func (r *OutboxRelay) processEvent() error {
 		nextRetryAt time.Time
 		errs        []error
 	)
-	err = r.executeEventHandlers(ctx, outboxEvent)
+
+	eventEnvelope, err := event.TranslateOutboxMsgToEventEnvelope(outboxEvent)
+	if err != nil {
+		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)
+	}
+
+	err = nil
+	switch outboxEvent.EventType {
+	case cnvEvnt.DirectConversationWithFirstMessageCreatedEventName:
+		err = r.ConversationEventsProducer.Produce(ctx, eventEnvelope)
+		if err != nil {
+			r.Logger.ErrorContext(ctx, "outbox relay: failed to produce message", 
+				"err", err,
+				"outboxID", outboxEvent.ID.String(),
+			)
+		}
+	}
+
 	if err != nil {
 		if errors.Is(err, ErrFatal) || outboxEvent.Attempts+1 >= retries {
 			status, nextRetryAt = event.StatusDead, time.Time{}
@@ -110,37 +108,37 @@ func (r *OutboxRelay) processEvent() error {
 		} else {
 			errs = append(errs, err)
 		}
-		r.eventService.UpdateEvent(ctx, outboxEvent, status, errs, nextRetryAt)
+		r.EventService.UpdateEvent(ctx, outboxEvent, status, errs, nextRetryAt)
 		return nil
 	}
 
-	r.eventService.UpdateEvent(ctx, outboxEvent, event.StatusSucceeded, errs, time.Time{})
+	r.EventService.UpdateEvent(ctx, outboxEvent, event.StatusSucceeded, errs, time.Time{})
 	return nil
 }
 
-func (r *OutboxRelay) executeEventHandlers(ctx context.Context, outboxEvent sqlc.Outbox) error {
-	eventEnvelope, err := event.TranslateOutboxMsgToEventEnvelope(outboxEvent)
-	if err != nil {
-		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)
-	}
+// func (r *OutboxRelay) executeEventHandlers(ctx context.Context, outboxEvent sqlc.Outbox) error {
+// 	eventEnvelope, err := event.TranslateOutboxMsgToEventEnvelope(outboxEvent)
+// 	if err != nil {
+// 		return fmt.Errorf("%w: failed to translate stored event to dispatched event: %w", ErrFatal, err)
+// 	}
 
-	eventHandlers := r.eventHandlerRegistry.HandlersForEvent(eventEnvelope.Event)
+// 	eventHandlers := r.EventHandlerRegistry.HandlersForEvent(eventEnvelope.Event)
 
-	var errs []error
-	var wg sync.WaitGroup
-	for _, handler := range eventHandlers {
-		wg.Go(func() {
-			if err := r.runHandler(ctx, outboxEvent.EventID, eventEnvelope, handler); err != nil {
-				errs = append(errs, fmt.Errorf("failed to execute handler %q: %w", handler.Name(), err))
-			}
-		})
-	}
-	wg.Wait()
-	if len(errs) > 0 {
-		return &EventHandlingError{errs}
-	}
-	return nil
-}
+// 	var errs []error
+// 	var wg sync.WaitGroup
+// 	for _, handler := range eventHandlers {
+// 		wg.Go(func() {
+// 			if err := r.runHandler(ctx, outboxEvent.EventID, eventEnvelope, handler); err != nil {
+// 				errs = append(errs, fmt.Errorf("failed to execute handler %q: %w", handler.Name(), err))
+// 			}
+// 		})
+// 	}
+// 	wg.Wait()
+// 	if len(errs) > 0 {
+// 		return &EventHandlingError{errs}
+// 	}
+// 	return nil
+// }
 
 // func (r *OutboxRelay) executeEventHandlersV2(ctx context.Context, outboxEvent sqlc.Outbox) error {
 // 	eventEnvelope, err := event.TranslateOutboxMsgToEventEnvelope(outboxEvent)
@@ -170,9 +168,9 @@ func (r *OutboxRelay) calcNextRetry() time.Time {
 	return time.Now().Add(5 * time.Second)
 }
 
-func (r *OutboxRelay) runHandler(ctx context.Context, eventID uuid.UUID, envelope apevent.Envelope[domain.Event], handler event.Handler) error {
-	return r.txManager.WithTransaction(ctx, func(ctx context.Context) error {
-		err := r.eventService.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
+func (r *OutboxRelay) runHandler(ctx context.Context, eventID uuid.UUID, envelope apevent.Envelope[apevent.Event], handler event.Handler) error {
+	return r.TXManager.WithTransaction(ctx, func(ctx context.Context) error {
+		err := r.EventService.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
 		if err != nil && !errors.Is(err, event.ErrHandlerAlreadyExecuted) {
 			return err
 		}

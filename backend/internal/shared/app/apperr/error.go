@@ -3,8 +3,9 @@ package apperr
 import (
 	"maps"
 	"errors"
-	"messenger/messenger/internal/directory/domain/entry"
 )
+
+var ErrNotFound = errors.New("not found")
 
 type kind int
 
@@ -49,7 +50,7 @@ type Error struct {
 	Message string
 	Code    string
 	Details map[string]any
-	Wrapped error
+	Causes []error
 }
 
 func (e *Error) Error() string {
@@ -57,7 +58,7 @@ func (e *Error) Error() string {
 }
 
 func (e *Error) Unwrap() error {
-	return e.Wrapped
+	return errors.Join(e.Causes...)
 }
 
 func New(msg string, opts ...Option) *Error {
@@ -84,7 +85,7 @@ func NewPermissionDenied(msg string, opts ...Option) *Error {
 }
 
 func NewNotFound(msg string, opts ...Option) *Error {
-	opts = append(opts, WithKind(KindNotFound))
+	opts = append(opts, WithKind(KindNotFound), WithCause(ErrNotFound))
 	return New(msg, opts...)
 }
 
@@ -100,9 +101,9 @@ func NewInvalidArgument(msg string, opts ...Option) *Error {
 
 type Option func(*Error)
 
-func WithCause(cause error) Option {
+func WithCause(causes ...error) Option {
 	return func(err *Error) {
-		err.Wrapped = cause
+		err.Causes = append(err.Causes, causes...)
 	}
 }
 
@@ -122,25 +123,4 @@ func WithDetails(details map[string]any) Option {
 	return func(err *Error) {
 		maps.Copy(err.Details, details)
 	}
-}
-
-// todo remove
-func Map(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	if _, ok := errors.AsType[*Error](err); ok {
-		return err
-	}
-
-	if _, ok := errors.AsType[entry.UnsupportableTargetTypeError](err); ok {
-		return &Error{
-			Code:    CodeUnsupportableDirectoryEntryTargetType,
-			Message: "Unsupportable Directory Entry Target Type",
-			Wrapped: err,
-		}
-	}
-
-	return err
 }

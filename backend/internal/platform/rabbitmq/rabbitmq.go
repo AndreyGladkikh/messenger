@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"encoding/json/jsontext"
 	"fmt"
 	"messenger/messenger/internal/platform/config"
 
@@ -19,4 +20,13 @@ func NewConnection(cfg config.Config) (*rmq.AmqpConnection, func(), error) {
 	return conn, func() {
 		_ = env.CloseConnections(context.Background())
 	}, nil
+}
+
+type Message struct {
+	Type string
+	Payload jsontext.Value
+}
+
+type Consumer interface {
+	HandleMessage(ctx context.Context, msg Message) error
 }

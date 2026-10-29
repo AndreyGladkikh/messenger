@@ -7,7 +7,7 @@
 package api
 
 import (
-	"messenger/messenger/internal/app"
+	"messenger/messenger/internal/bootstrap"
 	command2 "messenger/messenger/internal/conversations/app/command"
 	"messenger/messenger/internal/conversations/app/service"
 	"messenger/messenger/internal/conversations/infra/identity"
@@ -38,7 +38,7 @@ import (
 
 // Injectors from wire.go:
 
-func Initialize(cfg config.Config) (*App, func(), error) {
+func Initialize(cfg config.Config) (*Api, func(), error) {
 	loggerLogger := logger.New()
 	pool, cleanup, err := postgres.NewPool(cfg)
 	if err != nil {
@@ -66,18 +66,26 @@ func Initialize(cfg config.Config) (*App, func(), error) {
 	getAccountHandler := query.NewGetAccountHandler(queryService)
 	persistenceQueryService := persistence2.NewQueryService(storeStore)
 	searchHandler := query2.NewSearchHandler(persistenceQueryService)
-	bus := app.InitQueryBus(getAccountHandler, searchHandler)
+	getEntryHandler := &query2.GetEntryHandler{
+		Reader: persistenceQueryService,
+	}
+	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler)
 	participantLookup := identity.NewParticipantLookup(bus)
 	directConversationResolver := service.NewDirectConversationResolver(conversationRepository, membershipRepository, participantLookup)
 	messageRepository := repository3.NewMessageRepository(repositoryRepository)
 	messageSender := service.NewMessageSender(membershipRepository, messageRepository)
-	sendFirstDirectMessageHandler := command2.NewSendFirstDirectMessageHandler(directConversationResolver, messageSender)
+	publisher := &event.Publisher{}
+	sendFirstDirectMessageHandler := &command2.SendFirstDirectMessageHandler{
+		DirectConversationResolver: directConversationResolver,
+		MessageSender:              messageSender,
+		EventPublisher:             publisher,
+	}
 	sendMessageHandler := command2.NewSendMessageHandler(conversationRepository, messageSender)
 	entryRepository := persistence2.NewEntryRepository(repositoryRepository)
 	userLookup := identity2.NewUserLookup(bus)
 	targetLookup := command3.NewTargetLookup(userLookup)
 	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
-	commandbusBus := app.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler, registerEntryHandler)
+	commandbusBus := bootstrap.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler, registerEntryHandler)
 	apiHandler := http.NewApiHandler(commandbusBus, bus)
 	problemTypesRegistry := http.NewProblemTypesRegistry(cfg)
 	errorHandler := http.NewErrorHandler(cfg, loggerLogger, problemTypesRegistry)
@@ -86,14 +94,13 @@ func Initialize(cfg config.Config) (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	pubSub, cleanup3 := pubsub.NewPubSub(client)
-	chatEventsPubSub := pubsub.NewChatEventsPubSub(pubSub)
+	pubSub, cleanup3 := pubsub.NewPubSub(loggerLogger, client)
 	handler := &websocket.Handler{
-		Logger:           loggerLogger,
-		CommandBus:       commandbusBus,
-		QueryBus:         bus,
-		Store:            storeStore,
-		PeerEventsPubSub: chatEventsPubSub,
+		Logger:     loggerLogger,
+		CommandBus: commandbusBus,
+		QueryBus:   bus,
+		Store:      storeStore,
+		PubSub:     pubSub,
 	}
 	mux, err := http.NewRouter(apiHandler, errorHandler, tokenService, handler)
 	if err != nil {
@@ -102,8 +109,18 @@ func Initialize(cfg config.Config) (*App, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	apiApp := NewApp(mux)
-	return apiApp, func() {
+	server, err := http.NewServer(cfg, loggerLogger, mux)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	api := &Api{
+		HttpHandler: mux,
+		HttpServer:  server,
+	}
+	return api, func() {
 		cleanup3()
 		cleanup2()
 		cleanup()

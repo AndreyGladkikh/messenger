@@ -1,8 +1,13 @@
 package entry
 
-import "uuid"
+import (
+	"messenger/messenger/internal/shared/domain"
+	"uuid"
+)
 
 const EntryRegisteredEventName = "EntryRegistered"
+
+var _ domain.Event = EntryRegistered{}
 
 type EntryRegistered struct {
 	ID          uuid.UUID
@@ -11,8 +16,6 @@ type EntryRegistered struct {
 	DisplayName string
 	Handle      string
 }
-
-func (e EntryRegistered) IsEvent() {}
 
 func (e EntryRegistered) Name() string {
 	return EntryRegisteredEventName

@@ -55,6 +55,11 @@ func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context) error 
 				}
 			}
 		}
+		for _, evnt := range uow.Events() {
+			if err := c.eventService.PutEventToOutbox(ctx, evnt); err != nil {
+				return fmt.Errorf("failed to store event: %w", err)
+			}
+		}
 	}
 	return nil
 }

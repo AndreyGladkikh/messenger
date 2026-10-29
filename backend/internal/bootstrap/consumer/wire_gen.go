@@ -4,7 +4,7 @@
 //go:build !wireinject
 // +build !wireinject
 
-package main
+package consumer
 
 import (
 	"messenger/messenger/internal/platform/config"
@@ -13,14 +13,15 @@ import (
 
 // Injectors from wire.go:
 
-func initContainer() (*container, func(), error) {
-	configConfig := config.Load()
-	amqpConnection, cleanup, err := rabbitmq.NewConnection(configConfig)
+func Initialize(cfg config.Config) (*Consumer, func(), error) {
+	amqpConnection, cleanup, err := rabbitmq.NewConnection(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
-	mainContainer := newContainer(amqpConnection)
-	return mainContainer, func() {
+	consumer := &Consumer{
+		RMQConn: amqpConnection,
+	}
+	return consumer, func() {
 		cleanup()
 	}, nil
 }

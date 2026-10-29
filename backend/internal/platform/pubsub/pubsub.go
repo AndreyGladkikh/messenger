@@ -2,7 +2,6 @@ package pubsub
 
 import (
 	"context"
-	"encoding/json/jsontext"
 	"encoding/json/v2"
 	"errors"
 	"fmt"
@@ -29,11 +28,13 @@ type PubSub struct {
 }
 
 func NewPubSub(
+	logger *logger.Logger,
 	redisClient *redis.Client,
 ) (*PubSub, func()) {
 	redisPS := redisClient.Subscribe(context.Background())
 
 	ps := &PubSub{
+		logger:        logger,
 		redisClient:   redisClient,
 		redisPubSub:   redisPS,
 		subscriptions: make(map[string]*Subscription),
@@ -97,11 +98,6 @@ func (ps *PubSub) dispatch(m *redis.Message) {
 // 	ps.redisClient.Publish(ctx, channel, message)
 // }
 
-type Message struct {
-	Type string
-	Payload jsontext.Value
-}
-
 func (ps *PubSub) Publish(ctx context.Context, channel string, message Message) error {
 	env, err := json.Marshal(message)
 	if err != nil {
@@ -114,7 +110,7 @@ func (ps *PubSub) Publish(ctx context.Context, channel string, message Message) 
 	}
 
 	ps.redisClient.Publish(ctx, channel, env)
-	
+
 	return nil
 }
 

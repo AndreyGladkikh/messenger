@@ -3,6 +3,7 @@ package websocket
 import (
 	"encoding/json/jsontext"
 	"encoding/json/v2"
+	"time"
 	"uuid"
 )
 
@@ -76,7 +77,27 @@ func withData(data any) wsMessageOption {
 	}
 }
 
-type SendFirstDirectMessagePayload struct {
-	Body        string    `json:"body"`
-	RecipientID uuid.UUID `json:"recipient"`
+type Payload interface {
+	Type() string
+}
+
+type MessagePayload struct {
+	Body   string    `json:"body"`
+	SentAt time.Time `json:"sentAt"`
+}
+
+func (m *MessagePayload) Type() string {
+	return "MessagePayload"
+}
+
+type DirectConversationStartedPayload struct {
+	ConversationId    uuid.UUID       `json:"conversationId"`
+	SenderId          uuid.UUID       `json:"senderId"`
+	SenderDisplayName string          `json:"senderDisplayName"`
+	AvatarUrl         string          `json:"avatarUrl"`
+	Message           *MessagePayload `json:"message"`
+}
+
+func (m *DirectConversationStartedPayload) Type() string {
+	return "DirectConversationStartedPayload"
 }

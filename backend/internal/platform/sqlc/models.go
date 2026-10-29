@@ -10,7 +10,6 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"uuid"
 )
 
@@ -73,7 +72,7 @@ type ConversationsDirectConversation struct {
 type ConversationsFile struct {
 	ID        uuid.UUID
 	Hash      []byte
-	Name      pgtype.Text
+	Name      *string
 	Url       string
 	CreatedAt *time.Time
 }
@@ -101,7 +100,7 @@ type ConversationsMessageFile struct {
 	ID        uuid.UUID
 	MessageID *uuid.UUID
 	FileID    *uuid.UUID
-	Name      pgtype.Text
+	Name      *string
 }
 
 type DirectoryEntry struct {
@@ -110,6 +109,7 @@ type DirectoryEntry struct {
 	TargetType  string
 	DisplayName string
 	Handle      string
+	AvatarUrl   *string
 	TsVec       interface{}
 }
 

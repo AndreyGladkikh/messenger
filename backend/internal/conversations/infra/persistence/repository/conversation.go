@@ -33,7 +33,7 @@ func (c *ConversationRepository) GetDirectBetween(ctx context.Context, participa
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("Direct conversation betwenn participants doesn't exist", apperr.WithCause(repository.ErrNotFound))
+		return nil, apperr.NewNotFound("Direct conversation betwenn participants doesn't exist")
 	}
 
 	return conversation.Rehydrate(

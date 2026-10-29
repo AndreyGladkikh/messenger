@@ -2,7 +2,9 @@ package command
 
 import (
 	"context"
+	"messenger/messenger/internal/conversations/app/event"
 	"messenger/messenger/internal/conversations/app/service"
+	appEvent "messenger/messenger/internal/shared/app/event"
 	"uuid"
 )
 
@@ -18,31 +20,40 @@ func (cmd SendFirstDirectMessage) Name() string {
 	return "SendFirstDirectMessage"
 }
 
+type SendFirstDirectMessageResponse struct {
+	ConversationID uuid.UUID
+	MessageID      uuid.UUID
+}
+
 type SendFirstDirectMessageHandler struct {
-	directConversationResolver *service.DirectConversationResolver
-	messageSender              *service.MessageSender
+	DirectConversationResolver *service.DirectConversationResolver
+	MessageSender              *service.MessageSender
+	EventPublisher             appEvent.Publisher
 }
 
-func NewSendFirstDirectMessageHandler(
-	directConversationResolver *service.DirectConversationResolver,
-	messageSender *service.MessageSender,
-) *SendFirstDirectMessageHandler {
-	return &SendFirstDirectMessageHandler{
-		directConversationResolver: directConversationResolver,
-		messageSender:              messageSender,
-	}
-}
-
-func (h *SendFirstDirectMessageHandler) Handle(ctx context.Context, cmd SendFirstDirectMessage) (uuid.UUID, error) {
-	cnv, err := h.directConversationResolver.FindOrCreate(ctx, cmd.Sender, cmd.Recipient)
+func (h *SendFirstDirectMessageHandler) Handle(ctx context.Context, cmd SendFirstDirectMessage) (SendFirstDirectMessageResponse, error) {
+	cnv, found, err := h.DirectConversationResolver.FindOrCreate(ctx, cmd.Sender, cmd.Recipient)
 	if err != nil {
-		return uuid.UUID{}, err
+		return SendFirstDirectMessageResponse{}, err
 	}
 
-	_, err = h.messageSender.Send(ctx, cmd.Sender, cnv, cmd.Body)
+	m, err := h.MessageSender.Send(ctx, cmd.Sender, cnv, cmd.Body)
 	if err != nil {
-		return uuid.UUID{}, err
+		return SendFirstDirectMessageResponse{}, err
 	}
 
-	return cnv.ID(), nil
+	if !found {
+		h.EventPublisher.Publish(ctx, event.DirectConversationWithFirstMessageCreated{
+			ConversationID: cnv.ID(),
+			SenderID:       cmd.Sender,
+			RecipientID:    cmd.Recipient,
+			MessageID:      m.ID(),
+			MessageBody:    m.Body,
+		})
+	}
+
+	return SendFirstDirectMessageResponse{
+		ConversationID: cnv.ID(),
+		MessageID:      m.ID(),
+	}, nil
 }

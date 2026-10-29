@@ -30,6 +30,7 @@ import (
 	pg "messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
+	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/redis"
 	baseRepository "messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
@@ -37,7 +38,6 @@ import (
 	"messenger/messenger/internal/platform/transactions"
 	"messenger/messenger/internal/platform/transport/http"
 	"messenger/messenger/internal/platform/transport/websocket"
-	"messenger/messenger/internal/shared/app/chateventspublisher"
 	netHttp "net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -67,7 +67,7 @@ var ApiSet = wire.NewSet(
 )
 
 var OutboxRelaySet = wire.NewSet(
-	outbox_relay.NewOutboxRelay,
+	wire.Struct(new(outbox_relay.OutboxRelay), "*"),
 	NewEventHandlerRegistry,
 	CommonSet,
 )
@@ -99,14 +99,12 @@ var CommonSet = wire.NewSet(
 	idReader.NewQueryService,
 	drctrIdentity.NewUserLookup,
 	drctrCommand.NewTargetLookup,
-	// dirQueryService.NewQueryService,
+	rabbitmq.NewConnection,
+	rabbitmq.NewConversationEventsProducer,
 
-	// wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
-	wire.Bind(new(chateventspublisher.ChatEventsPublisher), new(*pubsub.ChatEventsPubSub)),
 	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
 	wire.Bind(new(idQuery.Reader), new(*idReader.QueryService)),
 	wire.Bind(new(drctrCommand.UserLookup), new(*drctrIdentity.UserLookup)),
-	// wire.Bind(new(dirQuery.Searcher), new(*dirQueryService.QueryService)),
 )
 
 var Persistence = wire.NewSet(
@@ -140,7 +138,8 @@ var CommandHandlers = wire.NewSet(
 	idCommand.NewLoginUserHandler,
 	idCommand.NewRefreshUserTokensHandler,
 	cnvCommand.NewSendMessageHandler,
-	cnvCommand.NewSendFirstDirectMessageHandler,
+	// cnvCommand.NewSendFirstDirectMessageHandler,
+	wire.Struct(new(cnvCommand.SendFirstDirectMessageHandler), "*"),
 	drctrCommand.NewRegisterEntryHandler,
 )
 

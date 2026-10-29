@@ -13,6 +13,7 @@ type Bus struct {
 	middlewares []Middleware
 }
 
+// todo rename to New
 func NewBus() *Bus {
 	return &Bus{
 		handlers: make(map[string]QueryHandler),

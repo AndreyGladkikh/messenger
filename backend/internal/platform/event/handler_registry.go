@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"messenger/messenger/internal/shared/app/event"
-	"messenger/messenger/internal/shared/domain"
 	"slices"
 )
 
@@ -18,22 +17,22 @@ func NewRegistry() *HandlerRegistry {
 	}
 }
 
-func (r *HandlerRegistry) HandlersForEvent(event domain.Event) []Handler {
+func (r *HandlerRegistry) HandlersForEvent(event event.Event) []Handler {
 	return slices.Clone(r.handlers[event.Name()])
 }
 
-func (r *HandlerRegistry) RegisterEventHandler[E domain.Event](handler event.Handler[any]) {
-	// var e E
-	// adaptedHandler := &ApEventHandlerAdapter[E]{handler}
-	// r.handlers[e.Name()] = append(r.handlers[eventName], adaptedHandler)
+func (r *HandlerRegistry) RegisterEventHandler[E event.Event](handler event.Handler[E]) {
+	var e E
+	adaptedHandler := &ApEventHandlerAdapter[E]{handler}
+	r.handlers[e.Name()] = append(r.handlers[e.Name()], adaptedHandler)
 }
 
 type Handler interface {
 	Name() string
-	Handle(context.Context, event.Envelope[domain.Event]) error
+	Handle(context.Context, event.Envelope[event.Event]) error
 }
 
-type ApEventHandlerAdapter[E domain.Event] struct {
+type ApEventHandlerAdapter[E event.Event] struct {
 	handler event.Handler[E]
 }
 
@@ -41,7 +40,7 @@ func (h *ApEventHandlerAdapter[E]) Name() string {
 	return h.handler.Name()
 }
 
-func (h *ApEventHandlerAdapter[E]) Handle(ctx context.Context, e event.Envelope[domain.Event]) error {
+func (h *ApEventHandlerAdapter[E]) Handle(ctx context.Context, e event.Envelope[event.Event]) error {
 	var eTP E
 
 	typedEvent, ok := e.Event.(E)

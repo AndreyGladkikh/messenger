@@ -29,9 +29,9 @@ generate_keys:
 generate_code:
 	cd backend && \
 	go tool sqlc generate && \
-	go tool wire ./cmd/consumer/ && \
-	go tool wire ./internal/app/api/ && \
-	go tool wire ./internal/platform/di/ && \
+	go tool wire ./internal/bootstrap/api/ && \
+	go tool wire ./internal/bootstrap/outbox_relay/ && \
+	go tool wire ./internal/bootstrap/consumer/ && \
 	go generate ./... && \
 	go mod tidy
 

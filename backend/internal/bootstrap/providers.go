@@ -1,4 +1,4 @@
-package app
+package bootstrap
 
 import (
 	cnvCmd "messenger/messenger/internal/conversations/app/command"
@@ -30,11 +30,13 @@ import (
 	pg "messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
+	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/redis"
 	baseRepo "messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/store"
 	"messenger/messenger/internal/platform/transactions"
+	appEvnt "messenger/messenger/internal/shared/app/event"
 
 	"github.com/google/wire"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,30 +44,33 @@ import (
 
 var AppSet = wire.NewSet(
 	logger.New,
-	Persistence,
+	PersistenceSet,
 	InitCommandBus,
-	CommandHandlers,
+	CommandHandlersSet,
 	InitQueryBus,
-	QueryHandlers,
+	QueryHandlersSet,
 	event.NewEventService,
 	idPassImpl.NewHasher,
 	idTokenImpl.NewService,
 	pubsub.NewPubSub,
 	pubsub.NewChatEventsPubSub,
 	cnvService.NewDirectConversationResolver,
-	// wire.Struct(new(cnvService.DirectConversationResolver), "*"),
 	cnvService.NewMessageSender,
 	cnvIdentity.NewParticipantLookup,
 	drctrIdentity.NewUserLookup,
 	drctrCmd.NewTargetLookup,
+	rabbitmq.NewConnection,
+	rabbitmq.NewConversationEventsProducer,
+	wire.Struct(new(event.Publisher), "*"),
 
 	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
 	wire.Bind(new(drctrCmd.UserLookup), new(*drctrIdentity.UserLookup)),
 	wire.Bind(new(password.Hasher), new(*idPassImpl.Hasher)),
 	wire.Bind(new(token.Service), new(*idTokenImpl.Service)),
+	wire.Bind(new(appEvnt.Publisher), new(*event.Publisher)),
 )
 
-var Persistence = wire.NewSet(
+var PersistenceSet = wire.NewSet(
 	pg.NewPool,
 	transactions.NewManager,
 	sqlc.New,
@@ -83,6 +88,7 @@ var Persistence = wire.NewSet(
 
 	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 	wire.Bind(new(drctrQry.Searcher), new(*drctrPrst.QueryService)),
+	wire.Bind(new(drctrQry.Reader), new(*drctrPrst.QueryService)),
 	wire.Bind(new(idQry.Reader), new(*idPrst.QueryService)),
 	wire.Bind(new(conversation.Repository), new(*cnvRepo.ConversationRepository)),
 	wire.Bind(new(membership.Repository), new(*cnvRepo.MembershipRepository)),
@@ -92,19 +98,20 @@ var Persistence = wire.NewSet(
 	wire.Bind(new(entry.Repository), new(*drctrPrst.EntryRepository)),
 )
 
-var CommandHandlers = wire.NewSet(
+var CommandHandlersSet = wire.NewSet(
 	idCmd.NewRegisterUserHandler,
 	idCmd.NewLoginUserHandler,
 	idCmd.NewRefreshUserTokensHandler,
 	cnvCmd.NewSendMessageHandler,
-	cnvCmd.NewSendFirstDirectMessageHandler,
+	wire.Struct(new(cnvCmd.SendFirstDirectMessageHandler), "*"),
 	drctrCmd.NewRegisterEntryHandler,
 )
 
-var QueryHandlers = wire.NewSet(
+var QueryHandlersSet = wire.NewSet(
 	idQry.NewGetAccountHandler,
 	wire.Struct(new(idQry.GetUserIDByLoginHandler), "*"),
 	drctrQry.NewSearchHandler,
+	wire.Struct(new(drctrQry.GetEntryHandler), "*"),
 )
 
 func InitCommandBus(
@@ -126,7 +133,6 @@ func InitCommandBus(
 	bus.Use(txMiddlewareContainer.Middleware)
 	bus.Use(middlewares.Recoverer)
 	bus.Use(loggingMiddlewareContainer.Middleware)
-	// bus.Use(middlewares.ErrorMapping)
 
 	bus.RegisterHandler(registerUserHandler)
 	bus.RegisterHandler(loginUserHandler)
@@ -141,11 +147,13 @@ func InitCommandBus(
 func InitQueryBus(
 	getAccountHandler *idQry.GetAccountHandler,
 	searchDirectoryEntryHandler *drctrQry.SearchHandler,
+	getDirectoryEntryHandler *drctrQry.GetEntryHandler,
 ) *querybus.Bus {
 	b := querybus.NewBus()
 
 	b.RegisterHandler(getAccountHandler)
 	b.RegisterHandler(searchDirectoryEntryHandler)
+	b.RegisterHandler(getDirectoryEntryHandler)
 
 	return b
 }

@@ -12,6 +12,7 @@ type Entry struct {
 	TargetID    uuid.UUID
 	TargetType  TargetType
 	DisplayName string
+	AvatarURL   string
 	Handle      string
 }
 
@@ -41,3 +42,11 @@ func New(
 func (e *Entry) ID() uuid.UUID {
 	return e.id
 }
+
+// type Option func(*Entry)
+
+// func WithAvatarURL(url string) Option {
+// 	return func(e *Entry) {
+// 		e.AvatarURL =  url
+// 	}
+// }

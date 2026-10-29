@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"messenger/messenger/internal/bootstrap/consumer"
+	"messenger/messenger/internal/platform/config"
+	"messenger/messenger/internal/platform/realtime/messaging"
 
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
@@ -18,20 +21,23 @@ func main() {
 func run() error {
 	ctx := context.Background()
 
-	container, cleanup, err := initContainer()
+	cfg := config.Load()
+
+	container, cleanup, err := consumer.Initialize(cfg)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 
-	cnsmrName := consumerNameDirectoryUpdateSearchIndex
+	cnsmrName := consumerNameRealtimeDeliveryUsers
 
-	consCfg, ok := consumerConfigs[cnsmrName]
+	// todo bootstrap
+	consCfg, ok := NewConsumerConfigs(Consumers{})[cnsmrName]
 	if !ok {
 		return fmt.Errorf("not found config for consumer %q", cnsmrName)
 	}
 
-	rmqConn := container.rmqConn
+	rmqConn := container.RMQConn
 
 	err = prepareConsumer(ctx, consCfg, rmqConn)
 	if err != nil {
@@ -67,33 +73,82 @@ func run() error {
 }
 
 const (
-	consumerNameDirectoryUpdateSearchIndex = "directory:update_search"
+	consumerNameRealtimeDeliveryPeers = "realtime:delivery:peers"
+	consumerNameRealtimeDeliveryUsers = "realtime:delivery:users"
 )
 
 type consumerConfig struct {
-	xNames []string
-	qName string
+	exchanges   []xConfig
+	qName       string
 	handlerFunc func(ctx context.Context, msg []byte) error
 }
 
-var consumerConfigs = map[string]consumerConfig {
-	consumerNameDirectoryUpdateSearchIndex: {
-		xNames: []string{
-			"directory.entry_registered",
-			"directory.entry_updated",
+type xConfig struct {
+	name        string
+	bindingKeys []string
+}
+
+type HandlerFunc func(ctx context.Context, msg []byte) error
+
+type ConsumerConfigs map[string]consumerConfig
+
+// var consumerConfigs = map[string]consumerConfig {
+// 	consumerNameRealtimeDeliveryPeers: {
+// 		exchanges: []xConfig{
+// 			{
+// 				name: "conversation.events",
+// 				bindingKeys: []string{"peer:*"},
+// 			},
+// 		},
+// 		qName: "realtime.deliver_peers",
+// 	},
+// 	consumerNameRealtimeDeliveryUsers: {
+// 		exchanges: []xConfig{
+// 			{
+// 				name: "conversation.events",
+// 				bindingKeys: []string{"user:*"},
+// 			},
+// 		},
+// 		qName: "realtime.deliver_users",
+// 	},
+// }
+
+type Consumers struct {
+	RealTimeDeliveryPeers *messaging.Peers
+}
+
+func NewConsumerConfigs(consumers Consumers) ConsumerConfigs {
+	return ConsumerConfigs{
+		consumerNameRealtimeDeliveryPeers: {
+			exchanges: []xConfig{
+				{
+					name:        "conversation.events",
+					bindingKeys: []string{"peer:*"},
+				},
+			},
+			qName:       "realtime.deliver_peers",
+			handlerFunc: consumers.RealTimeDeliveryPeers.Handle,
 		},
-		qName: "directory.update_search",
-	},
+		consumerNameRealtimeDeliveryUsers: {
+			exchanges: []xConfig{
+				{
+					name:        "conversation.events",
+					bindingKeys: []string{"user:*"},
+				},
+			},
+			qName: "realtime.deliver_users",
+		},
+	}
 }
 
 func prepareConsumer(ctx context.Context, cfg consumerConfig, conn *rmq.AmqpConnection) error {
-	for _, xName := range cfg.xNames {
-		_, err := conn.Management().DeclareExchange(ctx, &rmq.FanOutExchangeSpecification{Name: xName})
+	for _, x := range cfg.exchanges {
+		_, err := conn.Management().DeclareExchange(ctx, &rmq.TopicExchangeSpecification{Name: x.name})
 		if err != nil {
 			return fmt.Errorf("failed to declare an exchange: %w", err)
 		}
 	}
-	
+
 	qInfo, err := conn.Management().DeclareQueue(ctx, &rmq.QuorumQueueSpecification{
 		Name: cfg.qName,
 	})
@@ -101,14 +156,16 @@ func prepareConsumer(ctx context.Context, cfg consumerConfig, conn *rmq.AmqpConn
 		return fmt.Errorf("failed to declare a queue: %w", err)
 	}
 
-	for _, xName := range cfg.xNames {
-		_, err = conn.Management().Bind(ctx, &rmq.ExchangeToQueueBindingSpecification{
-			SourceExchange:   xName,
-			DestinationQueue: qInfo.Name(),
-			BindingKey:       "",
-		})
-		if err != nil {
-			return fmt.Errorf("failed to bind a queue: %w", err)
+	for _, x := range cfg.exchanges {
+		for _, bk := range x.bindingKeys {
+			_, err = conn.Management().Bind(ctx, &rmq.ExchangeToQueueBindingSpecification{
+				SourceExchange:   x.name,
+				DestinationQueue: qInfo.Name(),
+				BindingKey:       bk,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to bind a queue: %w", err)
+			}
 		}
 	}
 

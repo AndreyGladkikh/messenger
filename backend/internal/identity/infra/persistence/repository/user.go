@@ -57,7 +57,7 @@ func (r *UserRepository) GetByLogin(ctx context.Context, login string) (*user.Us
 		return nil, err
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, apperr.NewNotFound("User not found by login", apperr.WithCause(repository.ErrNotFound))
+		return nil, apperr.NewNotFound("User not found by login")
 	}
 
 	return user.Rehydrate(

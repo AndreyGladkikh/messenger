@@ -1,7 +1,7 @@
 package api
 
 import (
-	"messenger/messenger/internal/app"
+	"messenger/messenger/internal/bootstrap"
 	appHttp "messenger/messenger/internal/platform/transport/http"
 	"messenger/messenger/internal/platform/transport/websocket"
 	"net/http"
@@ -10,21 +10,15 @@ import (
 	"github.com/google/wire"
 )
 
-type App struct {
+type Api struct {
 	HttpHandler http.Handler
+	HttpServer *appHttp.Server
 }
 
-func NewApp(
-	httpHandler http.Handler,
-) *App {
-	return &App{
-		HttpHandler: httpHandler,
-	}
-}
-
-var AppSet = wire.NewSet(
-	NewApp,
-	app.AppSet,
+var ApiSet = wire.NewSet(
+	wire.Struct(new(Api), "*"),
+	appHttp.NewServer,
+	bootstrap.AppSet,
 	appHttp.NewRouter,
 	appHttp.NewApiHandler,
 	appHttp.NewErrorHandler,

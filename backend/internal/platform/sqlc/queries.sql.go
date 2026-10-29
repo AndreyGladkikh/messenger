@@ -113,6 +113,31 @@ func (q *Queries) GetDirectConversationBetween(ctx context.Context, arg GetDirec
 	return i, err
 }
 
+const getDirectoryEntry = `-- name: GetDirectoryEntry :one
+SELECT display_name, handle, avatar_url 
+FROM directory.entries
+WHERE target_id = $1
+    AND target_type = $2
+`
+
+type GetDirectoryEntryParams struct {
+	TargetID   uuid.UUID
+	TargetType string
+}
+
+type GetDirectoryEntryRow struct {
+	DisplayName string
+	Handle      string
+	AvatarUrl   *string
+}
+
+func (q *Queries) GetDirectoryEntry(ctx context.Context, arg GetDirectoryEntryParams) (GetDirectoryEntryRow, error) {
+	row := q.db.QueryRow(ctx, getDirectoryEntry, arg.TargetID, arg.TargetType)
+	var i GetDirectoryEntryRow
+	err := row.Scan(&i.DisplayName, &i.Handle, &i.AvatarUrl)
+	return i, err
+}
+
 const getEventToProcess = `-- name: GetEventToProcess :one
 WITH events_to_process as (
     SELECT id, event_id, event_type, event_payload, occurred_at, status, claimed_at, attempts, errors, next_retry_at FROM outbox

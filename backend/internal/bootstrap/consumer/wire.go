@@ -1,6 +1,6 @@
 //go:build wireinject
 
-package api
+package consumer
 
 import (
 	"messenger/messenger/internal/platform/config"
@@ -8,10 +8,10 @@ import (
 	"github.com/google/wire"
 )
 
-func Initialize(cfg config.Config) (*App, func(), error) {
+func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	wire.Build(
-		AppSet,
+		ApiSet,
 	)
 
-	return new(App), func() {}, nil
+	return new(Consumer), func() {}, nil
 }

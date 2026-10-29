@@ -45,7 +45,6 @@ type Auth struct {
 
 type Database struct {
 	Dsn            string
-	MigrationsPath *string
 }
 
 type Cache struct {
