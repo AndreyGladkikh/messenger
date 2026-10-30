@@ -8,6 +8,7 @@ import (
 	"log"
 	"messenger/messenger/internal/bootstrap/consumer"
 	"messenger/messenger/internal/platform/config"
+	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/realtime/messaging"
 
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
@@ -73,11 +74,6 @@ func run() error {
 	}
 }
 
-const (
-	consumerNameRealtimeDeliveryPeers = "realtime:delivery:peers"
-	consumerNameRealtimeDeliveryUsers = "realtime:delivery:users"
-)
-
 type consumerConfig struct {
 	exchanges   []xConfig
 	qName       string
@@ -120,24 +116,23 @@ type Consumers struct {
 
 func NewConsumerConfigs(consumers Consumers) ConsumerConfigs {
 	return ConsumerConfigs{
-		consumerNameRealtimeDeliveryPeers: {
+		rabbitmq.QNameRealtimeBroadcastDelivery: {
 			exchanges: []xConfig{
 				{
-					name:        "conversation.events",
-					bindingKeys: []string{"peer.*"},
+					name:        rabbitmq.XNameConversationEvents,
 				},
 			},
-			qName:       "realtime.deliver_peers",
+			qName:       rabbitmq.QNameRealtimeBroadcastDelivery,
 			handlerFunc: consumers.RealTimeDeliveryPeers.Handle,
 		},
-		consumerNameRealtimeDeliveryUsers: {
+		rabbitmq.QNameRealtimePersonalDelivery: {
 			exchanges: []xConfig{
 				{
-					name:        "conversation.events",
-					bindingKeys: []string{"user.*"},
+					name:        rabbitmq.XNameConversationEvents,
+					bindingKeys: []string{"direct-started.v1"},
 				},
 			},
-			qName: "realtime.deliver_users",
+			qName: rabbitmq.QNameRealtimePersonalDelivery,
 		},
 	}
 }
@@ -158,6 +153,17 @@ func prepareConsumer(ctx context.Context, cfg consumerConfig, conn *rmq.AmqpConn
 	}
 
 	for _, x := range cfg.exchanges {
+		if len(x.bindingKeys) == 0 {
+			_, err = conn.Management().Bind(ctx, &rmq.ExchangeToQueueBindingSpecification{
+				SourceExchange:   x.name,
+				DestinationQueue: qInfo.Name(),
+				BindingKey:       "*",
+			})
+			if err != nil {
+				return fmt.Errorf("failed to bind a queue: %w", err)
+			}
+			continue
+		}
 		for _, bk := range x.bindingKeys {
 			_, err = conn.Management().Bind(ctx, &rmq.ExchangeToQueueBindingSpecification{
 				SourceExchange:   x.name,

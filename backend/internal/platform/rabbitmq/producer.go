@@ -69,22 +69,19 @@ type ConversationEventsProducer struct {
 }
 
 func NewConversationEventsProducer(rmqConn *rmq.AmqpConnection) (*ConversationEventsProducer, func(), error) {
-	xName := "conversation.events"
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := rmqConn.Management().DeclareExchange(ctx, &rmq.TopicExchangeSpecification{Name: xName})
+	_, err := rmqConn.Management().DeclareExchange(ctx, &rmq.TopicExchangeSpecification{Name: XNameConversationEvents})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to declare an exchange %q: %w", xName, err)
+		return nil, nil, fmt.Errorf("failed to declare an exchange %q: %w", XNameConversationEvents, err)
 	}
 
 	publisher, err := rmqConn.NewPublisher(ctx, &rmq.ExchangeAddress{
-		Exchange: xName,
-		Key: "user.asd",
+		Exchange: XNameConversationEvents,
 	}, nil)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create publisher %q: %w", xName, err)
+		return nil, nil, fmt.Errorf("failed to create publisher %q: %w", XNameConversationEvents, err)
 	}
 	cleanup := func() { publisher.Close(context.Background()) }
 

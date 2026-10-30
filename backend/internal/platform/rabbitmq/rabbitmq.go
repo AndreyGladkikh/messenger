@@ -9,6 +9,13 @@ import (
 	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
+const (
+	XNameConversationEvents = "conversations.events"
+
+	QNameRealtimePersonalDelivery = "realtime.personal-delivery"
+	QNameRealtimeBroadcastDelivery = "realtime.broadcast-delivery"
+)
+
 func NewConnection(cfg config.Config) (*rmq.AmqpConnection, func(), error) {
 	ctx := context.Background()
 	env := rmq.NewEnvironment(cfg.Mq.Dsn, nil)
