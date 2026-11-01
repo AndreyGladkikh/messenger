@@ -31,6 +31,7 @@ import (
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/rabbitmq"
+	"messenger/messenger/internal/platform/rabbitmq/producers"
 	"messenger/messenger/internal/platform/redis"
 	baseRepository "messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
@@ -100,7 +101,7 @@ var CommonSet = wire.NewSet(
 	drctrIdentity.NewUserLookup,
 	drctrCommand.NewTargetLookup,
 	rabbitmq.NewConnection,
-	rabbitmq.NewConversationEventsProducer,
+	producers.NewConversationEventsProducer,
 
 	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
 	wire.Bind(new(idQuery.Reader), new(*idReader.QueryService)),

@@ -31,6 +31,8 @@ import (
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/rabbitmq"
+	"messenger/messenger/internal/platform/rabbitmq/consumers"
+	"messenger/messenger/internal/platform/rabbitmq/producers"
 	"messenger/messenger/internal/platform/redis"
 	baseRepo "messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
@@ -53,6 +55,7 @@ var AppSet = wire.NewSet(
 	idPassImpl.NewHasher,
 	idTokenImpl.NewService,
 	pubsub.NewPubSub,
+	pubsub.NewUserEventsPubSub,
 	pubsub.NewChatEventsPubSub,
 	cnvService.NewDirectConversationResolver,
 	cnvService.NewMessageSender,
@@ -60,8 +63,11 @@ var AppSet = wire.NewSet(
 	drctrIdentity.NewUserLookup,
 	drctrCmd.NewTargetLookup,
 	rabbitmq.NewConnection,
-	rabbitmq.NewConversationEventsProducer,
 	wire.Struct(new(event.Publisher), "*"),
+	producers.NewConversationEventsProducer,
+	wire.Struct(new(producers.Producers), "*"),
+	consumers.NewRealtimePersonalDeliveryConsumer,
+	wire.Struct(new(consumers.Consumers), "*"),
 
 	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
 	wire.Bind(new(drctrCmd.UserLookup), new(*drctrIdentity.UserLookup)),

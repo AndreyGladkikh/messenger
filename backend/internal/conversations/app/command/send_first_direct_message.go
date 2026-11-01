@@ -43,7 +43,7 @@ func (h *SendFirstDirectMessageHandler) Handle(ctx context.Context, cmd SendFirs
 	}
 
 	if !found {
-		h.EventPublisher.Publish(ctx, event.DirectConversationWithFirstMessageCreated{
+		h.EventPublisher.Publish(ctx, event.DirectConversationStarted{
 			ConversationID: cnv.ID(),
 			SenderID:       cmd.Sender,
 			RecipientID:    cmd.Recipient,

@@ -13,6 +13,7 @@ import (
 	"messenger/messenger/internal/platform/outbox_relay"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/rabbitmq"
+	"messenger/messenger/internal/platform/rabbitmq/producers"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/store"
 	"messenger/messenger/internal/platform/transactions"
@@ -30,22 +31,25 @@ func Initialize(cfg config.Config) (*Relay, func(), error) {
 	eventService := event.NewEventService(storeStore)
 	manager := transactions.NewManager(pool)
 	loggerLogger := logger.New()
-	amqpConnection, cleanup2, err := rabbitmq.NewConnection(cfg)
+	connection, cleanup2, err := rabbitmq.NewConnection(cfg)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	conversationEventsProducer, cleanup3, err := rabbitmq.NewConversationEventsProducer(amqpConnection)
+	conversationEventsProducer, cleanup3, err := producers.NewConversationEventsProducer(loggerLogger, connection)
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	outboxRelay := &outbox_relay.OutboxRelay{
-		EventService:               eventService,
-		TXManager:                  manager,
-		Logger:                     loggerLogger,
+	producersProducers := &producers.Producers{
 		ConversationEventsProducer: conversationEventsProducer,
+	}
+	outboxRelay := &outbox_relay.OutboxRelay{
+		EventService: eventService,
+		TXManager:    manager,
+		Logger:       loggerLogger,
+		Producers:    producersProducers,
 	}
 	relay := &Relay{
 		OutboxRelay: outboxRelay,

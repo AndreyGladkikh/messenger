@@ -223,19 +223,17 @@ func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) er
 const processEvent = `-- name: ProcessEvent :exec
 UPDATE outbox
   set status = $2,
-  claimed_at = $3,
-  attempts = $4,
-  errors = $5,
-  next_retry_at = $6
+  attempts = $3,
+  error = $4,
+  next_retry_at = $5
 WHERE id = $1
 `
 
 type ProcessEventParams struct {
 	ID          uuid.UUID
-	Status      string
-	ClaimedAt   time.Time
+	Status      OutboxStatus
 	Attempts    int32
-	Errors      []string
+	Error       *string
 	NextRetryAt *time.Time
 }
 
@@ -243,9 +241,8 @@ func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) erro
 	_, err := q.db.Exec(ctx, processEvent,
 		arg.ID,
 		arg.Status,
-		arg.ClaimedAt,
 		arg.Attempts,
-		arg.Errors,
+		arg.Error,
 		arg.NextRetryAt,
 	)
 	return err
@@ -254,27 +251,27 @@ func (q *Queries) ProcessEvent(ctx context.Context, arg ProcessEventParams) erro
 const putToOutbox = `-- name: PutToOutbox :exec
 INSERT INTO outbox (
     id,
-    event_id,
-    event_type,
-    event_payload
+    kind,
+    type,
+    payload
 ) VALUES (
   $1, $2, $3, $4
 )
 `
 
 type PutToOutboxParams struct {
-	ID           uuid.UUID
-	EventID      uuid.UUID
-	EventType    string
-	EventPayload []byte
+	ID      uuid.UUID
+	Kind    OutboxKind
+	Type    string
+	Payload []byte
 }
 
 func (q *Queries) PutToOutbox(ctx context.Context, arg PutToOutboxParams) error {
 	_, err := q.db.Exec(ctx, putToOutbox,
 		arg.ID,
-		arg.EventID,
-		arg.EventType,
-		arg.EventPayload,
+		arg.Kind,
+		arg.Type,
+		arg.Payload,
 	)
 	return err
 }

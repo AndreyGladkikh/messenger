@@ -1,4 +1,4 @@
-package messaging
+package realtime
 
 import (
 	"context"
@@ -12,17 +12,27 @@ import (
 	"messenger/messenger/internal/shared/app/event"
 )
 
-var _ rabbitmq.Consumer = (*UserDeliveryConsumer)(nil)
+var _ rabbitmq.Handler = (*PersonalDeliveryHandler)(nil)
 
-type UserDeliveryConsumer struct {
-	UserPubSub *pubsub.UserEventsPubSub
-	QueryBus   *querybus.Bus
+type PersonalDeliveryHandler struct {
+	userPubSub *pubsub.UserEventsPubSub
+	queryBus   *querybus.Bus
 }
 
-func (h *UserDeliveryConsumer) HandleMessage(ctx context.Context, msg rabbitmq.Message) error {
+func NewPersonalDeliveryHandler(
+	userPubSub *pubsub.UserEventsPubSub,
+	queryBus *querybus.Bus,
+) *PersonalDeliveryHandler {
+	return &PersonalDeliveryHandler{
+		userPubSub: userPubSub,
+		queryBus:   queryBus,
+	}
+}
+
+func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envelope) error {
 	switch msg.Type {
-	case cnvEvent.DirectConversationWithFirstMessageCreatedEventName:
-		var envlp event.Envelope[cnvEvent.DirectConversationWithFirstMessageCreated]
+	case cnvEvent.DirectConversationStartedEventName:
+		var envlp event.Envelope[cnvEvent.DirectConversationStarted]
 		err := json.Unmarshal(msg.Payload, envlp)
 		if err != nil {
 			return err
@@ -30,7 +40,7 @@ func (h *UserDeliveryConsumer) HandleMessage(ctx context.Context, msg rabbitmq.M
 
 		evnt := envlp.Event
 
-		entr, err := h.QueryBus.Dispatch[drctrQry.EntryView](ctx, drctrQry.GetEntry{
+		entr, err := h.queryBus.Dispatch[drctrQry.EntryView](ctx, drctrQry.GetEntry{
 			ID:   evnt.SenderID,
 			Type: entry.TargetTypeUser.String(),
 		})
@@ -54,7 +64,7 @@ func (h *UserDeliveryConsumer) HandleMessage(ctx context.Context, msg rabbitmq.M
 			Payload: payload,
 		}
 
-		h.UserPubSub.Publish(ctx, envlp.Event.RecipientID, pubSubMsg)
+		h.userPubSub.Publish(ctx, envlp.Event.RecipientID, pubSubMsg)
 	}
 	return nil
 }

@@ -46,17 +46,18 @@ func (c *TransactionMiddlewareContainer) Middleware(next commandbus.CommandHandl
 	})
 }
 
+// todo translate events to integration and domain events
 func (c *TransactionMiddlewareContainer) storeEvents(ctx context.Context) error {
 	if uow, ok := uow.FromContext(ctx); ok {
 		for _, aggregate := range uow.Aggregates() {
 			for _, event := range aggregate.PullEvents() {
-				if err := c.eventService.PutEventToOutbox(ctx, event); err != nil {
+				if err := c.eventService.PutEventToOutbox(ctx, "integration", event); err != nil {
 					return fmt.Errorf("failed to store event: %w", err)
 				}
 			}
 		}
 		for _, evnt := range uow.Events() {
-			if err := c.eventService.PutEventToOutbox(ctx, evnt); err != nil {
+			if err := c.eventService.PutEventToOutbox(ctx, "integration", evnt); err != nil {
 				return fmt.Errorf("failed to store event: %w", err)
 			}
 		}

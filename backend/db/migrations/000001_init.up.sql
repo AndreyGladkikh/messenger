@@ -103,16 +103,33 @@ CREATE TABLE directory.entries(
 );
 CREATE INDEX directory_entries_textsearch_idx ON directory.entries USING GIN (ts_vec);
 
+-- CREATE TABLE outbox(
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     event_id UUID NOT NULL,
+--     event_type TEXT NOT NULL,
+--     event_payload JSONB,
+--     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+--     status TEXT NOT NULL DEFAULT 'pending',
+--     claimed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+--     attempts INT NOT NULL DEFAULT 0,
+--     errors TEXT[],
+--     next_retry_at TIMESTAMP WITH TIME ZONE
+-- );
+-- CREATE INDEX outbox_occurred_at_idx ON outbox(occurred_at) WHERE status = 'pending';
+-- CREATE INDEX outbox_next_retry_at_occurred_at_idx ON outbox(next_retry_at, occurred_at) WHERE status = 'retry';
+
+CREATE TYPE outbox_kind AS ENUM ('local', 'integration');
+CREATE TYPE outbox_status AS ENUM ('pending', 'processing', 'retry', 'succeeded', 'dead');
+
 CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id UUID NOT NULL,
-    event_type TEXT NOT NULL,
-    event_payload JSONB,
+    kind OUTBOX_KIND NOT NULL,
+    type TEXT NOT NULL,
+    payload JSONB,
+    status OUTBOX_STATUS NOT NULL DEFAULT 'pending',
     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    status TEXT NOT NULL DEFAULT 'pending',
-    claimed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     attempts INT NOT NULL DEFAULT 0,
-    errors TEXT[],
+    error TEXT,
     next_retry_at TIMESTAMP WITH TIME ZONE
 );
 CREATE INDEX outbox_occurred_at_idx ON outbox(occurred_at) WHERE status = 'pending';

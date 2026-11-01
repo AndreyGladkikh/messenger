@@ -56,6 +56,93 @@ func (ns NullAccountType) Value() (driver.Value, error) {
 	return string(ns.AccountType), nil
 }
 
+type OutboxKind string
+
+const (
+	OutboxKindLocal       OutboxKind = "local"
+	OutboxKindIntegration OutboxKind = "integration"
+)
+
+func (e *OutboxKind) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OutboxKind(s)
+	case string:
+		*e = OutboxKind(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OutboxKind: %T", src)
+	}
+	return nil
+}
+
+type NullOutboxKind struct {
+	OutboxKind OutboxKind
+	Valid      bool // Valid is true if OutboxKind is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOutboxKind) Scan(value interface{}) error {
+	if value == nil {
+		ns.OutboxKind, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OutboxKind.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOutboxKind) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OutboxKind), nil
+}
+
+type OutboxStatus string
+
+const (
+	OutboxStatusPending    OutboxStatus = "pending"
+	OutboxStatusProcessing OutboxStatus = "processing"
+	OutboxStatusRetry      OutboxStatus = "retry"
+	OutboxStatusSucceeded  OutboxStatus = "succeeded"
+	OutboxStatusDead       OutboxStatus = "dead"
+)
+
+func (e *OutboxStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OutboxStatus(s)
+	case string:
+		*e = OutboxStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OutboxStatus: %T", src)
+	}
+	return nil
+}
+
+type NullOutboxStatus struct {
+	OutboxStatus OutboxStatus
+	Valid        bool // Valid is true if OutboxStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOutboxStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.OutboxStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OutboxStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOutboxStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OutboxStatus), nil
+}
+
 type ConversationsConversation struct {
 	ID        uuid.UUID
 	Type      string
@@ -151,14 +238,13 @@ type Inbox struct {
 }
 
 type Outbox struct {
-	ID           uuid.UUID
-	EventID      uuid.UUID
-	EventType    string
-	EventPayload []byte
-	OccurredAt   time.Time
-	Status       string
-	ClaimedAt    time.Time
-	Attempts     int32
-	Errors       []string
-	NextRetryAt  *time.Time
+	ID          uuid.UUID
+	Kind        OutboxKind
+	Type        string
+	Payload     []byte
+	Status      OutboxStatus
+	OccurredAt  time.Time
+	Attempts    int32
+	Error       *string
+	NextRetryAt *time.Time
 }

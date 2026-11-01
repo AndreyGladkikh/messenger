@@ -1,39 +1,31 @@
 package rabbitmq
 
 import (
-	"context"
 	"encoding/json/jsontext"
 	"fmt"
 	"messenger/messenger/internal/platform/config"
 
-	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 const (
-	XNameConversationEvents = "conversations.events"
-
-	QNameRealtimePersonalDelivery = "realtime.personal-delivery"
+	QNameRealtimePersonalDelivery  = "realtime.personal-delivery"
 	QNameRealtimeBroadcastDelivery = "realtime.broadcast-delivery"
 )
 
-func NewConnection(cfg config.Config) (*rmq.AmqpConnection, func(), error) {
-	ctx := context.Background()
-	env := rmq.NewEnvironment(cfg.Mq.Dsn, nil)
-	conn, err := env.NewConnection(ctx)
+func NewConnection(cfg config.Config) (*amqp.Connection, func(), error) {
+	conn, err := amqp.Dial(cfg.Mq.Dsn)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
+	cleanup := func() {
+		conn.Close()
+	}
 
-	return conn, func() {
-		_ = env.CloseConnections(context.Background())
-	}, nil
+	return conn, cleanup, nil
 }
 
-type Message struct {
+type Envelope struct {
 	Type    string
 	Payload jsontext.Value
-}
-
-type Consumer interface {
-	HandleMessage(ctx context.Context, msg Message) error
 }

@@ -10,7 +10,7 @@ import (
 
 func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	wire.Build(
-		ApiSet,
+		ConsumerSet,
 	)
 
 	return new(Consumer), func() {}, nil

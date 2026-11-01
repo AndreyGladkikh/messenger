@@ -2,16 +2,18 @@ package consumer
 
 import (
 	"messenger/messenger/internal/bootstrap"
+	"messenger/messenger/internal/platform/rabbitmq/consumers"
+	"messenger/messenger/internal/platform/realtime"
 
 	"github.com/google/wire"
-	rmq "github.com/rabbitmq/rabbitmq-amqp-go-client/pkg/rabbitmqamqp"
 )
 
 type Consumer struct {
-	RMQConn *rmq.AmqpConnection
+	Consumers *consumers.Consumers
 }
 
-var ApiSet = wire.NewSet(
+var ConsumerSet = wire.NewSet(
 	wire.Struct(new(Consumer), "*"),
+	realtime.NewPersonalDeliveryHandler,
 	bootstrap.AppSet,
 )

@@ -7,21 +7,75 @@
 package consumer
 
 import (
+	"messenger/messenger/internal/bootstrap"
+	query2 "messenger/messenger/internal/directory/app/query"
+	persistence2 "messenger/messenger/internal/directory/infra/persistence"
+	"messenger/messenger/internal/identity/app/query"
+	"messenger/messenger/internal/identity/infra/persistence"
 	"messenger/messenger/internal/platform/config"
+	"messenger/messenger/internal/platform/logger"
+	"messenger/messenger/internal/platform/postgres"
+	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/rabbitmq"
+	"messenger/messenger/internal/platform/rabbitmq/consumers"
+	"messenger/messenger/internal/platform/realtime"
+	"messenger/messenger/internal/platform/redis"
+	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/platform/store"
 )
 
 // Injectors from wire.go:
 
 func Initialize(cfg config.Config) (*Consumer, func(), error) {
-	amqpConnection, cleanup, err := rabbitmq.NewConnection(cfg)
+	loggerLogger := logger.New()
+	connection, cleanup, err := rabbitmq.NewConnection(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
+	client, cleanup2, err := redis.NewRedis(cfg)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	pubSub, cleanup3 := pubsub.NewPubSub(loggerLogger, client)
+	userEventsPubSub := pubsub.NewUserEventsPubSub(pubSub)
+	pool, cleanup4, err := postgres.NewPool(cfg)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	queries := sqlc.New(pool)
+	storeStore := store.NewStore(queries)
+	queryService := persistence.NewQueryService(storeStore)
+	getAccountHandler := query.NewGetAccountHandler(queryService)
+	persistenceQueryService := persistence2.NewQueryService(storeStore)
+	searchHandler := query2.NewSearchHandler(persistenceQueryService)
+	getEntryHandler := &query2.GetEntryHandler{
+		Reader: persistenceQueryService,
+	}
+	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler)
+	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(userEventsPubSub, bus)
+	realtimePersonalDeliveryConsumer, cleanup5, err := consumers.NewRealtimePersonalDeliveryConsumer(loggerLogger, connection, personalDeliveryHandler)
+	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	consumersConsumers := &consumers.Consumers{
+		RealtimePersonalDeliveryConsumer: realtimePersonalDeliveryConsumer,
+	}
 	consumer := &Consumer{
-		RMQConn: amqpConnection,
+		Consumers: consumersConsumers,
 	}
 	return consumer, func() {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }

@@ -8,8 +8,7 @@ WITH events_to_process as (
     FOR UPDATE SKIP LOCKED
 )
 UPDATE outbox e
-SET status = 'processing',
-claimed_at = now()
+SET status = 'processing'
 FROM events_to_process ep
 WHERE e.id = ep.id
 RETURNING e.*;

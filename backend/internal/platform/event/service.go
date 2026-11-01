@@ -29,7 +29,7 @@ func NewEventService(
 	}
 }
 
-func (s *EventService) PutEventToOutbox(ctx context.Context, e event.Event) error {
+func (s *EventService) PutEventToOutbox(ctx context.Context, kind string, e event.Event) error {
 	buf := new(bytes.Buffer)
 	if err := json.NewEncoder(buf).Encode(e); err != nil {
 		return err
@@ -37,9 +37,9 @@ func (s *EventService) PutEventToOutbox(ctx context.Context, e event.Event) erro
 
 	err := s.Queries(ctx).PutToOutbox(ctx, sqlc.PutToOutboxParams{
 		ID:           uuid.New(),
-		EventID:      uuid.New(),
-		EventType:    e.Name(),
-		EventPayload: buf.Bytes(),
+		Kind: sqlc.OutboxKind(kind),
+		Type: e.Name(),
+		Payload: buf.Bytes(),
 	})
 
 	return err
@@ -53,19 +53,15 @@ func (s *EventService) UpdateEvent(
 	ctx context.Context,
 	event sqlc.Outbox,
 	status Status,
-	errs []error,
+	errCause error,
 	nextRetryAt time.Time,
 ) error {
-	errors := make([]string, 0, len(errs))
-	for _, e := range errs {
-		errors = append(errors, e.Error())
-	}
+	errMsg := errCause.Error()
 	err := s.Queries(ctx).ProcessEvent(ctx, sqlc.ProcessEventParams{
 		ID:          event.ID,
-		Status:      string(status),
-		ClaimedAt:   time.Now(),
+		Status:      sqlc.OutboxStatus(status),
+		Error: &errMsg,
 		Attempts:    event.Attempts + 1,
-		Errors:      errors,
 		NextRetryAt: &nextRetryAt,
 	})
 	if err != nil {

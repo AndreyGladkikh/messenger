@@ -5,11 +5,11 @@ import (
 	"uuid"
 )
 
-const DirectConversationWithFirstMessageCreatedEventName = "conversations.DirectConversationWithFirstMessageCreated"
+const DirectConversationStartedEventName = "conversations.DirectConversationStarted.v1"
 
-var _ event.Event = DirectConversationWithFirstMessageCreated{}
+var _ event.Event = DirectConversationStarted{}
 
-type DirectConversationWithFirstMessageCreated struct {
+type DirectConversationStarted struct {
 	ConversationID uuid.UUID `json:"conversationId"`
 	SenderID       uuid.UUID `json:"senderId"`
 	RecipientID    uuid.UUID `json:"recipientId"`
@@ -17,6 +17,6 @@ type DirectConversationWithFirstMessageCreated struct {
 	MessageBody    string    `json:"messageBody"`
 }
 
-func (d DirectConversationWithFirstMessageCreated) Name() string {
-	return DirectConversationWithFirstMessageCreatedEventName
+func (d DirectConversationStarted) Name() string {
+	return DirectConversationStartedEventName
 }
