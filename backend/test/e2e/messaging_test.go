@@ -1,10 +1,8 @@
 package e2e
 
 import (
-	"context"
 	"encoding/json/v2"
 	appHttp "messenger/messenger/internal/platform/transport/http"
-	"messenger/messenger/internal/platform/transport/websocket"
 	"net/http"
 	"testing"
 	"time"
@@ -19,24 +17,28 @@ func TestSendMessage_Success(t *testing.T) {
 	alice := newUser(t, server, "alice")
 	defer alice.wsClient.CloseNow()
 
+	resp, err := alice.httpClient.registerDirectoryEntry(appHttp.DirectoryEntry{
+		DisplayName: "Alice DN",
+		Handle:      "alice",
+		TargetId:    alice.id,
+		TargetType:  "user",
+	})
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
 	bob := newUser(t, server, "bob")
 	defer bob.wsClient.CloseNow()
 
-	// err = wsjson.Write(ctx, c, "hi")
-	// if err != nil {
-	// 	t.Fatalf("failed to send ws message: %v", err)
-	// }
-
-	_, m, err := bob.wsClient.Read(context.Background())
+	resp, err = bob.httpClient.registerDirectoryEntry(appHttp.DirectoryEntry{
+		DisplayName: "Bob DN",
+		Handle:      "bob",
+		TargetId:    bob.id,
+		TargetType:  "user",
+	})
 	require.NoError(t, err)
-	_ = m
+	defer resp.Body.Close()
 
-	// alice.wsClient.sendMessage(websocket.SendFirstDirectMessagePayload{
-	// 	Body: "Hi!",
-	// 	RecipientID: bob.id,
-	// })
-
-	resp, err := alice.httpClient.createDirectConversationWithFirstMessage(appHttp.CreateDirectConversationJSONRequestBody{
+	resp, err = alice.httpClient.startDirectConversation(appHttp.StartDirectConversationJSONRequestBody{
 		ParticipantId: bob.id,
 		FirstMessage:  appHttp.FirstMessage{Body: "Hi!"},
 	})
@@ -47,22 +49,18 @@ func TestSendMessage_Success(t *testing.T) {
 	drctCnvBody := decode[appHttp.Conversation](t, resp.Body)
 	assert.NotEmpty(t, drctCnvBody.Id)
 
-	require.Eventually(t, func() bool {
-		_, m, err := bob.wsClient.Read(context.Background())
-		if err != nil {
-			return false
-		}
+	var msg []byte
 
-		var msg websocket.WSMessage
-		err = json.Unmarshal(m, &msg)
-		require.NoError(t, err)
+	select {
+	case msg = <-bob.wsClient.receive:
+		a := 1
+		_=a
+		_=msg
+	case <-time.After(1*time.Second):
+		t.Fatal("timeout waiting for message")
+	}
 
-		// var
-
-		return true
-	}, time.Second, 10*time.Millisecond)
-
-	// alice.wsClient
-
-	// bob.wsClient.sendMessage()
+	var payload any
+	err = json.Unmarshal(msg, &payload)
+	require.NoError(t, err)
 }

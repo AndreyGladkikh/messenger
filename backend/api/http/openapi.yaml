@@ -238,12 +238,12 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
       security:
         - bearerHttpAuthentication: []
-  /direct-conversations:
+  /conversations/direct:
     post:
       tags:
-        - direct-conversations
-      summary: Create direct conversation.
-      operationId: createDirectConversation
+        - conversations
+      summary: Start direct conversation.
+      operationId: startDirectConversation
       requestBody:
         content:
           application/json:

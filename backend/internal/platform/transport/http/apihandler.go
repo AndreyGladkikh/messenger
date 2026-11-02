@@ -156,7 +156,7 @@ func (h *ApiHandler) RegisterUser(ctx context.Context, request RegisterUserReque
 	}, nil
 }
 
-func (h *ApiHandler) CreateDirectConversation(ctx context.Context, request CreateDirectConversationRequestObject) (CreateDirectConversationResponseObject, error) {
+func (h *ApiHandler) StartDirectConversation(ctx context.Context, request StartDirectConversationRequestObject) (StartDirectConversationResponseObject, error) {
 	a, err := getAuth(ctx)
 	if err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func (h *ApiHandler) CreateDirectConversation(ctx context.Context, request Creat
 		return nil, err
 	}
 
-	return CreateDirectConversation201JSONResponse{
+	return StartDirectConversation201JSONResponse{
 		Id: resp.ConversationID,
 	}, nil
 }

@@ -33,10 +33,10 @@ func main() {
 	defer stop()
 
 	select {
-		case <-ctx.Done():
-			log.Println("outbox relay: shutting down")
-		case err := <-errc:
-			log.Fatal("outbox relay: failed to run", "err", err)
+	case <-ctx.Done():
+		log.Println("outbox relay: shutting down")
+	case err := <-errc:
+		log.Fatal("outbox relay: failed to run", "err", err)
 	}
 
 	cancel()

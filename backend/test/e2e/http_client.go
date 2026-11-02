@@ -121,6 +121,10 @@ func (c *httpClient) me() (*http.Response, error) {
 	return c.doRequest(http.MethodGet, "auth/me", nil)
 }
 
-func (c *httpClient) createDirectConversationWithFirstMessage(r appHttp.CreateDirectConversationJSONRequestBody) (*http.Response, error) {
-	return c.doRequest(http.MethodPost, "direct-conversations", &httpRequestOpts{Body: r})
+func (c *httpClient) startDirectConversation(r appHttp.StartDirectConversationJSONRequestBody) (*http.Response, error) {
+	return c.doRequest(http.MethodPost, "conversations/direct", &httpRequestOpts{Body: r})
+}
+
+func (c *httpClient) registerDirectoryEntry(r appHttp.RegisterDirectoryEntryJSONRequestBody) (*http.Response, error) {
+	return c.doRequest(http.MethodPost, "directory/entries", &httpRequestOpts{Body: r})
 }

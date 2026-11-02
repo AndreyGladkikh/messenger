@@ -38,7 +38,7 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 		return nil, nil, err
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(loggerLogger, client)
-	userEventsPubSub := pubsub.NewUserEventsPubSub(pubSub)
+	personalEventsPubSub := pubsub.NewPersonalEventsPubSub(pubSub)
 	pool, cleanup4, err := postgres.NewPool(cfg)
 	if err != nil {
 		cleanup3()
@@ -56,7 +56,7 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 		Reader: persistenceQueryService,
 	}
 	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler)
-	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(userEventsPubSub, bus)
+	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, bus)
 	realtimePersonalDeliveryConsumer, cleanup5, err := consumers.NewRealtimePersonalDeliveryConsumer(loggerLogger, connection, personalDeliveryHandler)
 	if err != nil {
 		cleanup4()
@@ -68,8 +68,9 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	consumersConsumers := &consumers.Consumers{
 		RealtimePersonalDeliveryConsumer: realtimePersonalDeliveryConsumer,
 	}
+	v := consumers.ConsumerRunners(consumersConsumers)
 	consumer := &Consumer{
-		Consumers: consumersConsumers,
+		Consumers: v,
 	}
 	return consumer, func() {
 		cleanup5()

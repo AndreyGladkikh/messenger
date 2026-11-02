@@ -11,6 +11,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+type ConsumerRunner interface {
+	Run(ctx context.Context) error
+}
+
+var _ ConsumerRunner = (*Consumer)(nil)
+
 type Consumer struct {
 	logger  *logger.Logger
 	cfg     ConsumerConfig

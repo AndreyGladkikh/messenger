@@ -55,7 +55,7 @@ var AppSet = wire.NewSet(
 	idPassImpl.NewHasher,
 	idTokenImpl.NewService,
 	pubsub.NewPubSub,
-	pubsub.NewUserEventsPubSub,
+	pubsub.NewPersonalEventsPubSub,
 	pubsub.NewChatEventsPubSub,
 	cnvService.NewDirectConversationResolver,
 	cnvService.NewMessageSender,
@@ -66,6 +66,7 @@ var AppSet = wire.NewSet(
 	wire.Struct(new(event.Publisher), "*"),
 	producers.NewConversationIntegrationEventsProducer,
 	wire.Struct(new(producers.Producers), "*"),
+	consumers.ConsumerRunners,
 	consumers.NewRealtimePersonalDeliveryConsumer,
 	wire.Struct(new(consumers.Consumers), "*"),
 

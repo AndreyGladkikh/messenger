@@ -36,14 +36,14 @@ func Initialize(cfg config.Config) (*Relay, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	conversationEventsProducer, cleanup3, err := producers.NewConversationIntegrationEventsProducer(loggerLogger, connection)
+	conversationIntegrationEventsProducer, cleanup3, err := producers.NewConversationIntegrationEventsProducer(loggerLogger, connection)
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
 	producersProducers := &producers.Producers{
-		ConversationIntegrationEventsProducer: conversationEventsProducer,
+		ConversationIntegrationEventsProducer: conversationIntegrationEventsProducer,
 	}
 	outboxRelay := &outbox_relay.OutboxRelay{
 		EventService: eventService,

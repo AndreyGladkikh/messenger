@@ -18,6 +18,12 @@ type Consumers struct {
 	RealtimePersonalDeliveryConsumer *RealtimePersonalDeliveryConsumer
 }
 
+func ConsumerRunners(cnsmrs *Consumers) map[string]rabbitmq.ConsumerRunner {
+	return map[string]rabbitmq.ConsumerRunner{
+		ConsumerNameRealtimePersonalDelivery: cnsmrs.RealtimePersonalDeliveryConsumer,
+	}
+}
+
 type RealtimePersonalDeliveryConsumer struct {
 	*rabbitmq.Consumer
 }

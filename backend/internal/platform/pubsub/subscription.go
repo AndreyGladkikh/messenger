@@ -88,7 +88,7 @@ func (s *Subscription) Cancel(ctx context.Context) {
 }
 
 func SubscribeToUserEvents(ctx context.Context, subscription *Subscription, userID uuid.UUID) {
-	subscription.AddChannels(ctx, ChannelNameUserEvents(userID))
+	subscription.AddChannels(ctx, ChannelNamePersonalEvents(userID))
 }
 
 func SubscribeToConversationEvents(ctx context.Context, subscription *Subscription, cnvIDs ...uuid.UUID) {

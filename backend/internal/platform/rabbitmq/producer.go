@@ -75,7 +75,7 @@ func (p *Producer) Produce(ctx context.Context, typ string, payload any) error {
 	}
 
 	body, err := json.Marshal(Envelope{
-		Type: typ,
+		Type:    typ,
 		Payload: jsonPayload,
 	})
 	if err != nil {

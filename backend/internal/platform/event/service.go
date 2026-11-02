@@ -36,9 +36,9 @@ func (s *EventService) PutEventToOutbox(ctx context.Context, kind string, e even
 	}
 
 	err := s.Queries(ctx).PutToOutbox(ctx, sqlc.PutToOutboxParams{
-		ID:           uuid.New(),
-		Kind: sqlc.OutboxKind(kind),
-		Type: e.Name(),
+		ID:      uuid.New(),
+		Kind:    sqlc.OutboxKind(kind),
+		Type:    e.Name(),
 		Payload: buf.Bytes(),
 	})
 
@@ -63,7 +63,7 @@ func (s *EventService) UpdateEvent(
 	err := s.Queries(ctx).ProcessEvent(ctx, sqlc.ProcessEventParams{
 		ID:          event.ID,
 		Status:      sqlc.OutboxStatus(status),
-		Error: &errMsg,
+		Error:       &errMsg,
 		Attempts:    event.Attempts + 1,
 		NextRetryAt: nextRetryAt,
 	})

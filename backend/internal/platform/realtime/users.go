@@ -15,12 +15,12 @@ import (
 var _ rabbitmq.Handler = (*PersonalDeliveryHandler)(nil)
 
 type PersonalDeliveryHandler struct {
-	userPubSub *pubsub.UserEventsPubSub
+	userPubSub *pubsub.PersonalEventsPubSub
 	queryBus   *querybus.Bus
 }
 
 func NewPersonalDeliveryHandler(
-	userPubSub *pubsub.UserEventsPubSub,
+	userPubSub *pubsub.PersonalEventsPubSub,
 	queryBus *querybus.Bus,
 ) *PersonalDeliveryHandler {
 	return &PersonalDeliveryHandler{
@@ -50,7 +50,7 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 
 		payload, err := json.Marshal(pubsub.DirectConversationStarted{
 			ConversationID:  evnt.ConversationID,
-			SenderAvatarUrl: *entr.AvatarURL,
+			SenderAvatarUrl: entr.AvatarURL,
 			SenderName:      entr.DisplayName,
 			MessageBody:     evnt.MessageBody,
 			MessageSentAt:   envlp.OccurredAt,
@@ -64,7 +64,10 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 			Payload: payload,
 		}
 
-		h.userPubSub.Publish(ctx, envlp.Event.RecipientID, pubSubMsg)
+		err = h.userPubSub.Publish(ctx, envlp.Event.RecipientID, pubSubMsg)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

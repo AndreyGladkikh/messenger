@@ -94,7 +94,7 @@ type DirectConversationStartedPayload struct {
 	ConversationId    uuid.UUID       `json:"conversationId"`
 	SenderId          uuid.UUID       `json:"senderId"`
 	SenderDisplayName string          `json:"senderDisplayName"`
-	AvatarUrl         string          `json:"avatarUrl"`
+	AvatarUrl         *string         `json:"avatarUrl"`
 	Message           *MessagePayload `json:"message"`
 }
 

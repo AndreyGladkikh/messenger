@@ -6,8 +6,6 @@ import (
 	"log"
 	"messenger/messenger/internal/bootstrap/consumer"
 	"messenger/messenger/internal/platform/config"
-	"messenger/messenger/internal/platform/rabbitmq/consumers"
-
 )
 
 func main() {
@@ -29,12 +27,18 @@ func run() error {
 	}
 	defer cleanup()
 
-	runner := getRunner(container.Consumers, cnsmrName)
-	if runner != nil {
+	if runner, ok := container.Consumers[cnsmrName]; ok {
 		if err := runner.Run(ctx); err != nil {
 			return err
 		}
 	}
+
+	// runner := getRunner(container.Consumers, cnsmrName)
+	// if runner != nil {
+	// 	if err := runner.Run(ctx); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 
@@ -77,16 +81,4 @@ func run() error {
 	// 		return fmt.Errorf("Failed to accept message %w", err)
 	// 	}
 	// }
-}
-
-type runner interface {
-	Run(ctx context.Context) error
-}
-
-func getRunner(cnsmrs *consumers.Consumers, name string) runner {
-	switch name {
-	case consumers.ConsumerNameRealtimePersonalDelivery:
-		return cnsmrs.RealtimePersonalDeliveryConsumer
-	}
-	return nil
 }
