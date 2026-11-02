@@ -40,29 +40,39 @@ func (e *EventHandlingError) AsStrings() []string {
 }
 
 type OutboxRelay struct {
+	Logger       *logger.Logger
 	EventService *event.EventService
 	TXManager    *transactions.Manager
-	Logger       *logger.Logger
 	Producers    *producers.Producers
 }
 
 func (r *OutboxRelay) Run(ctx context.Context) error {
+	r.Logger.InfoContext(ctx, "outbox relay started")
+
+	runCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		r.Logger.InfoContext(ctx, "outbox relay stopped")
+		<-time.After(30 * time.Second)
+		cancel()
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if err := r.run(); err != nil {
-				r.Logger.Error("outbox relay process failed", "error", err)
+			if err := r.run(runCtx); err != nil {
+				r.Logger.ErrorContext(ctx, "outbox relay process failed", "error", err)
 				return fmt.Errorf("outbox relay process failed: %w", err)
 			}
 		}
 	}
 }
 
-func (r *OutboxRelay) run() error {
-	ctx := context.Background()
-
+func (r *OutboxRelay) run(ctx context.Context) error {
 	var err error
 
 	outboxEvent, err := r.EventService.GetNextUnprocessedEvent(ctx)

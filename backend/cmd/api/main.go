@@ -15,9 +15,7 @@ import (
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	cfg := config.Load()
@@ -30,16 +28,20 @@ func main() {
 	defer cleanup()
 
 	var wg sync.WaitGroup
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 
 	wg.Go(func() {
-		if err := api.HttpServer.Run(ctx); err != nil {
-			errCh <- err
-		}
+		errCh <- api.HttpServer.Run(ctx)
 	})
 
+	interruptCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	wg.Go(func() {
-		<-errCh
+		select {
+		case <-interruptCtx.Done():
+		case <-errCh:
+		}
 		cancel()
 	})
 

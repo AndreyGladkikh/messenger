@@ -10,7 +10,7 @@ export const register = async (creds: Credentials) => await apiRequest('/auth/re
     },
 }, false)
 
-export const login = async (creds: Credentials) => await apiRequest('/auth/login', {
+export const login = async (creds: Credentials) => await apiRequest('/auth/users/login', {
     method: http.method.post,
     body: {
         login: creds.login,

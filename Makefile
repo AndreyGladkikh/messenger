@@ -10,7 +10,16 @@ test:
 	cd backend && go test ./...
 
 run:
-	cd backend && APP_ENV=local go run ./cmd/api/main.go -config=../../backend/configs/config.yaml -env=../../backend/.env
+	$(MAKE) -j3 api consumer outbox_relay
+
+api:
+	cd backend && APP_ENV=local go run ./cmd/api
+
+consumer:
+	cd backend && APP_ENV=local go run ./cmd/consumer realtime:personal-delivery
+
+outbox_relay:
+	cd backend && APP_ENV=local go run ./cmd/outbox_relay
 
 init: generate_keys generate_code
 	cd backend && \

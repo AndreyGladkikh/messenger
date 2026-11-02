@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
 	"messenger/messenger/internal/bootstrap/consumer"
@@ -18,6 +19,11 @@ func run() error {
 	ctx := context.Background()
 
 	cfg := config.Load()
+
+	args := flag.Args()
+	if len(args) < 1 {
+		return errors.New("consumer name is required as the first argument")
+	}
 
 	cnsmrName := flag.Args()[0]
 

@@ -14,8 +14,8 @@ tags:
     description: Current user info
   - name: directory
     description: Searchable and viewable elemnts of messenger
-  - name: direct-conversations
-    description: Direct conversations
+  - name: conversations
+    description: Conversations
 paths:
   /auth/users:
     post:

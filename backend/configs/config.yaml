@@ -1,7 +1,9 @@
 Auth:
   Jwt:
-    PrivateKeyPath: ../../keys/private.pem
-    PublicKeyPath: ../../keys/public.pem
+    # PrivateKeyPath: ../../keys/private.pem
+    # PublicKeyPath: ../../keys/public.pem
+    PrivateKeyPath: keys/private.pem
+    PublicKeyPath: keys/public.pem
 
 HttpServer:
   Addr: :3000

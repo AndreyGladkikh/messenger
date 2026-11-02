@@ -7,7 +7,6 @@ import (
 	"messenger/messenger/internal/platform/config"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -24,22 +23,16 @@ func main() {
 
 	errc := make(chan error, 1)
 	go func() {
-		if err := relay.OutboxRelay.Run(ctx); err != nil {
-			errc <- err
-		}
+		errc <- relay.OutboxRelay.Run(ctx)
 	}()
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	interruptCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	select {
-	case <-ctx.Done():
-		log.Println("outbox relay: shutting down")
-	case err := <-errc:
-		log.Fatal("outbox relay: failed to run", "err", err)
-	}
+	go func() {
+		<-interruptCtx.Done()
+		cancel()
+	}()
 
-	cancel()
-
-	<-time.After(30 * time.Second)
+	<-errc
 }
