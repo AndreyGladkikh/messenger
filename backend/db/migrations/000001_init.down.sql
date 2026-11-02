@@ -16,6 +16,7 @@ DROP TABLE identity.users;
 DROP TABLE identity.accounts;
 
 DROP TYPE outbox_kind;
+DROP TYPE outbox_status;
 DROP TYPE account_type;
 
 DROP SCHEMA directory;

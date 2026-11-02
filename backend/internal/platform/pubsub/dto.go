@@ -15,9 +15,9 @@ type Message struct {
 	Payload jsontext.Value
 }
 
-const DirectConversationCreatedName = "DirectConversationCreated"
+const DirectConversationStartedName = "DirectConversationStarted"
 
-type DirectConversationCreated struct {
+type DirectConversationStarted struct {
 	ConversationID  uuid.UUID
 	SenderAvatarUrl string
 	SenderID        uuid.UUID
@@ -38,7 +38,7 @@ func DecodeMessage(msg Message) (any, error) {
 }
 
 var decoders = map[string]decoder{
-	DirectConversationCreatedName: decodeAs[DirectConversationCreated],
+	DirectConversationStartedName: decodeAs[DirectConversationStarted],
 }
 
 type decoder func(jsontext.Value) (any, error)

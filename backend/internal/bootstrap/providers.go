@@ -64,7 +64,7 @@ var AppSet = wire.NewSet(
 	drctrCmd.NewTargetLookup,
 	rabbitmq.NewConnection,
 	wire.Struct(new(event.Publisher), "*"),
-	producers.NewConversationEventsProducer,
+	producers.NewConversationIntegrationEventsProducer,
 	wire.Struct(new(producers.Producers), "*"),
 	consumers.NewRealtimePersonalDeliveryConsumer,
 	wire.Struct(new(consumers.Consumers), "*"),

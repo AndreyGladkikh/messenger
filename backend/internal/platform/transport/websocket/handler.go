@@ -282,7 +282,7 @@ func (h *Handler) readEventsLoop(ctx context.Context, subscription *pubsub.Subsc
 			}
 
 			switch p := payload.(type) {
-			case pubsub.DirectConversationCreated:
+			case pubsub.DirectConversationStarted:
 				m, err := NewWSMessage(wsMessageTypeMessageSent, withData(DirectConversationStartedPayload{
 					ConversationId:    p.ConversationID,
 					SenderId:          p.SenderID,

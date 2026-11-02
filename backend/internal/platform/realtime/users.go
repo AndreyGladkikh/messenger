@@ -33,7 +33,7 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 	switch msg.Type {
 	case cnvEvent.DirectConversationStartedEventName:
 		var envlp event.Envelope[cnvEvent.DirectConversationStarted]
-		err := json.Unmarshal(msg.Payload, envlp)
+		err := json.Unmarshal(msg.Payload, &envlp)
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,7 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 			return err
 		}
 
-		payload, err := json.Marshal(pubsub.DirectConversationCreated{
+		payload, err := json.Marshal(pubsub.DirectConversationStarted{
 			ConversationID:  evnt.ConversationID,
 			SenderAvatarUrl: *entr.AvatarURL,
 			SenderName:      entr.DisplayName,
@@ -60,7 +60,7 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 		}
 
 		pubSubMsg := pubsub.Message{
-			Type:    pubsub.DirectConversationCreatedName,
+			Type:    pubsub.DirectConversationStartedName,
 			Payload: payload,
 		}
 

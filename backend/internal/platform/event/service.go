@@ -54,15 +54,18 @@ func (s *EventService) UpdateEvent(
 	event sqlc.Outbox,
 	status Status,
 	errCause error,
-	nextRetryAt time.Time,
+	nextRetryAt *time.Time,
 ) error {
-	errMsg := errCause.Error()
+	var errMsg string
+	if errCause != nil {
+		errMsg = errCause.Error()
+	}
 	err := s.Queries(ctx).ProcessEvent(ctx, sqlc.ProcessEventParams{
 		ID:          event.ID,
 		Status:      sqlc.OutboxStatus(status),
 		Error: &errMsg,
 		Attempts:    event.Attempts + 1,
-		NextRetryAt: &nextRetryAt,
+		NextRetryAt: nextRetryAt,
 	})
 	if err != nil {
 		return fmt.Errorf("event processor: failed to mark event as processed: %w", err)

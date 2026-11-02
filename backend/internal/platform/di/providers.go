@@ -101,7 +101,7 @@ var CommonSet = wire.NewSet(
 	drctrIdentity.NewUserLookup,
 	drctrCommand.NewTargetLookup,
 	rabbitmq.NewConnection,
-	producers.NewConversationEventsProducer,
+	producers.NewConversationIntegrationEventsProducer,
 
 	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
 	wire.Bind(new(idQuery.Reader), new(*idReader.QueryService)),

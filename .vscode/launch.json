@@ -13,7 +13,7 @@
             "args": [
                 "-config", "${workspaceFolder}/backend/configs/config.yaml",
                 "-env", "${workspaceFolder}/backend/.env",
-                "realtime:delivery:users"
+                "realtime:personal-delivery"
             ],
             "env": {
                 "APP_ENV": "local"

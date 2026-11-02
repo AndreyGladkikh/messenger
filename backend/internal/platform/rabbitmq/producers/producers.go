@@ -9,20 +9,20 @@ import (
 )
 
 type Producers struct {
-	ConversationEventsProducer *ConversationEventsProducer
+	ConversationIntegrationEventsProducer *ConversationIntegrationEventsProducer
 }
 
-type ConversationEventsProducer struct {
+type ConversationIntegrationEventsProducer struct {
 	*rabbitmq.Producer
 }
 
-func NewConversationEventsProducer(
+func NewConversationIntegrationEventsProducer(
 	logger *logger.Logger,
 	amqpConn *amqp.Connection,
-) (*ConversationEventsProducer, func(), error) {
+) (*ConversationIntegrationEventsProducer, func(), error) {
 	p, cleanup, err := rabbitmq.NewProducer(logger, amqpConn, exchanges.NameConversationIntegrationEvents)
 	if err != nil {
 		return nil, nil, err
 	}
-	return &ConversationEventsProducer{p}, cleanup, nil
+	return &ConversationIntegrationEventsProducer{p}, cleanup, nil
 }

@@ -12,7 +12,7 @@ import (
 	"messenger/messenger/internal/platform/rabbitmq/producers"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/transactions"
-	apevent "messenger/messenger/internal/shared/app/event"
+	appEvent "messenger/messenger/internal/shared/app/event"
 	"strings"
 	"time"
 
@@ -52,7 +52,7 @@ func (r *OutboxRelay) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			if err := r.processEvent(); err != nil {
+			if err := r.run(); err != nil {
 				r.Logger.Error("outbox relay process failed", "error", err)
 				return fmt.Errorf("outbox relay process failed: %w", err)
 			}
@@ -60,7 +60,7 @@ func (r *OutboxRelay) Run(ctx context.Context) error {
 	}
 }
 
-func (r *OutboxRelay) processEvent() error {
+func (r *OutboxRelay) run() error {
 	ctx := context.Background()
 
 	var err error
@@ -84,13 +84,13 @@ func (r *OutboxRelay) processEvent() error {
 	producer := r.Producer(outboxEvent)
 	if producer != nil {
 		envlp := event.Envelope{
-			ID: outboxEvent.ID,
-			Type: outboxEvent.Type,
+			ID:         outboxEvent.ID,
+			Type:       outboxEvent.Type,
 			OccurredAt: outboxEvent.OccurredAt,
-			Payload: outboxEvent.Payload,
+			Event:      outboxEvent.Payload,
 		}
 
-		err = producer.Produce(ctx, outboxEvent.Type, envlp)
+		err = producer.Produce(ctx, envlp.Type, envlp)
 	} else {
 		// todo dl
 		err = errors.New("no producer for outbox")
@@ -98,21 +98,22 @@ func (r *OutboxRelay) processEvent() error {
 
 	var (
 		status      event.Status
-		nextRetryAt time.Time
+		nextRetryAt *time.Time
 	)
 
 	if err != nil {
 		if errors.Is(err, ErrFatal) || outboxEvent.Attempts+1 >= retries {
-			status, nextRetryAt = event.StatusDead, time.Time{}
+			status, nextRetryAt = event.StatusDead, nil
 		} else {
-			status, nextRetryAt = event.StatusRetry, r.calcNextRetry()
+			retr := r.calcNextRetry()
+			status, nextRetryAt = event.StatusRetry, &retr
 		}
 
 		r.EventService.UpdateEvent(ctx, outboxEvent, status, err, nextRetryAt)
 		return nil
 	}
 
-	r.EventService.UpdateEvent(ctx, outboxEvent, event.StatusSucceeded, err, time.Time{})
+	r.EventService.UpdateEvent(ctx, outboxEvent, event.StatusSucceeded, err, nil)
 	return nil
 }
 
@@ -168,7 +169,7 @@ func (r *OutboxRelay) calcNextRetry() time.Time {
 	return time.Now().Add(5 * time.Second)
 }
 
-func (r *OutboxRelay) runHandler(ctx context.Context, eventID uuid.UUID, envelope apevent.Envelope[apevent.Event], handler event.Handler) error {
+func (r *OutboxRelay) runHandler(ctx context.Context, eventID uuid.UUID, envelope appEvent.Envelope[appEvent.Event], handler event.Handler) error {
 	return r.TXManager.WithTransaction(ctx, func(ctx context.Context) error {
 		err := r.EventService.RegisterEventHandlerExecution(ctx, eventID, handler.Name())
 		if err != nil && !errors.Is(err, event.ErrHandlerAlreadyExecuted) {
@@ -244,7 +245,7 @@ func (o *OutboxRelay) Producer(outbox sqlc.Outbox) Producer {
 	case cnvEvnt.DirectConversationStartedEventName:
 		switch outbox.Kind {
 		case sqlc.OutboxKindIntegration:
-			return o.Producers.ConversationEventsProducer
+			return o.Producers.ConversationIntegrationEventsProducer
 		}
 	}
 

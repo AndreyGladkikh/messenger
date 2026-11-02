@@ -2,14 +2,15 @@ package event
 
 import (
 	"encoding/json"
-	"time"
-
-	"uuid"
+	"messenger/messenger/internal/shared/app/event"
+	// "time"
+	// "uuid"
 )
 
 type Envelope struct {
-	ID         uuid.UUID       `json:"id"`
-	Type       string          `json:"type"`
-	OccurredAt time.Time       `json:"occurredAt"`
-	Payload    json.RawMessage `json:"payload"`
+	event.Envelope[event.Event]
+	// ID         uuid.UUID `json:"id"`
+	// OccurredAt time.Time `json:"occurredAt"`
+	Type  string          `json:"type"`
+	Event json.RawMessage `json:"event"`
 }

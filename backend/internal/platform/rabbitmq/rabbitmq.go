@@ -4,6 +4,7 @@ import (
 	"encoding/json/jsontext"
 	"fmt"
 	"messenger/messenger/internal/platform/config"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -14,7 +15,11 @@ const (
 )
 
 func NewConnection(cfg config.Config) (*amqp.Connection, func(), error) {
-	conn, err := amqp.Dial(cfg.Mq.Dsn)
+	// todo rm
+	config := amqp.Config{
+		Heartbeat: time.Hour,
+	}
+	conn, err := amqp.DialConfig(cfg.Mq.Dsn, config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}

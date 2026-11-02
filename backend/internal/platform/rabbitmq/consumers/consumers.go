@@ -1,6 +1,7 @@
 package consumers
 
 import (
+	cnvEvent "messenger/messenger/internal/conversations/app/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/rabbitmq/exchanges"
@@ -30,7 +31,7 @@ func NewRealtimePersonalDeliveryConsumer(
 		Exchanges: []rabbitmq.XConfig{
 			{
 				Name:        exchanges.NameConversationIntegrationEvents,
-				BindingKeys: []string{"direct-started.v1"},
+				BindingKeys: []string{cnvEvent.DirectConversationStartedEventName},
 			},
 		},
 		QName: rabbitmq.QNameRealtimePersonalDelivery,

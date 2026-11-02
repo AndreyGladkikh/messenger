@@ -72,8 +72,9 @@ func NewConsumer(
 			}
 		}
 	}
-	
+
 	return &Consumer{
+		logger:  logger,
 		rmqChan: ch,
 		queue:   q,
 		handler: handler,
@@ -91,26 +92,37 @@ func (c *Consumer) Run(ctx context.Context) error {
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to register a consumer %q: %w", c.name, err)
+		return fmt.Errorf("rabbitmq consumer: failed to register a consumer %q: %w", c.name, err)
 	}
 
 	var forever chan struct{}
 
 	go func() {
 		for d := range msgs {
+			logErr := func(msg string, args ...any) {
+				args = append([]any{
+					"consumer", c.name,
+					"msg", d.Body,
+				}, args...)
+				c.logger.ErrorContext(ctx, fmt.Sprintf("rabbitmq consumer: %s", msg), args...)
+			}
+
 			log.Printf("Received a message: %s", d.Body)
 
 			var envlp Envelope
-			err := json.Unmarshal(d.Body, envlp)
+			err := json.Unmarshal(d.Body, &envlp)
 			if err != nil {
-				c.logger.ErrorContext(ctx, "rabbitmq consumer: failed to decode message",
-					"err", err,
-					"consumer", c.name,
-					"msg", d.Body,
-				)
+				logErr("failed to decode message", "err", err)
+				d.Nack(false, false)
+				continue
 			}
 
-			c.handler.Handle(ctx, envlp)
+			err = c.handler.Handle(ctx, envlp)
+			if err != nil {
+				logErr("failed to handle message", "err", err)
+				d.Nack(false, false)
+				continue
+			}
 			d.Ack(false)
 		}
 	}()
