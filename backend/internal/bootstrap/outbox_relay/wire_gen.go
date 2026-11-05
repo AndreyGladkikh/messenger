@@ -22,6 +22,7 @@ import (
 // Injectors from wire.go:
 
 func Initialize(cfg config.Config) (*Relay, func(), error) {
+	loggerLogger := logger.New()
 	pool, cleanup, err := postgres.NewPool(cfg)
 	if err != nil {
 		return nil, nil, err
@@ -30,7 +31,6 @@ func Initialize(cfg config.Config) (*Relay, func(), error) {
 	storeStore := store.NewStore(queries)
 	eventService := event.NewEventService(storeStore)
 	manager := transactions.NewManager(pool)
-	loggerLogger := logger.New()
 	connection, cleanup2, err := rabbitmq.NewConnection(cfg)
 	if err != nil {
 		cleanup()
@@ -46,9 +46,9 @@ func Initialize(cfg config.Config) (*Relay, func(), error) {
 		ConversationIntegrationEventsProducer: conversationIntegrationEventsProducer,
 	}
 	outboxRelay := &outbox_relay.OutboxRelay{
+		Logger:       loggerLogger,
 		EventService: eventService,
 		TXManager:    manager,
-		Logger:       loggerLogger,
 		Producers:    producersProducers,
 	}
 	relay := &Relay{

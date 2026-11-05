@@ -5,7 +5,6 @@ import (
 )
 
 type Query interface {
-	IsQuery()
 	Name() string
 }
 

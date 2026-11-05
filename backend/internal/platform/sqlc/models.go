@@ -143,6 +143,17 @@ func (ns NullOutboxStatus) Value() (driver.Value, error) {
 	return string(ns.OutboxStatus), nil
 }
 
+type BffPeer struct {
+	UserID      uuid.UUID
+	TargetID    uuid.UUID
+	TargetType  string
+	Title       string
+	AvatarUrl   *string
+	Preview     *string
+	PreviewTime *time.Time
+	UnreadCount int32
+}
+
 type ConversationsConversation struct {
 	ID        uuid.UUID
 	Type      string
@@ -162,6 +173,12 @@ type ConversationsFile struct {
 	Name      *string
 	Url       string
 	CreatedAt *time.Time
+}
+
+type ConversationsGroupConversation struct {
+	ConversationID uuid.UUID
+	Title          string
+	AvatarUrl      *string
 }
 
 type ConversationsMembership struct {

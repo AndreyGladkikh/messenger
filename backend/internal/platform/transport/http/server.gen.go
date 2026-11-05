@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 	"uuid"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -88,10 +89,26 @@ type FirstMessage struct {
 	Body string `json:"body"`
 }
 
+// HomePage defines model for HomePage.
+type HomePage struct {
+	Peers []PeerItem `json:"peers"`
+}
+
 // Message defines model for Message.
 type Message struct {
 	Body             string     `json:"body"`
 	ReplyToMessageId *uuid.UUID `json:"replyToMessageId,omitempty"`
+}
+
+// PeerItem defines model for PeerItem.
+type PeerItem struct {
+	AvatarUrl   *string    `json:"avatarUrl,omitempty"`
+	Id          uuid.UUID  `json:"id"`
+	Preview     *string    `json:"preview,omitempty"`
+	PreviewTime *time.Time `json:"previewTime,omitempty"`
+	Title       string     `json:"title"`
+	Type        string     `json:"type"`
+	UnreadCount *int       `json:"unreadCount,omitempty"`
 }
 
 // ProblemDetails Error representation according to RFC 9457
@@ -181,7 +198,7 @@ type RegisterDirectoryEntryJSONRequestBody = DirectoryEntry
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// GetMe Get current user info.
+	// GetMe Get authenticated user info.
 	// (GET /auth/me)
 	GetMe(w http.ResponseWriter, r *http.Request)
 	// RegisterUser Register a new user.
@@ -193,6 +210,9 @@ type ServerInterface interface {
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/users/refresh-tokens)
 	RefreshTokens(w http.ResponseWriter, r *http.Request, params RefreshTokensParams)
+	// GetWebHomePage Get home page.
+	// (GET /bff/web/home-page)
+	GetWebHomePage(w http.ResponseWriter, r *http.Request)
 	// StartDirectConversation Start direct conversation.
 	// (POST /conversations/direct)
 	StartDirectConversation(w http.ResponseWriter, r *http.Request)
@@ -202,7 +222,7 @@ type ServerInterface interface {
 	// RegisterDirectoryEntry Register a new directory entry.
 	// (POST /directory/entries)
 	RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request)
-	// GetMyChatList Get current user chat list.
+	// GetMyChatList Get authenticated user chat list.
 	// (GET /me/chats)
 	GetMyChatList(w http.ResponseWriter, r *http.Request)
 }
@@ -211,7 +231,7 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
-// GetMe Get current user info.
+// GetMe Get authenticated user info.
 // (GET /auth/me)
 func (_ Unimplemented) GetMe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -235,6 +255,12 @@ func (_ Unimplemented) RefreshTokens(w http.ResponseWriter, r *http.Request, par
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// GetWebHomePage Get home page.
+// (GET /bff/web/home-page)
+func (_ Unimplemented) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // StartDirectConversation Start direct conversation.
 // (POST /conversations/direct)
 func (_ Unimplemented) StartDirectConversation(w http.ResponseWriter, r *http.Request) {
@@ -253,7 +279,7 @@ func (_ Unimplemented) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// GetMyChatList Get current user chat list.
+// GetMyChatList Get authenticated user chat list.
 // (GET /me/chats)
 func (_ Unimplemented) GetMyChatList(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -397,6 +423,20 @@ func (siw *ServerInterfaceWrapper) RefreshTokens(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RefreshTokens(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWebHomePage operation middleware
+func (siw *ServerInterfaceWrapper) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWebHomePage(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -610,6 +650,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/conversations/{conversation_id}/messages", wrapper.SendMessage)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/bff/web/home-page", wrapper.GetWebHomePage)
 	})
 
 	return r
@@ -1235,6 +1278,155 @@ func (response RefreshTokens503ApplicationProblemPlusJSONResponse) VisitRefreshT
 	return err
 }
 
+type GetWebHomePageRequestObject struct {
+}
+
+type GetWebHomePageResponseObject interface {
+	VisitGetWebHomePageResponse(w http.ResponseWriter) error
+}
+
+type GetWebHomePage200JSONResponse HomePage
+
+func (response GetWebHomePage200JSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage400ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage401ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage403ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage404ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage409ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage422ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage500ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetWebHomePage503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetWebHomePage503ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type StartDirectConversationRequestObject struct {
 	Body *StartDirectConversationJSONRequestBody
 }
@@ -1825,7 +2017,7 @@ func (response GetMyChatList503ApplicationProblemPlusJSONResponse) VisitGetMyCha
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// GetMe Get current user info.
+	// GetMe Get authenticated user info.
 	// (GET /auth/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
 	// RegisterUser Register a new user.
@@ -1837,6 +2029,9 @@ type StrictServerInterface interface {
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/users/refresh-tokens)
 	RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error)
+	// GetWebHomePage Get home page.
+	// (GET /bff/web/home-page)
+	GetWebHomePage(ctx context.Context, request GetWebHomePageRequestObject) (GetWebHomePageResponseObject, error)
 	// StartDirectConversation Start direct conversation.
 	// (POST /conversations/direct)
 	StartDirectConversation(ctx context.Context, request StartDirectConversationRequestObject) (StartDirectConversationResponseObject, error)
@@ -1846,7 +2041,7 @@ type StrictServerInterface interface {
 	// RegisterDirectoryEntry Register a new directory entry.
 	// (POST /directory/entries)
 	RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error)
-	// GetMyChatList Get current user chat list.
+	// GetMyChatList Get authenticated user chat list.
 	// (GET /me/chats)
 	GetMyChatList(ctx context.Context, request GetMyChatListRequestObject) (GetMyChatListResponseObject, error)
 }
@@ -2006,6 +2201,30 @@ func (sh *strictHandler) RefreshTokens(w http.ResponseWriter, r *http.Request, p
 	}
 }
 
+// GetWebHomePage operation middleware
+func (sh *strictHandler) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
+	var request GetWebHomePageRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWebHomePage(ctx, request.(GetWebHomePageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWebHomePage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWebHomePageResponseObject); ok {
+		if err := validResponse.VisitGetWebHomePageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // StartDirectConversation operation middleware
 func (sh *strictHandler) StartDirectConversation(w http.ResponseWriter, r *http.Request) {
 	var request StartDirectConversationRequestObject
@@ -2130,71 +2349,73 @@ func (sh *strictHandler) GetMyChatList(w http.ResponseWriter, r *http.Request) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"1kfnH+f/GwA=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

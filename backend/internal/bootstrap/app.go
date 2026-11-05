@@ -1,17 +1,24 @@
 package bootstrap
 
 import (
+	webBffPort "messenger/messenger/internal/bff/web/application/port"
+	webBffQry "messenger/messenger/internal/bff/web/application/query"
+	webBffDirectory "messenger/messenger/internal/bff/web/infra/integration/directory"
+	webBffMessaging "messenger/messenger/internal/bff/web/infra/integration/messaging"
 	cnvCmd "messenger/messenger/internal/conversations/app/command"
+	cnvQry "messenger/messenger/internal/conversations/app/query"
 	cnvService "messenger/messenger/internal/conversations/app/service"
 	"messenger/messenger/internal/conversations/domain/model/conversation"
+	"messenger/messenger/internal/conversations/domain/model/group_conversation"
 	"messenger/messenger/internal/conversations/domain/model/membership"
 	"messenger/messenger/internal/conversations/domain/model/message"
-	cnvIdentity "messenger/messenger/internal/conversations/infra/identity"
+	cnvIdentity "messenger/messenger/internal/conversations/infra/integration/identity"
+	cnvPersistence "messenger/messenger/internal/conversations/infra/persistence"
 	cnvRepo "messenger/messenger/internal/conversations/infra/persistence/repository"
 	drctrCmd "messenger/messenger/internal/directory/app/command"
 	drctrQry "messenger/messenger/internal/directory/app/query"
 	"messenger/messenger/internal/directory/domain/entry"
-	drctrIdentity "messenger/messenger/internal/directory/infra/identity"
+	drctrIdentity "messenger/messenger/internal/directory/infra/integration/identity"
 	drctrPrst "messenger/messenger/internal/directory/infra/persistence"
 	idCmd "messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/identity/app/password"
@@ -69,12 +76,16 @@ var AppSet = wire.NewSet(
 	consumers.ConsumerRunners,
 	consumers.NewRealtimePersonalDeliveryConsumer,
 	wire.Struct(new(consumers.Consumers), "*"),
+	webBffMessaging.NewService,
+	webBffDirectory.NewService,
 
 	wire.Bind(new(cnvService.ParticipantLookup), new(*cnvIdentity.ParticipantLookup)),
 	wire.Bind(new(drctrCmd.UserLookup), new(*drctrIdentity.UserLookup)),
 	wire.Bind(new(password.Hasher), new(*idPassImpl.Hasher)),
 	wire.Bind(new(token.Service), new(*idTokenImpl.Service)),
 	wire.Bind(new(appEvnt.Publisher), new(*event.Publisher)),
+	wire.Bind(new(webBffPort.MessagingReader), new(*webBffMessaging.Service)),
+	wire.Bind(new(webBffPort.DirectoryReader), new(*webBffDirectory.Service)),
 )
 
 var PersistenceSet = wire.NewSet(
@@ -92,6 +103,8 @@ var PersistenceSet = wire.NewSet(
 	idRepo.NewUserRepository,
 	idRepo.NewSessionRepository,
 	drctrPrst.NewEntryRepository,
+	cnvRepo.NewGroupConversationRepository,
+	cnvPersistence.NewQueryService,
 
 	wire.Bind(new(sqlc.DBTX), new(*pgxpool.Pool)),
 	wire.Bind(new(drctrQry.Searcher), new(*drctrPrst.QueryService)),
@@ -103,6 +116,8 @@ var PersistenceSet = wire.NewSet(
 	wire.Bind(new(user.Repository), new(*idRepo.UserRepository)),
 	wire.Bind(new(session.Repository), new(*idRepo.SessionRepository)),
 	wire.Bind(new(entry.Repository), new(*drctrPrst.EntryRepository)),
+	wire.Bind(new(group_conversation.Repository), new(*cnvRepo.GroupConversationRepository)),
+	wire.Bind(new(cnvQry.Reader), new(*cnvPersistence.QueryService)),
 )
 
 var CommandHandlersSet = wire.NewSet(
@@ -110,15 +125,19 @@ var CommandHandlersSet = wire.NewSet(
 	idCmd.NewLoginUserHandler,
 	idCmd.NewRefreshUserTokensHandler,
 	cnvCmd.NewSendMessageHandler,
-	wire.Struct(new(cnvCmd.SendFirstDirectMessageHandler), "*"),
+	wire.Struct(new(cnvCmd.StartDirectConversationHandler), "*"),
 	drctrCmd.NewRegisterEntryHandler,
+	cnvCmd.NewCreateGroupConversationHandler,
 )
 
 var QueryHandlersSet = wire.NewSet(
 	idQry.NewGetAccountHandler,
 	wire.Struct(new(idQry.GetUserIDByLoginHandler), "*"),
 	drctrQry.NewSearchHandler,
+	drctrQry.NewGetEntriesHandler,
+	webBffQry.NewGetHomePageHandler,
 	wire.Struct(new(drctrQry.GetEntryHandler), "*"),
+	cnvQry.NewListUserConversationsHandler,
 )
 
 func InitCommandBus(
@@ -128,7 +147,7 @@ func InitCommandBus(
 	registerUserHandler *idCmd.RegisterUserHandler,
 	loginUserHandler *idCmd.LoginUserHandler,
 	refreshSessionHandler *idCmd.RefreshUserTokensHandler,
-	sendFirstDirectMsgHandler *cnvCmd.SendFirstDirectMessageHandler,
+	sendFirstDirectMsgHandler *cnvCmd.StartDirectConversationHandler,
 	sendMsgHandler *cnvCmd.SendMessageHandler,
 	registerEntryHandler *drctrCmd.RegisterEntryHandler,
 ) *commandbus.Bus {
@@ -155,12 +174,16 @@ func InitQueryBus(
 	getAccountHandler *idQry.GetAccountHandler,
 	searchDirectoryEntryHandler *drctrQry.SearchHandler,
 	getDirectoryEntryHandler *drctrQry.GetEntryHandler,
+	getHomePageHandler *webBffQry.GetHomePageHandler,
+	listUserConversationsHandler *cnvQry.ListUserConversationsHandler,
 ) *querybus.Bus {
 	b := querybus.NewBus()
 
 	b.RegisterHandler(getAccountHandler)
 	b.RegisterHandler(searchDirectoryEntryHandler)
 	b.RegisterHandler(getDirectoryEntryHandler)
+	b.RegisterHandler(getHomePageHandler)
+	b.RegisterHandler(listUserConversationsHandler)
 
 	return b
 }

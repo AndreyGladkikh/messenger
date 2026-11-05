@@ -1,6 +1,7 @@
 CREATE SCHEMA identity;
 CREATE SCHEMA conversations;
 CREATE SCHEMA directory;
+CREATE SCHEMA bff;
 
 CREATE TYPE account_type AS ENUM ('user', 'bot', 'service');
 
@@ -42,12 +43,19 @@ CREATE TABLE conversations.conversations(
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     deleted_at TIMESTAMP WITH TIME ZONE
 );
+CREATE INDEX conversations_created_at_idx on conversations.conversations (created_at desc);
 
 CREATE TABLE conversations.direct_conversations(
-    conversation_id UUID NOT NULL REFERENCES conversations.conversations ON DELETE CASCADE,
+    conversation_id UUID PRIMARY KEY REFERENCES conversations.conversations ON DELETE CASCADE,
     participant_id_low UUID NOT NULL,
     participant_id_high UUID NOT NULL,
     UNIQUE(participant_id_low, participant_id_high)
+);
+
+CREATE TABLE conversations.group_conversations(
+    conversation_id UUID PRIMARY KEY REFERENCES conversations.conversations ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    avatar_url TEXT
 );
 
 CREATE TABLE conversations.memberships(
@@ -71,6 +79,7 @@ CREATE TABLE conversations.messages(
     updated_at TIMESTAMP WITH TIME ZONE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
+CREATE INDEX messages_conversation_id_created_at_id_idx ON conversations.messages (conversation_id, created_at DESC, id DESC) WHERE deleted_at IS NULL;
 
 CREATE TABLE conversations.files(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -102,6 +111,19 @@ CREATE TABLE directory.entries(
     UNIQUE(target_id, target_type)
 );
 CREATE INDEX directory_entries_textsearch_idx ON directory.entries USING GIN (ts_vec);
+
+CREATE TABLE bff.peers(
+    user_id UUID NOT NULL,
+    target_id UUID NOT NULL,
+    target_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    avatar_url TEXT,
+    preview TEXT,
+    preview_time TIMESTAMP WITH TIME ZONE,
+    unread_count INT NOT NULL DEFAULT 0,
+    PRIMARY KEY(user_id, target_id, target_type)
+);
+CREATE INDEX bff_peers_user_id_preview_time_idx ON bff.peers(user_id, preview_time);
 
 -- CREATE TABLE outbox(
 --     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

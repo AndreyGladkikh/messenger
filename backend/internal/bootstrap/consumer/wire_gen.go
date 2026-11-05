@@ -7,7 +7,10 @@
 package consumer
 
 import (
+	query3 "messenger/messenger/internal/bff/web/application/query"
 	"messenger/messenger/internal/bootstrap"
+	query4 "messenger/messenger/internal/conversations/app/query"
+	persistence3 "messenger/messenger/internal/conversations/infra/persistence"
 	query2 "messenger/messenger/internal/directory/app/query"
 	persistence2 "messenger/messenger/internal/directory/infra/persistence"
 	"messenger/messenger/internal/identity/app/query"
@@ -55,7 +58,10 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	getEntryHandler := &query2.GetEntryHandler{
 		Reader: persistenceQueryService,
 	}
-	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler)
+	getHomePageHandler := query3.NewGetHomePageHandler()
+	queryService2 := persistence3.NewQueryService(storeStore)
+	listUserConversationsHandler := query4.NewListUserConversationsHandler(queryService2)
+	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler, getHomePageHandler, listUserConversationsHandler)
 	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, bus)
 	realtimePersonalDeliveryConsumer, cleanup5, err := consumers.NewRealtimePersonalDeliveryConsumer(loggerLogger, connection, personalDeliveryHandler)
 	if err != nil {

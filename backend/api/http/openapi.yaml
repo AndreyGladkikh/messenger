@@ -11,11 +11,13 @@ tags:
   - name: auth
     description: Everything about identity and access
   - name: me
-    description: Current user info
+    description: Authenticated user info
   - name: directory
     description: Searchable and viewable elemnts of messenger
   - name: conversations
     description: Conversations
+  - name: bff
+    description: Backend for frontend
 paths:
   /auth/users:
     post:
@@ -139,11 +141,11 @@ paths:
       tags:
         - auth
         - me
-      summary: Get current user info.
+      summary: Get authenticated user info.
       operationId: getMe
       responses:
         '200':
-          description: Current user info
+          description: Authenticated user info
           content:
             application/json:
               schema:
@@ -211,11 +213,11 @@ paths:
     get:
       tags:
         - me
-      summary: Get current user chat list.
+      summary: Get authenticated user chat list.
       operationId: getMyChatList
       responses:
         '200':
-          description: Current user chats
+          description: Authenticated user chats
           content:
             application/json:
               schema:
@@ -298,6 +300,37 @@ paths:
       responses:
         '201':
           description: Successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
+  /bff/web/home-page:
+    get:
+      tags:
+        - bff
+      summary: Get home page.
+      operationId: getWebHomePage
+      responses:
+        '200':
+          description: Home page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomePage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -417,6 +450,41 @@ components:
           type: string
           format: uuid
           x-go-type: uuid.UUID
+
+    HomePage:
+      type: object
+      required:
+        - peers
+      properties:
+        peers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeerItem'
+
+    PeerItem:
+      type: object
+      required:
+        - id
+        - type
+        - title
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+        type:
+          type: string
+        avatarUrl:
+          type: string
+        title:
+          type: string
+        preview:
+          type: string
+        previewTime:
+          type: string
+          format: date-time
+        unreadCount:
+          type: integer
 
     FirstMessage:
       type: object

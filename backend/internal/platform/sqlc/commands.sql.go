@@ -220,6 +220,29 @@ func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) er
 	return err
 }
 
+const insertWebBffPeer = `-- name: InsertWebBffPeer :exec
+INSERT INTO bff.peers (user_id, target_id, target_type, preview_time)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (user_id, target_id, target_type) DO UPDATE SET preview_time = $4
+`
+
+type InsertWebBffPeerParams struct {
+	UserID      uuid.UUID
+	TargetID    uuid.UUID
+	TargetType  string
+	PreviewTime *time.Time
+}
+
+func (q *Queries) InsertWebBffPeer(ctx context.Context, arg InsertWebBffPeerParams) error {
+	_, err := q.db.Exec(ctx, insertWebBffPeer,
+		arg.UserID,
+		arg.TargetID,
+		arg.TargetType,
+		arg.PreviewTime,
+	)
+	return err
+}
+
 const processEvent = `-- name: ProcessEvent :exec
 UPDATE outbox
   set status = $2,
@@ -319,6 +342,29 @@ func (q *Queries) UpdateMessage(ctx context.Context, arg UpdateMessageParams) er
 	return err
 }
 
+const updateWebBffPeer = `-- name: UpdateWebBffPeer :exec
+UPDATE bff.peers
+SET preview_time = $1
+WHERE user_id = $2 AND target_id = $3 AND target_type = $4
+`
+
+type UpdateWebBffPeerParams struct {
+	PreviewTime *time.Time
+	UserID      uuid.UUID
+	TargetID    uuid.UUID
+	TargetType  string
+}
+
+func (q *Queries) UpdateWebBffPeer(ctx context.Context, arg UpdateWebBffPeerParams) error {
+	_, err := q.db.Exec(ctx, updateWebBffPeer,
+		arg.PreviewTime,
+		arg.UserID,
+		arg.TargetID,
+		arg.TargetType,
+	)
+	return err
+}
+
 const upsertDirectoryEntry = `-- name: UpsertDirectoryEntry :exec
 INSERT INTO directory.entries (
     id,
@@ -349,6 +395,29 @@ func (q *Queries) UpsertDirectoryEntry(ctx context.Context, arg UpsertDirectoryE
 		arg.DisplayName,
 		arg.Handle,
 	)
+	return err
+}
+
+const upsertGroupConversation = `-- name: UpsertGroupConversation :exec
+INSERT INTO conversations.group_conversations(
+    conversation_id,
+    title,
+    avatar_url
+) VALUES (
+    $1, $2, $3
+) ON CONFLICT (conversation_id) DO UPDATE
+SET title = EXCLUDED.title,
+    avatar_url = EXCLUDED.avatar_url
+`
+
+type UpsertGroupConversationParams struct {
+	ConversationID uuid.UUID
+	Title          string
+	AvatarUrl      *string
+}
+
+func (q *Queries) UpsertGroupConversation(ctx context.Context, arg UpsertGroupConversationParams) error {
+	_, err := q.db.Exec(ctx, upsertGroupConversation, arg.ConversationID, arg.Title, arg.AvatarUrl)
 	return err
 }
 

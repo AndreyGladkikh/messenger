@@ -7,6 +7,7 @@ package sqlc
 
 import (
 	"context"
+	"time"
 
 	"uuid"
 )
@@ -171,6 +172,19 @@ func (q *Queries) GetEventToProcess(ctx context.Context) (Outbox, error) {
 	return i, err
 }
 
+const getGroupConversation = `-- name: GetGroupConversation :one
+SELECT conversation_id, title, avatar_url
+FROM conversations.group_conversations
+WHERE conversation_id = $1
+`
+
+func (q *Queries) GetGroupConversation(ctx context.Context, conversationID uuid.UUID) (ConversationsGroupConversation, error) {
+	row := q.db.QueryRow(ctx, getGroupConversation, conversationID)
+	var i ConversationsGroupConversation
+	err := row.Scan(&i.ConversationID, &i.Title, &i.AvatarUrl)
+	return i, err
+}
+
 const getMessage = `-- name: GetMessage :one
 SELECT id, sender_id, conversation_id, body, reply_to_message_id, created_at, updated_at, deleted_at FROM conversations.messages
 WHERE id = $1 LIMIT 1
@@ -226,6 +240,48 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (IdentityUse
 	return i, err
 }
 
+const getUserPeers = `-- name: GetUserPeers :many
+SELECT user_id, target_id, target_type, title, avatar_url, preview, preview_time, unread_count
+FROM bff.peers p
+WHERE p.user_id = $1
+ORDER BY p.preview_time DESC
+LIMIT $2
+`
+
+type GetUserPeersParams struct {
+	UserID uuid.UUID
+	Limit  int32
+}
+
+func (q *Queries) GetUserPeers(ctx context.Context, arg GetUserPeersParams) ([]BffPeer, error) {
+	rows, err := q.db.Query(ctx, getUserPeers, arg.UserID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BffPeer
+	for rows.Next() {
+		var i BffPeer
+		if err := rows.Scan(
+			&i.UserID,
+			&i.TargetID,
+			&i.TargetType,
+			&i.Title,
+			&i.AvatarUrl,
+			&i.Preview,
+			&i.PreviewTime,
+			&i.UnreadCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const handleExists = `-- name: HandleExists :one
 SELECT EXISTS(
     SELECT 1 FROM directory.entries
@@ -241,6 +297,7 @@ func (q *Queries) HandleExists(ctx context.Context, handle string) (bool, error)
 }
 
 const listConversationIDsForUser = `-- name: ListConversationIDsForUser :many
+
 SELECT id FROM conversations.conversations
 WHERE id = ANY(
     SELECT conversation_id
@@ -249,6 +306,19 @@ WHERE id = ANY(
 )
 `
 
+// -- name: ListConversationsForUser :many
+// SELECT * FROM conversations.conversations c
+// LEFT JOIN conversations.group_conversations gc ON c.id = gc.conversation_id
+// WHERE id = ANY(
+//
+//	SELECT conversation_id
+//	FROM conversations.memberships
+//	WHERE participant_id = $1
+//
+// )
+// ORDER BY c.created_at DESC
+// LIMIT $2
+// OFFSET $3;
 func (q *Queries) ListConversationIDsForUser(ctx context.Context, participantID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := q.db.Query(ctx, listConversationIDsForUser, participantID)
 	if err != nil {
@@ -270,37 +340,122 @@ func (q *Queries) ListConversationIDsForUser(ctx context.Context, participantID 
 }
 
 const listConversationsForUser = `-- name: ListConversationsForUser :many
-SELECT id, type, created_at, deleted_at FROM conversations.conversations
-WHERE id = ANY(
-    SELECT conversation_id
-    FROM conversations.memberships
-    WHERE participant_id = $1
-)
-ORDER BY created_at DESC
-LIMIT $2 
-OFFSET $3
+SELECT cnv.id,
+    cnv.type,
+    gcnv.title,
+    gcnv.avatar_url,
+    msg.id as msg_id,
+    msg.body as msg_body,
+    msg.sender_id as msg_sender_id,
+    msg.created_at as msg_created_at
+FROM conversations.conversations cnv
+LEFT JOIN conversations.group_conversations gcnv ON cnv.id = gcnv.conversation_id
+JOIN conversations.memberships memb ON cnv.id = memb.conversation_id
+LEFT JOIN lateral (
+    SELECT msg.id,
+        msg.body,
+        msg.sender_id,
+        msg.created_at
+    FROM conversations.messages msg
+    WHERE msg.conversation_id = cnv.id
+        AND msg.deleted_at IS NULL
+    ORDER BY msg.created_at DESC, msg.id DESC
+    LIMIT 1
+) msg ON true
+WHERE memb.participant_id = $1
+AND cnv.deleted_at IS NULL
+ORDER BY msg.created_at DESC, cnv.created_at DESC
 `
 
-type ListConversationsForUserParams struct {
-	ParticipantID uuid.UUID
-	Limit         int32
-	Offset        int32
+type ListConversationsForUserRow struct {
+	ID           uuid.UUID
+	Type         string
+	Title        *string
+	AvatarUrl    *string
+	MsgID        uuid.UUID
+	MsgBody      string
+	MsgSenderID  uuid.UUID
+	MsgCreatedAt time.Time
 }
 
-func (q *Queries) ListConversationsForUser(ctx context.Context, arg ListConversationsForUserParams) ([]ConversationsConversation, error) {
-	rows, err := q.db.Query(ctx, listConversationsForUser, arg.ParticipantID, arg.Limit, arg.Offset)
+func (q *Queries) ListConversationsForUser(ctx context.Context, participantID uuid.UUID) ([]ListConversationsForUserRow, error) {
+	rows, err := q.db.Query(ctx, listConversationsForUser, participantID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ConversationsConversation
+	var items []ListConversationsForUserRow
 	for rows.Next() {
-		var i ConversationsConversation
+		var i ListConversationsForUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Type,
-			&i.CreatedAt,
-			&i.DeletedAt,
+			&i.Title,
+			&i.AvatarUrl,
+			&i.MsgID,
+			&i.MsgBody,
+			&i.MsgSenderID,
+			&i.MsgCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDirectoryEntriesByTargets = `-- name: ListDirectoryEntriesByTargets :many
+WITH targets AS (
+  SELECT 
+    target_ids.val::uuid AS id,
+    target_types.val::text AS type
+  FROM unnest($1::uuid[]) WITH ORDINALITY AS target_ids(val, ord)
+  JOIN unnest($2::text[]) WITH ORDINALITY AS target_types(val, ord) ON target_ids.ord = target_types.ord
+)
+SELECT
+    e.id,
+    e.target_id,
+    e.target_type,
+    e.display_name,
+    e.handle,
+    e.avatar_url
+FROM directory.entries AS e
+JOIN targets ON e.target_id = target.id AND e.target_type = target.type
+`
+
+type ListDirectoryEntriesByTargetsParams struct {
+	TargetIds   []uuid.UUID
+	TargetTypes []string
+}
+
+type ListDirectoryEntriesByTargetsRow struct {
+	ID          uuid.UUID
+	TargetID    uuid.UUID
+	TargetType  string
+	DisplayName string
+	Handle      string
+	AvatarUrl   *string
+}
+
+func (q *Queries) ListDirectoryEntriesByTargets(ctx context.Context, arg ListDirectoryEntriesByTargetsParams) ([]ListDirectoryEntriesByTargetsRow, error) {
+	rows, err := q.db.Query(ctx, listDirectoryEntriesByTargets, arg.TargetIds, arg.TargetTypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListDirectoryEntriesByTargetsRow
+	for rows.Next() {
+		var i ListDirectoryEntriesByTargetsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TargetID,
+			&i.TargetType,
+			&i.DisplayName,
+			&i.Handle,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}

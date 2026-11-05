@@ -7,6 +7,8 @@ import (
 	"uuid"
 )
 
+const GetEntryQueryName = "GetEntry"
+
 var _ query.Query = GetEntry{}
 
 type GetEntry struct {
@@ -14,10 +16,8 @@ type GetEntry struct {
 	Type string
 }
 
-func (g GetEntry) IsQuery() {}
-
 func (g GetEntry) Name() string {
-	return "GetEntry"
+	return GetEntryQueryName
 }
 
 var _ query.Handler[GetEntry, EntryView] = (*GetEntryHandler)(nil)

@@ -14,3 +14,21 @@ SELECT display_name, handle, avatar_url
 FROM directory.entries
 WHERE target_id = $1
     AND target_type = $2;
+
+-- name: ListDirectoryEntriesByTargets :many
+WITH targets AS (
+  SELECT 
+    target_ids.val::uuid AS id,
+    target_types.val::text AS type
+  FROM unnest(@target_ids::uuid[]) WITH ORDINALITY AS target_ids(val, ord)
+  JOIN unnest(@target_types::text[]) WITH ORDINALITY AS target_types(val, ord) ON target_ids.ord = target_types.ord
+)
+SELECT
+    e.id,
+    e.target_id,
+    e.target_type,
+    e.display_name,
+    e.handle,
+    e.avatar_url
+FROM directory.entries AS e
+JOIN targets ON e.target_id = target.id AND e.target_type = target.type;

@@ -128,3 +128,7 @@ func (c *httpClient) startDirectConversation(r appHttp.StartDirectConversationJS
 func (c *httpClient) registerDirectoryEntry(r appHttp.RegisterDirectoryEntryJSONRequestBody) (*http.Response, error) {
 	return c.doRequest(http.MethodPost, "directory/entries", &httpRequestOpts{Body: r})
 }
+
+func (c *httpClient) getHomePage() (*http.Response, error) {
+	return c.doRequest(http.MethodGet, "bff/web/home-page", nil)
+}

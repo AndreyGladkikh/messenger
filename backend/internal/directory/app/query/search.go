@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"messenger/messenger/internal/shared/app/query"
 	"strings"
 	"unicode"
 	"uuid"
@@ -9,11 +10,11 @@ import (
 
 const SearchQueryName = "Search"
 
+var _ query.Query = Search{}
+
 type Search struct {
 	Str string
 }
-
-func (g Search) IsQuery() {}
 
 func (g Search) Name() string {
 	return SearchQueryName

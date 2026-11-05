@@ -75,7 +75,10 @@ func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetTy
 		TargetID:   id,
 		TargetType: typ.String(),
 	})
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return query.EntryView{}, err
+	}
+	if errors.Is(err, sql.ErrNoRows) {
 		return query.EntryView{}, apperr.NewNotFound(fmt.Sprintf("Directory entry with id %q and type %q not found", id, typ.String()))
 	}
 
@@ -85,4 +88,26 @@ func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetTy
 		DisplayName: entryRow.DisplayName,
 		AvatarURL:   entryRow.AvatarUrl,
 	}, nil
+}
+
+func (q *QueryService) ListByTargets(ctx context.Context, ids []uuid.UUID, types []string) ([]query.EntryView, error) {
+	entryRows, err := q.Queries(ctx).ListDirectoryEntriesByTargets(ctx, sqlc.ListDirectoryEntriesByTargetsParams{
+		TargetIds: ids,
+		TargetTypes: types,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list directory entries by targets: %w", err)
+	}
+
+	entries := make([]query.EntryView, 0, len(entryRows))
+	for _, r := range entryRows {
+		entries = append(entries, query.EntryView{
+			ID: r.TargetID,
+			Type: r.TargetType,
+			DisplayName: r.DisplayName,
+			AvatarURL: r.AvatarUrl,
+		})
+	}
+
+	return entries, nil
 }

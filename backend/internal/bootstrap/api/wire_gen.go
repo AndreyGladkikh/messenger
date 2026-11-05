@@ -7,14 +7,17 @@
 package api
 
 import (
+	query3 "messenger/messenger/internal/bff/web/application/query"
 	"messenger/messenger/internal/bootstrap"
 	command2 "messenger/messenger/internal/conversations/app/command"
+	query4 "messenger/messenger/internal/conversations/app/query"
 	"messenger/messenger/internal/conversations/app/service"
-	"messenger/messenger/internal/conversations/infra/identity"
+	"messenger/messenger/internal/conversations/infra/integration/identity"
+	persistence3 "messenger/messenger/internal/conversations/infra/persistence"
 	repository3 "messenger/messenger/internal/conversations/infra/persistence/repository"
 	command3 "messenger/messenger/internal/directory/app/command"
 	query2 "messenger/messenger/internal/directory/app/query"
-	identity2 "messenger/messenger/internal/directory/infra/identity"
+	identity2 "messenger/messenger/internal/directory/infra/integration/identity"
 	persistence2 "messenger/messenger/internal/directory/infra/persistence"
 	"messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/identity/app/query"
@@ -69,13 +72,16 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	getEntryHandler := &query2.GetEntryHandler{
 		Reader: persistenceQueryService,
 	}
-	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler)
+	getHomePageHandler := query3.NewGetHomePageHandler()
+	queryService2 := persistence3.NewQueryService(storeStore)
+	listUserConversationsHandler := query4.NewListUserConversationsHandler(queryService2)
+	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler, getHomePageHandler, listUserConversationsHandler)
 	participantLookup := identity.NewParticipantLookup(bus)
 	directConversationResolver := service.NewDirectConversationResolver(conversationRepository, membershipRepository, participantLookup)
 	messageRepository := repository3.NewMessageRepository(repositoryRepository)
 	messageSender := service.NewMessageSender(membershipRepository, messageRepository)
 	publisher := &event.Publisher{}
-	sendFirstDirectMessageHandler := &command2.SendFirstDirectMessageHandler{
+	startDirectConversationHandler := &command2.StartDirectConversationHandler{
 		DirectConversationResolver: directConversationResolver,
 		MessageSender:              messageSender,
 		EventPublisher:             publisher,
@@ -85,7 +91,7 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	userLookup := identity2.NewUserLookup(bus)
 	targetLookup := command3.NewTargetLookup(userLookup)
 	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
-	commandbusBus := bootstrap.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, sendFirstDirectMessageHandler, sendMessageHandler, registerEntryHandler)
+	commandbusBus := bootstrap.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, startDirectConversationHandler, sendMessageHandler, registerEntryHandler)
 	apiHandler := http.NewApiHandler(commandbusBus, bus)
 	problemTypesRegistry := http.NewProblemTypesRegistry(cfg)
 	errorHandler := http.NewErrorHandler(cfg, loggerLogger, problemTypesRegistry)

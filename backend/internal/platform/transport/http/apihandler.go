@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json/v2"
 
+	webBffQry "messenger/messenger/internal/bff/web/application/query"
 	cnvCmd "messenger/messenger/internal/conversations/app/command"
 	drctrCmd "messenger/messenger/internal/directory/app/command"
 	drctrQry "messenger/messenger/internal/directory/app/query"
@@ -162,12 +163,12 @@ func (h *ApiHandler) StartDirectConversation(ctx context.Context, request StartD
 		return nil, err
 	}
 
-	cmd := cnvCmd.SendFirstDirectMessage{
+	cmd := cnvCmd.StartDirectConversation{
 		Sender:    a.Principal.Subject.ID,
 		Recipient: request.Body.ParticipantId,
 		Body:      request.Body.FirstMessage.Body,
 	}
-	resp, err := h.commandBus.Dispatch[cnvCmd.SendFirstDirectMessageResponse](ctx, cmd)
+	resp, err := h.commandBus.Dispatch[cnvCmd.StartDirectConversationResponse](ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -194,6 +195,38 @@ func (h *ApiHandler) SendMessage(ctx context.Context, request SendMessageRequest
 	}
 
 	return SendMessage201Response{}, nil
+}
+
+func (h *ApiHandler) GetWebHomePage(ctx context.Context, request GetWebHomePageRequestObject) (GetWebHomePageResponseObject, error) {
+	a, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	qry := webBffQry.GetHomePage{
+		UserID: a.Principal.Subject.ID,
+	}
+	resp, err := h.queryBus.Dispatch[webBffQry.HomePage](ctx, qry)
+	if err != nil {
+		return nil, err
+	}
+
+	peerItem := make([]PeerItem, 0, len(resp.Peers))
+	for _, p := range resp.Peers {
+		peerItem = append(peerItem, PeerItem{
+			Id:          p.ID,
+			Type:        p.Type,
+			AvatarUrl:   &p.AvatarUrl,
+			Title:       p.Title,
+			Preview:     &p.Preview,
+			PreviewTime: &p.PreviewTime,
+			UnreadCount: &p.UnreadCount,
+		})
+	}
+
+	return GetWebHomePage200JSONResponse{
+		Peers: peerItem,
+	}, nil
 }
 
 func getAuth(ctx context.Context) (auth.Auth, error) {

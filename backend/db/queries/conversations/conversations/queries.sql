@@ -10,15 +10,44 @@ WHERE id = (
 );
 
 -- name: ListConversationsForUser :many
-SELECT * FROM conversations.conversations
-WHERE id = ANY(
-    SELECT conversation_id
-    FROM conversations.memberships
-    WHERE participant_id = $1
-)
-ORDER BY created_at DESC
-LIMIT $2 
-OFFSET $3;
+SELECT cnv.id,
+    cnv.type,
+    gcnv.title,
+    gcnv.avatar_url,
+    msg.id as msg_id,
+    msg.body as msg_body,
+    msg.sender_id as msg_sender_id,
+    msg.created_at as msg_created_at
+FROM conversations.conversations cnv
+LEFT JOIN conversations.group_conversations gcnv ON cnv.id = gcnv.conversation_id
+JOIN conversations.memberships memb ON cnv.id = memb.conversation_id
+LEFT JOIN lateral (
+    SELECT msg.id,
+        msg.body,
+        msg.sender_id,
+        msg.created_at
+    FROM conversations.messages msg
+    WHERE msg.conversation_id = cnv.id
+        AND msg.deleted_at IS NULL
+    ORDER BY msg.created_at DESC, msg.id DESC
+    LIMIT 1
+) msg ON true
+WHERE memb.participant_id = $1
+AND cnv.deleted_at IS NULL
+ORDER BY msg.created_at DESC, cnv.created_at DESC
+;
+
+-- -- name: ListConversationsForUser :many
+-- SELECT * FROM conversations.conversations c
+-- LEFT JOIN conversations.group_conversations gc ON c.id = gc.conversation_id
+-- WHERE id = ANY(
+--     SELECT conversation_id
+--     FROM conversations.memberships
+--     WHERE participant_id = $1
+-- )
+-- ORDER BY c.created_at DESC
+-- LIMIT $2 
+-- OFFSET $3;
 
 -- name: ListConversationIDsForUser :many
 SELECT id FROM conversations.conversations

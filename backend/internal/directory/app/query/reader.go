@@ -8,4 +8,5 @@ import (
 
 type Reader interface {
 	Get(ctx context.Context, id uuid.UUID, typ entry.TargetType) (EntryView, error)
+	ListByTargets(ctx context.Context, ids []uuid.UUID, types []string) ([]EntryView, error)
 }

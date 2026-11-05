@@ -2,17 +2,18 @@ package query
 
 import (
 	"context"
+	"messenger/messenger/internal/shared/app/query"
 
 	"uuid"
 )
 
 const GetAccountQueryName = "GetAccount"
 
+var _ query.Query = GetAccount{}
+
 type GetAccount struct {
 	ID uuid.UUID
 }
-
-func (q GetAccount) IsQuery() {}
 
 func (q GetAccount) Name() string {
 	return GetAccountQueryName

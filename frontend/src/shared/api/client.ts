@@ -150,7 +150,7 @@ let refreshPromise: Promise<void> | null = null
 function refreshOnce(): Promise<void> {
     if (!refreshPromise) {
         refreshPromise = apiRequest(
-            '/auth/refresh',
+            '/auth/users/refresh-tokens',
             { method: http.method.post },
             false
         ).finally(() => { refreshPromise = null })

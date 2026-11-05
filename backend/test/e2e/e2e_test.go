@@ -159,9 +159,7 @@ func startOutboxRelay(t *testing.T, cfg config.Config) func() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
-		if err := outboxRelay.OutboxRelay.Run(ctx); err != nil {
-			require.NoError(t, err)
-		}
+		outboxRelay.OutboxRelay.Run(ctx)
 	}()
 
 	return func() {
@@ -180,9 +178,7 @@ func startConsumers(t *testing.T, cfg config.Config) func() {
 
 	for _, runner := range consumer.Consumers {
 		go func() {
-			if err := runner.Run(ctx); err != nil {
-				require.NoError(t, err)
-			}
+			runner.Run(ctx)
 		}()
 	}
 

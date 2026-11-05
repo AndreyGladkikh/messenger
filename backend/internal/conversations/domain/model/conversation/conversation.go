@@ -23,10 +23,8 @@ type Conversation struct {
 
 	id   uuid.UUID
 	Type ConversationType
-}
-
-func (s *Conversation) ID() uuid.UUID {
-	return s.id
+	Title *string
+	AvatarUrl *string
 }
 
 func New(
@@ -46,6 +44,10 @@ func Rehydrate(
 		id:   id,
 		Type: typ,
 	}
+}
+
+func (s *Conversation) ID() uuid.UUID {
+	return s.id
 }
 
 type DirectConversationParticipantsPair struct {
