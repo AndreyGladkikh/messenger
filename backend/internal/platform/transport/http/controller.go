@@ -14,7 +14,6 @@ package http
 // 	"messenger/messenger/internal/messaging/application/command/send_message"
 // 	"messenger/messenger/internal/messaging/application/query/get_chat_list"
 // 	"messenger/messenger/internal/platform/commandbus"
-// 	"messenger/messenger/internal/platform/querybus"
 // 	"messenger/messenger/internal/platform/transport/http/auth"
 // 	"messenger/messenger/internal/platform/transport/http/cookies"
 // 	"net/http"
@@ -26,16 +25,13 @@ package http
 
 // type Controller struct {
 // 	commandBus *commandbus.Bus
-// 	queryBus   *querybus.Bus
 // }
 
 // func NewController(
 // 	commandBus *commandbus.Bus,
-// 	queryBus *querybus.Bus,
 // ) *Controller {
 // 	return &Controller{
 // 		commandBus: commandBus,
-// 		queryBus:   queryBus,
 // 	}
 // }
 
@@ -115,17 +111,6 @@ package http
 // 	NewResponse(response, err).WriteTo(w)
 // }
 
-// func (c *Controller) getCurrentUser(w http.ResponseWriter, r *http.Request) {
-// 	userID, _ := auth.UserIDFromContext(r.Context())
-
-// 	q := &get_current_user.Query{
-// 		UserID: userID,
-// 	}
-// 	response, err := c.queryBus.Dispatch(r.Context(), q)
-
-// 	NewResponse(response, err).WriteTo(w)
-// }
-
 // func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 // 	accessTokenCookie := &http.Cookie{
 // 		Name:     cookies.AccessToken,
@@ -178,17 +163,6 @@ package http
 // 		ChatWithUserID: request.ChatWithUserID,
 // 	}
 // 	response, err := c.commandBus.Dispatch(r.Context(), command)
-
-// 	NewResponse(response, err).WriteTo(w)
-// }
-
-// func (c *Controller) getChatList(w http.ResponseWriter, r *http.Request) {
-// 	userID, _ := auth.UserIDFromContext(r.Context())
-
-// 	query := &get_chat_list.Query{
-// 		UserID: userID,
-// 	}
-// 	response, err := c.queryBus.Dispatch(r.Context(), query)
 
 // 	NewResponse(response, err).WriteTo(w)
 // }

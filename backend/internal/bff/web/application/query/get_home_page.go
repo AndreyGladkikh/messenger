@@ -51,30 +51,32 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 		if c.Type == port.ConversationTypeDirect {
 			cnvIdxMap[c.ID] = i
 			entryRefs = append(entryRefs, port.EntryRef{
-				ID: c.ID,
+				ID:   c.ID,
 				Type: port.ConversationTypeDirect,
 			})
 		}
 	}
 
-	entries, err := h.directoryReader.GetEntries(ctx, entryRefs)
-	if err != nil {
-		return HomePage{}, err
-	}
+	if len(entryRefs) > 0 {
+		entries, err := h.directoryReader.GetEntries(ctx, entryRefs)
+		if err != nil {
+			return HomePage{}, err
+		}
 
-	for _, e := range entries {
-		cnvs[cnvIdxMap[e.ID]].Title = &e.DisplayName
-		cnvs[cnvIdxMap[e.ID]].AvatarURL = e.AvatarURL
+		for _, e := range entries {
+			cnvs[cnvIdxMap[e.ID]].Title = &e.DisplayName
+			cnvs[cnvIdxMap[e.ID]].AvatarURL = e.AvatarURL
+		}
 	}
 
 	peers := make([]PeerItem, 0, len(cnvs))
 	for _, c := range cnvs {
 		peer := PeerItem{
-			ID: c.ID,
-			Type: port.ConversationTypeDirect,
-			AvatarUrl: *c.AvatarURL,
-			Title: *c.AvatarURL,
-			Preview: c.LastMessage.Body,
+			ID:          c.ID,
+			Type:        port.ConversationTypeDirect,
+			AvatarUrl:   *c.AvatarURL,
+			Title:       *c.AvatarURL,
+			Preview:     c.LastMessage.Body,
 			PreviewTime: c.LastMessage.SentAt,
 		}
 

@@ -15,8 +15,8 @@ import (
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/commandbus"
-	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/transport/http/cookies"
+	appQuery "messenger/messenger/internal/shared/app/query"
 	"net/http"
 	"net/netip"
 	"time"
@@ -27,17 +27,23 @@ import (
 var _ StrictServerInterface = (*ApiHandler)(nil)
 
 type ApiHandler struct {
-	commandBus *commandbus.Bus
-	queryBus   *querybus.Bus
+	commandBus      *commandbus.Bus
+	getAccount      appQuery.Handler[idQuery.GetAccount, idQuery.AccountView]
+	searchDirectory appQuery.Handler[drctrQry.Search, []drctrQry.SearchResultItem]
+	getWebHomePage  appQuery.Handler[webBffQry.GetHomePage, webBffQry.HomePage]
 }
 
 func NewApiHandler(
 	commandBus *commandbus.Bus,
-	queryBus *querybus.Bus,
+	getAccount appQuery.Handler[idQuery.GetAccount, idQuery.AccountView],
+	searchDirectory appQuery.Handler[drctrQry.Search, []drctrQry.SearchResultItem],
+	getWebHomePage appQuery.Handler[webBffQry.GetHomePage, webBffQry.HomePage],
 ) *ApiHandler {
 	return &ApiHandler{
-		commandBus: commandBus,
-		queryBus:   queryBus,
+		commandBus:      commandBus,
+		getAccount:      getAccount,
+		searchDirectory: searchDirectory,
+		getWebHomePage:  getWebHomePage,
 	}
 }
 
@@ -50,7 +56,7 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 	q := idQuery.GetAccount{
 		ID: a.Principal.Subject.ID,
 	}
-	response, err := h.queryBus.Dispatch[idQuery.AccountView](ctx, q)
+	response, err := h.getAccount.Handle(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -66,14 +72,6 @@ func (h *ApiHandler) GetMyChatList(ctx context.Context, request GetMyChatListReq
 	if err != nil {
 		return nil, err
 	}
-
-	// query := &get_chat_list.Query{
-	// 	UserID: a.Principal.Subject.ID,
-	// }
-	// response, err := h.queryBus.Dispatch[get_chat_list.ChatListView](ctx, query)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	return GetMyChatList200JSONResponse{}, nil
 }
@@ -206,7 +204,7 @@ func (h *ApiHandler) GetWebHomePage(ctx context.Context, request GetWebHomePageR
 	qry := webBffQry.GetHomePage{
 		UserID: a.Principal.Subject.ID,
 	}
-	resp, err := h.queryBus.Dispatch[webBffQry.HomePage](ctx, qry)
+	resp, err := h.getWebHomePage.Handle(ctx, qry)
 	if err != nil {
 		return nil, err
 	}
@@ -334,7 +332,7 @@ func (h *ApiHandler) Test(w http.ResponseWriter, r *http.Request) {
 		Str: rqst.Search,
 	}
 
-	rsp, err := h.queryBus.Dispatch[any](r.Context(), qry)
+	rsp, err := h.searchDirectory.Handle(r.Context(), qry)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -4,27 +4,27 @@ import (
 	"context"
 	"fmt"
 	"messenger/messenger/internal/bff/web/application/port"
-	"messenger/messenger/internal/conversations/app/query"
-	"messenger/messenger/internal/platform/querybus"
+	cnvQry "messenger/messenger/internal/conversations/app/query"
+	appQuery "messenger/messenger/internal/shared/app/query"
 	"uuid"
 )
 
 var _ port.MessagingReader = (*Service)(nil)
 
 type Service struct {
-	queryBus *querybus.Bus
+	listUserConversations appQuery.Handler[cnvQry.ListUserConversations, []cnvQry.ConversationSummary]
 }
 
 func NewService(
-	queryBus *querybus.Bus,
+	listUserConversations appQuery.Handler[cnvQry.ListUserConversations, []cnvQry.ConversationSummary],
 ) *Service {
 	return &Service{
-		queryBus: queryBus,
+		listUserConversations: listUserConversations,
 	}
 }
 
 func (s *Service) ListUserConvesations(ctx context.Context, userID uuid.UUID) ([]port.ConversationSummary, error) {
-	cnvs, err := s.queryBus.Dispatch[[]query.ConversationSummary](ctx, query.ListUserConversations{
+	cnvs, err := s.listUserConversations.Handle(ctx, cnvQry.ListUserConversations{
 		UserID: userID,
 	})
 	if err != nil {

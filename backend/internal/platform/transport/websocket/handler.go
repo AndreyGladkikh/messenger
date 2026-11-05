@@ -10,7 +10,6 @@ import (
 	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/pubsub"
-	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/store"
 	"net/http"
 	"sync"
@@ -31,7 +30,6 @@ var _ http.Handler = (*Handler)(nil)
 type Handler struct {
 	Logger     *logger.Logger
 	CommandBus *commandbus.Bus
-	QueryBus   *querybus.Bus
 	Store      *store.Store
 	PubSub     *pubsub.PubSub
 }

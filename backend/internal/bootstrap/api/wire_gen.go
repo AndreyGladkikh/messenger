@@ -7,12 +7,14 @@
 package api
 
 import (
-	query3 "messenger/messenger/internal/bff/web/application/query"
+	query4 "messenger/messenger/internal/bff/web/application/query"
+	"messenger/messenger/internal/bff/web/infra/integration/directory"
+	"messenger/messenger/internal/bff/web/infra/integration/messaging"
 	"messenger/messenger/internal/bootstrap"
 	command2 "messenger/messenger/internal/conversations/app/command"
-	query4 "messenger/messenger/internal/conversations/app/query"
+	query3 "messenger/messenger/internal/conversations/app/query"
 	"messenger/messenger/internal/conversations/app/service"
-	"messenger/messenger/internal/conversations/infra/integration/identity"
+	"messenger/messenger/internal/conversations/infra/integration"
 	persistence3 "messenger/messenger/internal/conversations/infra/persistence"
 	repository3 "messenger/messenger/internal/conversations/infra/persistence/repository"
 	command3 "messenger/messenger/internal/directory/app/command"
@@ -67,16 +69,8 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	membershipRepository := repository3.NewMembershipRepository(repositoryRepository)
 	queryService := persistence.NewQueryService(storeStore)
 	getAccountHandler := query.NewGetAccountHandler(queryService)
-	persistenceQueryService := persistence2.NewQueryService(storeStore)
-	searchHandler := query2.NewSearchHandler(persistenceQueryService)
-	getEntryHandler := &query2.GetEntryHandler{
-		Reader: persistenceQueryService,
-	}
-	getHomePageHandler := query3.NewGetHomePageHandler()
-	queryService2 := persistence3.NewQueryService(storeStore)
-	listUserConversationsHandler := query4.NewListUserConversationsHandler(queryService2)
-	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler, getHomePageHandler, listUserConversationsHandler)
-	participantLookup := identity.NewParticipantLookup(bus)
+	handler := bootstrap.ProvideGetAccountQueryHandler(getAccountHandler, loggerLogger)
+	participantLookup := integration.NewParticipantLookup(handler)
 	directConversationResolver := service.NewDirectConversationResolver(conversationRepository, membershipRepository, participantLookup)
 	messageRepository := repository3.NewMessageRepository(repositoryRepository)
 	messageSender := service.NewMessageSender(membershipRepository, messageRepository)
@@ -88,11 +82,23 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	}
 	sendMessageHandler := command2.NewSendMessageHandler(conversationRepository, messageSender)
 	entryRepository := persistence2.NewEntryRepository(repositoryRepository)
-	userLookup := identity2.NewUserLookup(bus)
+	userLookup := identity2.NewUserLookup(handler)
 	targetLookup := command3.NewTargetLookup(userLookup)
 	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
-	commandbusBus := bootstrap.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, startDirectConversationHandler, sendMessageHandler, registerEntryHandler)
-	apiHandler := http.NewApiHandler(commandbusBus, bus)
+	bus := bootstrap.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, startDirectConversationHandler, sendMessageHandler, registerEntryHandler)
+	persistenceQueryService := persistence2.NewQueryService(storeStore)
+	searchHandler := query2.NewSearchHandler(persistenceQueryService)
+	queryHandler := bootstrap.ProvideSearchDirectoryQueryHandler(searchHandler, loggerLogger)
+	queryService2 := persistence3.NewQueryService(storeStore)
+	listUserConversationsHandler := query3.NewListUserConversationsHandler(queryService2)
+	handler2 := bootstrap.ProvideListUserConversationsQueryHandler(listUserConversationsHandler, loggerLogger)
+	messagingService := messaging.NewService(handler2)
+	getEntriesHandler := query2.NewGetEntriesHandler(persistenceQueryService)
+	handler3 := bootstrap.ProvideGetDirectoryEntriesQueryHandler(getEntriesHandler, loggerLogger)
+	directoryService := directory.NewService(handler3)
+	getHomePageHandler := query4.NewGetHomePageHandler(messagingService, directoryService)
+	handler4 := bootstrap.ProvideGetWebHomePageQueryHandler(getHomePageHandler, loggerLogger)
+	apiHandler := http.NewApiHandler(bus, handler, queryHandler, handler4)
 	problemTypesRegistry := http.NewProblemTypesRegistry(cfg)
 	errorHandler := http.NewErrorHandler(cfg, loggerLogger, problemTypesRegistry)
 	client, cleanup2, err := redis.NewRedis(cfg)
@@ -101,14 +107,13 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 		return nil, nil, err
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(loggerLogger, client)
-	handler := &websocket.Handler{
+	websocketHandler := &websocket.Handler{
 		Logger:     loggerLogger,
-		CommandBus: commandbusBus,
-		QueryBus:   bus,
+		CommandBus: bus,
 		Store:      storeStore,
 		PubSub:     pubSub,
 	}
-	mux, err := http.NewRouter(apiHandler, errorHandler, tokenService, handler)
+	mux, err := http.NewRouter(apiHandler, errorHandler, tokenService, websocketHandler)
 	if err != nil {
 		cleanup3()
 		cleanup2()

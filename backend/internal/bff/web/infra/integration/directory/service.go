@@ -4,34 +4,34 @@ import (
 	"context"
 	"fmt"
 	"messenger/messenger/internal/bff/web/application/port"
-	"messenger/messenger/internal/directory/app/query"
-	"messenger/messenger/internal/platform/querybus"
+	drctrQry "messenger/messenger/internal/directory/app/query"
+	appQuery "messenger/messenger/internal/shared/app/query"
 )
 
 var _ port.DirectoryReader = (*Service)(nil)
 
 type Service struct {
-	queryBus *querybus.Bus
+	getEntries appQuery.Handler[drctrQry.GetEntries, []drctrQry.EntryView]
 }
 
 func NewService(
-	queryBus *querybus.Bus,
+	getEntries appQuery.Handler[drctrQry.GetEntries, []drctrQry.EntryView],
 ) *Service {
 	return &Service{
-		queryBus: queryBus,
+		getEntries: getEntries,
 	}
 }
 
 func (s *Service) GetEntries(ctx context.Context, refs []port.EntryRef) ([]port.EntryView, error) {
-	qryRefs := make([]query.EntryRef, 0, len(refs))
+	qryRefs := make([]drctrQry.EntryRef, 0, len(refs))
 	for _, r := range refs {
-		qryRefs = append(qryRefs, query.EntryRef{
-			ID: r.ID,
+		qryRefs = append(qryRefs, drctrQry.EntryRef{
+			ID:   r.ID,
 			Type: r.Type,
 		})
 	}
 
-	entries, err := s.queryBus.Dispatch[[]query.EntryView](ctx, query.GetEntries{
+	entries, err := s.getEntries.Handle(ctx, drctrQry.GetEntries{
 		Refs: qryRefs,
 	})
 	if err != nil {
@@ -41,10 +41,10 @@ func (s *Service) GetEntries(ctx context.Context, refs []port.EntryRef) ([]port.
 	entriesConv := make([]port.EntryView, 0, len(entries))
 	for _, e := range entries {
 		entriesConv = append(entriesConv, port.EntryView{
-			ID: e.ID,
-			Type: e.Type,
+			ID:          e.ID,
+			Type:        e.Type,
 			DisplayName: e.DisplayName,
-			AvatarURL: e.AvatarURL,
+			AvatarURL:   e.AvatarURL,
 		})
 	}
 

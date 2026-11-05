@@ -3,25 +3,25 @@ package identity
 import (
 	"context"
 	"messenger/messenger/internal/directory/domain/entry"
-	"messenger/messenger/internal/identity/app/query"
-	"messenger/messenger/internal/platform/querybus"
+	idQry "messenger/messenger/internal/identity/app/query"
+	appQuery "messenger/messenger/internal/shared/app/query"
 	"uuid"
 )
 
 type UserLookup struct {
-	qryBus *querybus.Bus
+	getAccount appQuery.Handler[idQry.GetAccount, idQry.AccountView]
 }
 
 func NewUserLookup(
-	qryBus *querybus.Bus,
+	getAccount appQuery.Handler[idQry.GetAccount, idQry.AccountView],
 ) *UserLookup {
 	return &UserLookup{
-		qryBus: qryBus,
+		getAccount: getAccount,
 	}
 }
 
 func (u *UserLookup) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
-	rspns, err := u.qryBus.Dispatch[query.AccountView](ctx, query.GetAccount{ID: id})
+	rspns, err := u.getAccount.Handle(ctx, idQry.GetAccount{ID: id})
 	if err != nil {
 		return false, err
 	}

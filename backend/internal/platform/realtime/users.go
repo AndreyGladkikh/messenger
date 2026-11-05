@@ -7,25 +7,25 @@ import (
 	drctrQry "messenger/messenger/internal/directory/app/query"
 	"messenger/messenger/internal/directory/domain/entry"
 	"messenger/messenger/internal/platform/pubsub"
-	"messenger/messenger/internal/platform/querybus"
 	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/shared/app/event"
+	appQuery "messenger/messenger/internal/shared/app/query"
 )
 
 var _ rabbitmq.Handler = (*PersonalDeliveryHandler)(nil)
 
 type PersonalDeliveryHandler struct {
 	userPubSub *pubsub.PersonalEventsPubSub
-	queryBus   *querybus.Bus
+	getEntry   appQuery.Handler[drctrQry.GetEntry, drctrQry.EntryView]
 }
 
 func NewPersonalDeliveryHandler(
 	userPubSub *pubsub.PersonalEventsPubSub,
-	queryBus *querybus.Bus,
+	getEntry appQuery.Handler[drctrQry.GetEntry, drctrQry.EntryView],
 ) *PersonalDeliveryHandler {
 	return &PersonalDeliveryHandler{
 		userPubSub: userPubSub,
-		queryBus:   queryBus,
+		getEntry:   getEntry,
 	}
 }
 
@@ -40,7 +40,7 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 
 		evnt := envlp.Event
 
-		entr, err := h.queryBus.Dispatch[drctrQry.EntryView](ctx, drctrQry.GetEntry{
+		entr, err := h.getEntry.Handle(ctx, drctrQry.GetEntry{
 			ID:   evnt.SenderID,
 			Type: entry.TargetTypeUser.String(),
 		})

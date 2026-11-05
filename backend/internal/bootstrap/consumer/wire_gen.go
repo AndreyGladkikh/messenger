@@ -7,14 +7,9 @@
 package consumer
 
 import (
-	query3 "messenger/messenger/internal/bff/web/application/query"
 	"messenger/messenger/internal/bootstrap"
-	query4 "messenger/messenger/internal/conversations/app/query"
-	persistence3 "messenger/messenger/internal/conversations/infra/persistence"
-	query2 "messenger/messenger/internal/directory/app/query"
-	persistence2 "messenger/messenger/internal/directory/infra/persistence"
-	"messenger/messenger/internal/identity/app/query"
-	"messenger/messenger/internal/identity/infra/persistence"
+	"messenger/messenger/internal/directory/app/query"
+	"messenger/messenger/internal/directory/infra/persistence"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
@@ -52,17 +47,11 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	queries := sqlc.New(pool)
 	storeStore := store.NewStore(queries)
 	queryService := persistence.NewQueryService(storeStore)
-	getAccountHandler := query.NewGetAccountHandler(queryService)
-	persistenceQueryService := persistence2.NewQueryService(storeStore)
-	searchHandler := query2.NewSearchHandler(persistenceQueryService)
-	getEntryHandler := &query2.GetEntryHandler{
-		Reader: persistenceQueryService,
+	getEntryHandler := &query.GetEntryHandler{
+		Reader: queryService,
 	}
-	getHomePageHandler := query3.NewGetHomePageHandler()
-	queryService2 := persistence3.NewQueryService(storeStore)
-	listUserConversationsHandler := query4.NewListUserConversationsHandler(queryService2)
-	bus := bootstrap.InitQueryBus(getAccountHandler, searchHandler, getEntryHandler, getHomePageHandler, listUserConversationsHandler)
-	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, bus)
+	handler := bootstrap.ProvideGetDirectoryEntryQueryHandler(getEntryHandler, loggerLogger)
+	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, handler)
 	realtimePersonalDeliveryConsumer, cleanup5, err := consumers.NewRealtimePersonalDeliveryConsumer(loggerLogger, connection, personalDeliveryHandler)
 	if err != nil {
 		cleanup4()
