@@ -136,37 +136,6 @@ func (q *Queries) CreateInbox(ctx context.Context, arg CreateInboxParams) (Inbox
 	return i, err
 }
 
-const createMessage = `-- name: CreateMessage :exec
-INSERT INTO conversations.messages (
-    id,
-    sender_id,
-    conversation_id,
-    body,
-    reply_to_message_id
-) VALUES (
-  $1, $2, $3, $4, $5
-)
-`
-
-type CreateMessageParams struct {
-	ID               uuid.UUID
-	SenderID         uuid.UUID
-	ConversationID   uuid.UUID
-	Body             string
-	ReplyToMessageID *uuid.UUID
-}
-
-func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
-	_, err := q.db.Exec(ctx, createMessage,
-		arg.ID,
-		arg.SenderID,
-		arg.ConversationID,
-		arg.Body,
-		arg.ReplyToMessageID,
-	)
-	return err
-}
-
 const createUser = `-- name: CreateUser :exec
 INSERT INTO identity.users (
   id,
@@ -217,6 +186,40 @@ type DeleteMessageParams struct {
 
 func (q *Queries) DeleteMessage(ctx context.Context, arg DeleteMessageParams) error {
 	_, err := q.db.Exec(ctx, deleteMessage, arg.ID, arg.DeletedAt)
+	return err
+}
+
+const insertMessage = `-- name: InsertMessage :exec
+INSERT INTO conversations.messages (
+    id,
+    sender_id,
+    conversation_id,
+    body,
+    reply_to_message_id,
+    created_at
+) VALUES (
+  $1, $2, $3, $4, $5, $6
+)
+`
+
+type InsertMessageParams struct {
+	ID               uuid.UUID
+	SenderID         uuid.UUID
+	ConversationID   uuid.UUID
+	Body             string
+	ReplyToMessageID *uuid.UUID
+	CreatedAt        time.Time
+}
+
+func (q *Queries) InsertMessage(ctx context.Context, arg InsertMessageParams) error {
+	_, err := q.db.Exec(ctx, insertMessage,
+		arg.ID,
+		arg.SenderID,
+		arg.ConversationID,
+		arg.Body,
+		arg.ReplyToMessageID,
+		arg.CreatedAt,
+	)
 	return err
 }
 
@@ -371,9 +374,10 @@ INSERT INTO directory.entries (
     target_id,
     target_type,
     display_name,
-    handle
+    handle,
+    avatar_url
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
 ) ON CONFLICT (id) DO UPDATE
 SET display_name = EXCLUDED.display_name,
   handle = EXCLUDED.handle
@@ -385,6 +389,7 @@ type UpsertDirectoryEntryParams struct {
 	TargetType  string
 	DisplayName string
 	Handle      string
+	AvatarUrl   *string
 }
 
 func (q *Queries) UpsertDirectoryEntry(ctx context.Context, arg UpsertDirectoryEntryParams) error {
@@ -394,6 +399,7 @@ func (q *Queries) UpsertDirectoryEntry(ctx context.Context, arg UpsertDirectoryE
 		arg.TargetType,
 		arg.DisplayName,
 		arg.Handle,
+		arg.AvatarUrl,
 	)
 	return err
 }

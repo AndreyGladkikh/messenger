@@ -26,6 +26,8 @@ type httpClient struct {
 }
 
 func newHttpClient(t *testing.T, server *httptest.Server) *httpClient {
+	t.Helper()
+
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	require.NoError(t, err)
 
@@ -46,7 +48,7 @@ type httpRequestOpts struct {
 	Cookies     []*http.Cookie
 }
 
-func (c *httpClient) doRequest(method, url string, opts *httpRequestOpts) (*http.Response, error) {
+func (c *httpClient) doRequest(t *testing.T, method, url string, opts *httpRequestOpts) (*http.Response, error) {
 	if opts == nil {
 		opts = new(httpRequestOpts)
 	}
@@ -96,39 +98,51 @@ func (c *httpClient) doRequest(method, url string, opts *httpRequestOpts) (*http
 		return nil, err
 	}
 
+	t.Cleanup(func() {
+		rsp.Body.Close()
+	})
+
 	return rsp, nil
 }
 
-func (c *httpClient) registerUser(login, pass string) (*http.Response, error) {
-	return c.doRequest(http.MethodPost, "auth/users", &httpRequestOpts{Body: appHttp.RegisterUserJSONRequestBody{
+func (c *httpClient) registerUser(t *testing.T, login, pass string) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "auth/users", &httpRequestOpts{Body: appHttp.RegisterUserJSONRequestBody{
 		Login:    login,
 		Password: pass,
 	}})
 }
 
-func (c *httpClient) loginUser(login, pass string) (*http.Response, error) {
-	return c.doRequest(http.MethodPost, "auth/users/login", &httpRequestOpts{Body: appHttp.LoginUserJSONRequestBody{
+func (c *httpClient) loginUser(t *testing.T, login, pass string) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "auth/users/login", &httpRequestOpts{Body: appHttp.LoginUserJSONRequestBody{
 		Login:    login,
 		Password: pass,
 	}})
 }
 
-func (c *httpClient) refreshUserTokens() (*http.Response, error) {
-	return c.doRequest(http.MethodPost, "auth/users/refresh-tokens", nil)
+func (c *httpClient) refreshUserTokens(t *testing.T) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "auth/users/refresh-tokens", nil)
 }
 
-func (c *httpClient) me() (*http.Response, error) {
-	return c.doRequest(http.MethodGet, "auth/me", nil)
+func (c *httpClient) me(t *testing.T) (*http.Response, error) {
+	return c.doRequest(t, http.MethodGet, "auth/me", nil)
 }
 
-func (c *httpClient) startDirectConversation(r appHttp.StartDirectConversationJSONRequestBody) (*http.Response, error) {
-	return c.doRequest(http.MethodPost, "conversations/direct", &httpRequestOpts{Body: r})
+func (c *httpClient) createMyProfile(t *testing.T, r appHttp.CreateMyProfileJSONRequestBody) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "me/profile", &httpRequestOpts{Body: r})
 }
 
-func (c *httpClient) registerDirectoryEntry(r appHttp.RegisterDirectoryEntryJSONRequestBody) (*http.Response, error) {
-	return c.doRequest(http.MethodPost, "directory/entries", &httpRequestOpts{Body: r})
+func (c *httpClient) getMyProfile(t *testing.T) (*http.Response, error) {
+	return c.doRequest(t, http.MethodGet, "me/profile", nil)
 }
 
-func (c *httpClient) getHomePage() (*http.Response, error) {
-	return c.doRequest(http.MethodGet, "bff/web/home-page", nil)
+func (c *httpClient) startDirectConversation(t *testing.T, r appHttp.StartDirectConversationJSONRequestBody) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "conversations/direct", &httpRequestOpts{Body: r})
+}
+
+func (c *httpClient) registerDirectoryEntry(t *testing.T, r appHttp.RegisterDirectoryEntryJSONRequestBody) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "directory/entries", &httpRequestOpts{Body: r})
+}
+
+func (c *httpClient) getHomePage(t *testing.T) (*http.Response, error) {
+	return c.doRequest(t, http.MethodGet, "bff/web/home-page", nil)
 }

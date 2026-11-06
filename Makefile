@@ -38,10 +38,10 @@ generate_keys:
 generate_code:
 	cd backend && \
 	go tool sqlc generate && \
-	go tool wire ./internal/bootstrap/api/ && \
-	go tool wire ./internal/bootstrap/outbox_relay/ && \
-	go tool wire ./internal/bootstrap/consumer/ && \
 	go generate ./... && \
+	go tool wire ./internal/platform/bootstrap/api/ && \
+	go tool wire ./internal/platform/bootstrap/outbox_relay/ && \
+	go tool wire ./internal/platform/bootstrap/consumer/ && \
 	go mod tidy
 
 lint:

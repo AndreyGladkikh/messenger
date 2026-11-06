@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	cnvEvnt "messenger/messenger/internal/conversations/app/event"
+	cnvEvnt "messenger/messenger/internal/messaging/app/event"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/rabbitmq/producers"

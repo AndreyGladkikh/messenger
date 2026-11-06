@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"log"
-	"messenger/messenger/internal/bootstrap/consumer"
+	"messenger/messenger/internal/platform/bootstrap/consumer"
 	"messenger/messenger/internal/platform/config"
 )
 

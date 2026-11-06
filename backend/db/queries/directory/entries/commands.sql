@@ -4,9 +4,10 @@ INSERT INTO directory.entries (
     target_id,
     target_type,
     display_name,
-    handle
+    handle,
+    avatar_url
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
 ) ON CONFLICT (id) DO UPDATE
 SET display_name = EXCLUDED.display_name,
   handle = EXCLUDED.handle;

@@ -12,7 +12,7 @@ type Entry struct {
 	TargetID    uuid.UUID
 	TargetType  TargetType
 	DisplayName string
-	AvatarURL   string
+	AvatarURL   *string
 	Handle      string
 }
 
@@ -21,6 +21,7 @@ func New(
 	targetType TargetType,
 	displayName string,
 	handle string,
+	opts ...Option,
 ) *Entry {
 	e := &Entry{
 		id:          uuid.New(),
@@ -29,6 +30,10 @@ func New(
 		DisplayName: displayName,
 		Handle:      handle,
 	}
+	for _, o := range opts {
+		o(e)
+	}
+
 	e.AddEvent(EntryRegistered{
 		ID:          e.ID(),
 		TargetID:    targetID,
@@ -36,6 +41,7 @@ func New(
 		DisplayName: displayName,
 		Handle:      handle,
 	})
+	
 	return e
 }
 
@@ -43,10 +49,10 @@ func (e *Entry) ID() uuid.UUID {
 	return e.id
 }
 
-// type Option func(*Entry)
+type Option func(*Entry)
 
-// func WithAvatarURL(url string) Option {
-// 	return func(e *Entry) {
-// 		e.AvatarURL =  url
-// 	}
-// }
+func WithAvatarURL(url *string) Option {
+	return func(e *Entry) {
+		e.AvatarURL =  url
+	}
+}

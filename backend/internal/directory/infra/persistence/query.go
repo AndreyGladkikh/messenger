@@ -85,6 +85,7 @@ func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetTy
 	return query.EntryView{
 		ID:          id,
 		Type:        typ.String(),
+		Handle:      entryRow.Handle,
 		DisplayName: entryRow.DisplayName,
 		AvatarURL:   entryRow.AvatarUrl,
 	}, nil
@@ -92,7 +93,7 @@ func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetTy
 
 func (q *QueryService) ListByTargets(ctx context.Context, ids []uuid.UUID, types []string) ([]query.EntryView, error) {
 	entryRows, err := q.Queries(ctx).ListDirectoryEntriesByTargets(ctx, sqlc.ListDirectoryEntriesByTargetsParams{
-		TargetIds: ids,
+		TargetIds:   ids,
 		TargetTypes: types,
 	})
 	if err != nil {
@@ -102,10 +103,10 @@ func (q *QueryService) ListByTargets(ctx context.Context, ids []uuid.UUID, types
 	entries := make([]query.EntryView, 0, len(entryRows))
 	for _, r := range entryRows {
 		entries = append(entries, query.EntryView{
-			ID: r.TargetID,
-			Type: r.TargetType,
+			ID:          r.TargetID,
+			Type:        r.TargetType,
 			DisplayName: r.DisplayName,
-			AvatarURL: r.AvatarUrl,
+			AvatarURL:   r.AvatarUrl,
 		})
 	}
 

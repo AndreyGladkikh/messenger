@@ -13,12 +13,9 @@ func TestGetHomePage_Success(t *testing.T) {
 	server, _ := initApi(t)
 
 	user := newUser(t, server, "alice")
-	defer user.wsClient.CloseNow()
 
-	resp, err := user.httpClient.getHomePage()
+	resp, err := user.httpClient.getHomePage(t)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusOK, resp.StatusCode)	
 	
 	// body := decode[appHttp.GetWebHomePage200JSONResponse](t, resp.Body)

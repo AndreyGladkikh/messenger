@@ -53,6 +53,7 @@ const (
 	wsMessageTypeSendFirstDirectMessage WSMessageType = "sendFirstDirectMessage"
 	wsMessageTypeAddSubscription        WSMessageType = "addSubscription"
 
+	wsMessageTypeDirectConversationStarted WSMessageType = "directConversationStarted"
 	wsMessageTypeMessageSent WSMessageType = "messageSent"
 )
 

@@ -5,14 +5,14 @@ import (
 	"encoding/json/v2"
 
 	webBffQry "messenger/messenger/internal/bff/web/app/query"
-	cnvCmd "messenger/messenger/internal/conversations/app/command"
-	drctrCmd "messenger/messenger/internal/directory/app/command"
-	drctrQry "messenger/messenger/internal/directory/app/query"
+	directoryCmd "messenger/messenger/internal/directory/app/command"
+	directoryQry "messenger/messenger/internal/directory/app/query"
 	idApp "messenger/messenger/internal/identity/app"
 	idCommand "messenger/messenger/internal/identity/app/command"
 	idQuery "messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/model/session"
+	cnvCmd "messenger/messenger/internal/messaging/app/command"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/command_handler"
 	"messenger/messenger/internal/platform/query_handler"
@@ -95,7 +95,7 @@ func (h *ApiHandler) LoginUser(ctx context.Context, request LoginUserRequestObje
 }
 
 func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error) {
-	cmd := drctrCmd.RegisterEntry{
+	cmd := directoryCmd.RegisterEntry{
 		TargetID:    request.Body.TargetId,
 		TargetType:  request.Body.TargetType,
 		DisplayName: request.Body.DisplayName,
@@ -166,7 +166,9 @@ func (h *ApiHandler) StartDirectConversation(ctx context.Context, request StartD
 	}
 
 	return StartDirectConversation201JSONResponse{
-		Id: resp.ConversationID,
+		ConversationId: resp.ConversationID,
+		MessageId:      resp.MessageID,
+		MessageSentAt:  resp.MessageSentAt,
 	}, nil
 }
 
@@ -218,6 +220,49 @@ func (h *ApiHandler) GetWebHomePage(ctx context.Context, request GetWebHomePageR
 
 	return GetWebHomePage200JSONResponse{
 		Peers: peerItem,
+	}, nil
+}
+
+func (h *ApiHandler) CreateMyProfile(ctx context.Context, request CreateMyProfileRequestObject) (CreateMyProfileResponseObject, error) {
+	a, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := directoryCmd.RegisterEntry{
+		TargetID:    a.Principal.Subject.ID,
+		TargetType:  string(a.Principal.Subject.Type),
+		DisplayName: request.Body.DisplayName,
+		Handle:      request.Body.Handle,
+		AvatarURL:   request.Body.AvatarUrl,
+	}
+	_, err = h.commands.RegisterDirectoryEntry.Handle(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return CreateMyProfile201Response{}, nil
+}
+
+func (h *ApiHandler) GetMyProfile(ctx context.Context, request GetMyProfileRequestObject) (GetMyProfileResponseObject, error) {
+	a, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	qry := directoryQry.GetEntry{
+		ID:   a.Principal.Subject.ID,
+		Type: string(a.Principal.Subject.Type),
+	}
+	resp, err := h.queries.GetDirectoryEntry.Handle(ctx, qry)
+	if err != nil {
+		return nil, err
+	}
+
+	return GetMyProfile200JSONResponse{
+		Handle:      resp.Handle,
+		DisplayName: resp.DisplayName,
+		AvatarUrl:   resp.AvatarURL,
 	}, nil
 }
 
@@ -322,7 +367,7 @@ func (h *ApiHandler) Test(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	qry := drctrQry.Search{
+	qry := directoryQry.Search{
 		Str: rqst.Search,
 	}
 

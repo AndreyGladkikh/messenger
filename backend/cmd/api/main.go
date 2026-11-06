@@ -10,7 +10,7 @@ import (
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"messenger/messenger/internal/bootstrap/api"
+	"messenger/messenger/internal/platform/bootstrap/api"
 	"messenger/messenger/internal/platform/config"
 )
 

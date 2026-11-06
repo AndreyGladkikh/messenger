@@ -2,9 +2,9 @@ package query_handler
 
 import (
 	webBffQry "messenger/messenger/internal/bff/web/app/query"
-	conversationsQry "messenger/messenger/internal/conversations/app/query"
 	directoryQry "messenger/messenger/internal/directory/app/query"
 	identityQry "messenger/messenger/internal/identity/app/query"
+	conversationsQry "messenger/messenger/internal/messaging/app/query"
 	appQuery "messenger/messenger/internal/shared/app/query"
 )
 

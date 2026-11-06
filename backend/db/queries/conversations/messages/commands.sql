@@ -1,12 +1,13 @@
--- name: CreateMessage :exec
+-- name: InsertMessage :exec
 INSERT INTO conversations.messages (
     id,
     sender_id,
     conversation_id,
     body,
-    reply_to_message_id
+    reply_to_message_id,
+    created_at
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
 );
 
 -- name: UpdateMessage :exec

@@ -1,7 +1,7 @@
 package consumers
 
 import (
-	cnvEvent "messenger/messenger/internal/conversations/app/event"
+	cnvEvent "messenger/messenger/internal/messaging/app/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/rabbitmq/exchanges"

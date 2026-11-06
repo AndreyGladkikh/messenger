@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"log"
-	"messenger/messenger/internal/bootstrap/outbox_relay"
+	"messenger/messenger/internal/platform/bootstrap/outbox_relay"
 	"messenger/messenger/internal/platform/config"
 	"os/signal"
 	"syscall"

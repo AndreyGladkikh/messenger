@@ -1,9 +1,9 @@
 package command_handler
 
 import (
-	conversationsCmd "messenger/messenger/internal/conversations/app/command"
 	directoryCmd "messenger/messenger/internal/directory/app/command"
 	identityCmd "messenger/messenger/internal/identity/app/command"
+	conversationsCmd "messenger/messenger/internal/messaging/app/command"
 	appCmd "messenger/messenger/internal/shared/app/command"
 	"uuid"
 )

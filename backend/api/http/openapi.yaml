@@ -11,7 +11,7 @@ tags:
   - name: auth
     description: Everything about identity and access
   - name: me
-    description: Authenticated user info
+    description: Authenticated user actions
   - name: directory
     description: Searchable and viewable elemnts of messenger
   - name: conversations
@@ -187,6 +187,69 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DirectoryEntry'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
+  /me/profile:
+    get:
+      tags:
+        - me
+      summary: Get profile.
+      operationId: getMyProfile
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
+    post:
+      tags:
+        - me
+      summary: Create profile.
+      operationId: createMyProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
         required: true
       responses:
         '201':
@@ -409,6 +472,19 @@ components:
             sentAt:
               type: string
 
+    Profile:
+      type: object
+      required:
+        - handle
+        - displayName
+      properties:
+        handle:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+
     DirectoryEntry:
       type: object
       required:
@@ -444,12 +520,21 @@ components:
     Conversation:
       type: object
       required:
-        - id
+        - conversationId
+        - messageId
+        - messageSentAt
       properties:
-        id:
+        conversationId:
           type: string
           format: uuid
           x-go-type: uuid.UUID
+        messageId:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+        messageSentAt:
+          type: string
+          format: date-time
 
     HomePage:
       type: object

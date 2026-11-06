@@ -10,9 +10,9 @@ import (
 	"strings"
 	"uuid"
 
-	"messenger/messenger/internal/bootstrap/api"
-	"messenger/messenger/internal/bootstrap/consumer"
-	"messenger/messenger/internal/bootstrap/outbox_relay"
+	"messenger/messenger/internal/platform/bootstrap/api"
+	"messenger/messenger/internal/platform/bootstrap/consumer"
+	"messenger/messenger/internal/platform/bootstrap/outbox_relay"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/migrate"
 	"messenger/messenger/internal/platform/postgres"
@@ -189,6 +189,8 @@ func startConsumers(t *testing.T, cfg config.Config) func() {
 }
 
 func decode[T any](t *testing.T, data io.Reader) T {
+	t.Helper()
+	
 	var decoded T
 	err := json.UnmarshalRead(data, &decoded)
 	require.NoError(t, err)

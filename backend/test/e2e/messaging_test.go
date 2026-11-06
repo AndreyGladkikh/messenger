@@ -3,6 +3,7 @@ package e2e
 import (
 	"encoding/json/v2"
 	appHttp "messenger/messenger/internal/platform/transport/http"
+	"messenger/messenger/internal/platform/transport/websocket"
 	"net/http"
 	"testing"
 	"time"
@@ -14,53 +15,39 @@ import (
 func TestSendMessage_Success(t *testing.T) {
 	server, _ := initApi(t)
 
-	alice := newUser(t, server, "alice")
-	defer alice.wsClient.CloseNow()
+	alice := newUser(t, server, "alice", userWithProfile(t, "alice_handle", "Alice DN", nil))
+	bob := newUser(t, server, "bob", userWithProfile(t, "bob_handle", "Bob DN", nil))
 
-	resp, err := alice.httpClient.registerDirectoryEntry(appHttp.DirectoryEntry{
-		DisplayName: "Alice DN",
-		Handle:      "alice",
-		TargetId:    alice.id,
-		TargetType:  "user",
-	})
-	require.NoError(t, err)
-	defer resp.Body.Close()
+	msgBody := "Hi!"
 
-	bob := newUser(t, server, "bob")
-	defer bob.wsClient.CloseNow()
-
-	resp, err = bob.httpClient.registerDirectoryEntry(appHttp.DirectoryEntry{
-		DisplayName: "Bob DN",
-		Handle:      "bob",
-		TargetId:    bob.id,
-		TargetType:  "user",
-	})
-	require.NoError(t, err)
-	defer resp.Body.Close()
-
-	resp, err = alice.httpClient.startDirectConversation(appHttp.StartDirectConversationJSONRequestBody{
+	resp, err := alice.httpClient.startDirectConversation(t, appHttp.StartDirectConversationJSONRequestBody{
 		ParticipantId: bob.id,
-		FirstMessage:  appHttp.FirstMessage{Body: "Hi!"},
+		FirstMessage:  appHttp.FirstMessage{Body: msgBody},
 	})
 	require.NoError(t, err)
-	defer resp.Body.Close()
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
-
 	drctCnvBody := decode[appHttp.Conversation](t, resp.Body)
-	assert.NotEmpty(t, drctCnvBody.Id)
+	assert.NotEmpty(t, drctCnvBody.ConversationId)
 
-	var msg []byte
-
+	var msgRaw []byte
 	select {
-	case msg = <-bob.wsClient.receive:
-		a := 1
-		_=a
-		_=msg
-	case <-time.After(1*time.Second):
+	case msgRaw = <-bob.wsClient.receive:
+	case <-time.After(1 * time.Second):
 		t.Fatal("timeout waiting for message")
 	}
 
 	var payload any
-	err = json.Unmarshal(msg, &payload)
+	err = json.Unmarshal(msgRaw, &payload)
 	require.NoError(t, err)
+
+	assert.Equal(t, websocket.DirectConversationStartedPayload{
+		ConversationId:    drctCnvBody.ConversationId,
+		SenderId:          alice.id,
+		SenderDisplayName: alice.profile.displayName,
+		AvatarUrl:         alice.profile.avatarURL,
+		Message: &websocket.MessagePayload{
+			Body: msgBody,
+			SentAt: drctCnvBody.MessageSentAt,
+		},
+	}, decodeWSMsg[websocket.DirectConversationStartedPayload](t, msgRaw))
 }

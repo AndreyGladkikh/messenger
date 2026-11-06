@@ -26,6 +26,7 @@ func (r *EntryRepository) Save(ctx context.Context, e *entry.Entry) error {
 		TargetType:  string(e.TargetType),
 		DisplayName: e.DisplayName,
 		Handle:      e.Handle,
+		AvatarUrl:   e.AvatarURL,
 	})
 	if err != nil {
 		return err

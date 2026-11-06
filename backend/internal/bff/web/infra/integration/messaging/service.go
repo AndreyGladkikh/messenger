@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"messenger/messenger/internal/bff/web/app/port"
-	cnvQry "messenger/messenger/internal/conversations/app/query"
+	cnvQry "messenger/messenger/internal/messaging/app/query"
 	appQuery "messenger/messenger/internal/shared/app/query"
 	"uuid"
 )

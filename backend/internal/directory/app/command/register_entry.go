@@ -17,6 +17,7 @@ type RegisterEntry struct {
 	TargetType  string
 	DisplayName string
 	Handle      string
+	AvatarURL      *string
 }
 
 func (r RegisterEntry) IsCommand() {}
@@ -62,6 +63,7 @@ func (h *RegisterEntryHandler) Handle(ctx context.Context, qry RegisterEntry) (a
 		trgt,
 		qry.DisplayName,
 		qry.Handle,
+		entry.WithAvatarURL(qry.AvatarURL),
 	)
 
 	err = h.entryRepo.Save(ctx, entr)

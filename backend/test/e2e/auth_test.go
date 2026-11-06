@@ -18,15 +18,16 @@ import (
 func TestRegisterUser_Success(t *testing.T) {
 	_, client := initApi(t)
 
-	resp, err := client.registerUser("alice", "TestPass123!")
+	resp, err := client.registerUser(t, "alice", "TestPass123!")
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	body := decode[appHttp.Tokens](t, resp.Body)
+	assert.NotNil(t, body.AccessToken)
+	assert.NotNil(t, body.RefreshToken)
 
 	respCookies := resp.Cookies()
 	assert.NotEmpty(t, respCookies)
-
 	var accessTokenCookie, refreshTokenCookie *http.Cookie
 	for _, c := range respCookies {
 		switch c.Name {
@@ -40,10 +41,6 @@ func TestRegisterUser_Success(t *testing.T) {
 	assert.NotEmpty(t, accessTokenCookie.Value)
 	require.NotNil(t, refreshTokenCookie)
 	assert.NotEmpty(t, refreshTokenCookie.Value)
-
-	body := decode[appHttp.Tokens](t, resp.Body)
-	assert.NotNil(t, body.AccessToken)
-	assert.NotNil(t, body.RefreshToken)
 }
 
 func TestRegisterUser_LoginAlreadyExists(t *testing.T) {
@@ -52,16 +49,12 @@ func TestRegisterUser_LoginAlreadyExists(t *testing.T) {
 	login := "alice"
 	pass := "TestPass123!"
 
-	resp, err := client.registerUser(login, pass)
+	resp, err := client.registerUser(t, login, pass)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	resp, err = client.registerUser(login, pass)
+	resp, err = client.registerUser(t, login, pass)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	body := decode[appHttp.ProblemDetails](t, resp.Body)
@@ -75,25 +68,19 @@ func TestLoginUser_Success(t *testing.T) {
 	login := "alice"
 	pass := "TestPass123!"
 
-	resp, err := client.registerUser(login, pass)
+	resp, err := client.registerUser(t, login, pass)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	resp, err = client.loginUser(login, pass)
+	resp, err = client.loginUser(t, login, pass)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
 	body := decode[appHttp.Tokens](t, resp.Body)
 	assert.NotNil(t, body.AccessToken)
 	assert.NotNil(t, body.RefreshToken)
 
 	respCookies := resp.Cookies()
 	assert.NotEmpty(t, respCookies)
-
 	var accessTokenCookie, refreshTokenCookie *http.Cookie
 	for _, c := range respCookies {
 		switch c.Name {
@@ -112,12 +99,9 @@ func TestLoginUser_Success(t *testing.T) {
 func TestLoginUser_NonExistentUser(t *testing.T) {
 	_, client := initApi(t)
 
-	resp, err := client.loginUser("alice", "TestPass123!")
+	resp, err := client.loginUser(t, "alice", "TestPass123!")
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-
 	body := decode[appHttp.ProblemDetails](t, resp.Body)
 	assert.Equal(t, problemTypesRegistry.Blank, *body.Type)
 	assert.NotNil(t, apperr.KindUnauthenticated, body.Title)
@@ -126,18 +110,13 @@ func TestLoginUser_NonExistentUser(t *testing.T) {
 func TestLoginUser_WrongPassword(t *testing.T) {
 	_, client := initApi(t)
 
-	resp, err := client.registerUser("alice", "TestPass123!")
+	resp, err := client.registerUser(t, "alice", "TestPass123!")
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	resp, err = client.loginUser("alice", "WrongPass123!")
+	resp, err = client.loginUser(t, "alice", "WrongPass123!")
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-
 	body := decode[appHttp.ProblemDetails](t, resp.Body)
 	assert.Equal(t, problemTypesRegistry.Blank, *body.Type)
 	assert.NotNil(t, apperr.KindUnauthenticated, body.Title)
@@ -146,10 +125,8 @@ func TestLoginUser_WrongPassword(t *testing.T) {
 func TestRefreshUserTokens_Success(t *testing.T) {
 	_, client := initApi(t)
 
-	resp, err := client.registerUser("alice", "TestPass123!")
+	resp, err := client.registerUser(t, "alice", "TestPass123!")
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 	body := decode[appHttp.Tokens](t, resp.Body)
 
@@ -158,12 +135,9 @@ func TestRefreshUserTokens_Success(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	resp, err = client.refreshUserTokens()
+	resp, err = client.refreshUserTokens(t)
 	require.NoError(t, err)
-	defer resp.Body.Close()
-
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-
 	body = decode[appHttp.Tokens](t, resp.Body)
 	assert.NotEmpty(t, body.AccessToken)
 	assert.NotEmpty(t, body.RefreshToken)
@@ -173,7 +147,6 @@ func TestRefreshUserTokens_Success(t *testing.T) {
 
 	respCookies := resp.Cookies()
 	assert.NotEmpty(t, respCookies)
-
 	var accessTokenCookie, refreshTokenCookie *http.Cookie
 	for _, c := range respCookies {
 		switch c.Name {
@@ -192,7 +165,7 @@ func TestRefreshUserTokens_Success(t *testing.T) {
 func TestMalformedRequest(t *testing.T) {
 	_, client := initApi(t)
 
-	resp, err := client.doRequest(http.MethodPost, "auth/users", &httpRequestOpts{Body: map[string]string{"wrongField": "alice"}})
+	resp, err := client.doRequest(t, http.MethodPost, "auth/users", &httpRequestOpts{Body: map[string]string{"wrongField": "alice"}})
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
@@ -201,7 +174,3 @@ func TestMalformedRequest(t *testing.T) {
 	assert.Equal(t, problemTypesRegistry.ValidationError, *body.Type)
 	assert.Equal(t, "Validation error", body.Title)
 }
-
-// func validateErrorResponse(t *testing.T, resp *http.Response) {
-
-// }

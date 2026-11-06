@@ -13,16 +13,14 @@ func TestRegisterDirectoryEntry_Success(t *testing.T) {
 	server, _ := initApi(t)
 
 	user := newUser(t, server, "alice")
-	defer user.wsClient.CloseNow()
 
-	resp, err := user.httpClient.registerDirectoryEntry(appHttp.DirectoryEntry{
+	resp, err := user.httpClient.registerDirectoryEntry(t, appHttp.DirectoryEntry{
 		DisplayName: "Alice DN",
 		Handle:      "alice",
 		TargetId:    user.id,
 		TargetType:  "user",
 	})
 	require.NoError(t, err)
-	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 }

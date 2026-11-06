@@ -2,16 +2,16 @@ package e2e
 
 import (
 	"context"
+	"encoding/json/v2"
 	"fmt"
 	"messenger/messenger/internal/platform/transport/http/cookies"
-	// appWS "messenger/messenger/internal/platform/transport/websocket"
+	appWS "messenger/messenger/internal/platform/transport/websocket"
 	"net/http"
 	"testing"
-
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/coder/websocket/wsjson"
+	"github.com/stretchr/testify/require"
 )
 
 type wsClient struct {
@@ -20,9 +20,10 @@ type wsClient struct {
 }
 
 func newWSClient(t *testing.T, httpClient *httpClient) *wsClient {
-	ctx := context.Background()
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	// defer cancel()
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
 	c, _, err := websocket.Dial(ctx, fmt.Sprintf("ws://%s/ws", "www.example.com"), &websocket.DialOptions{
 		HTTPClient: httpClient.Client,
@@ -33,13 +34,6 @@ func newWSClient(t *testing.T, httpClient *httpClient) *wsClient {
 	if err != nil {
 		t.Fatalf("failed to establish ws connection: %v", err)
 	}
-
-	// err = wsjson.Write(ctx, c, "hi")
-	// if err != nil {
-	// 	t.Fatalf("failed to send ws message: %v", err)
-	// }
-
-	// c.Close(websocket.StatusNormalClosure, "")
 
 	receive := make(chan []byte, 32)
 	go func() {
@@ -59,9 +53,18 @@ func newWSClient(t *testing.T, httpClient *httpClient) *wsClient {
 	}
 }
 
-func (c *wsClient) sendMessage(msg any) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+func decodeWSMsg[T any](t *testing.T, data []byte) T {
+	t.Helper()
+	
+	var msg appWS.WSMessage
+	err := json.Unmarshal(data, &msg)
+	require.NoError(t, err)
+	require.NotEmpty(t, msg.Type)
+	require.NotEmpty(t, msg.Payload)
 
-	return wsjson.Write(ctx, c.Conn, msg)
+	var payload T
+	err = json.Unmarshal(msg.Payload, &payload)
+	require.NoError(t, err)
+	
+	return payload
 }
