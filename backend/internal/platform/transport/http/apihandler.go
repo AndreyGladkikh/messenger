@@ -61,15 +61,6 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 	}, nil
 }
 
-func (h *ApiHandler) GetMyChatList(ctx context.Context, request GetMyChatListRequestObject) (GetMyChatListResponseObject, error) {
-	_, err := getAuth(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return GetMyChatList200JSONResponse{}, nil
-}
-
 func (h *ApiHandler) LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error) {
 	clientIP := middleware.GetClientIP(ctx)
 	ip, err := netip.ParseAddr(clientIP)
