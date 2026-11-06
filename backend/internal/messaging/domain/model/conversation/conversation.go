@@ -7,28 +7,28 @@ import (
 	"uuid"
 )
 
-type ConversationType string
+type Type string
 
-func (c ConversationType) String() string {
+func (c Type) String() string {
 	return string(c)
 }
 
 const (
-	ConversationTypeDirect ConversationType = "direct"
-	ConversationTypeGroup  ConversationType = "group"
+	TypeDirect Type = "direct"
+	TypeGroup  Type = "group"
 )
 
 type Conversation struct {
 	domain.AggregateRoot
 
-	id   uuid.UUID
-	Type ConversationType
-	Title *string
+	id        uuid.UUID
+	Type      Type
+	Title     *string
 	AvatarUrl *string
 }
 
 func New(
-	typ ConversationType,
+	typ Type,
 ) *Conversation {
 	return &Conversation{
 		id:   uuid.New(),
@@ -38,7 +38,7 @@ func New(
 
 func Rehydrate(
 	id uuid.UUID,
-	typ ConversationType,
+	typ Type,
 ) *Conversation {
 	return &Conversation{
 		id:   id,

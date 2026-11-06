@@ -167,7 +167,6 @@ func TestMalformedRequest(t *testing.T) {
 
 	resp, err := client.doRequest(t, http.MethodPost, "auth/users", &httpRequestOpts{Body: map[string]string{"wrongField": "alice"}})
 	require.NoError(t, err)
-	defer resp.Body.Close()
 
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	body := decode[appHttp.ProblemDetails](t, resp.Body)

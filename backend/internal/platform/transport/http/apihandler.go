@@ -210,7 +210,7 @@ func (h *ApiHandler) GetWebHomePage(ctx context.Context, request GetWebHomePageR
 		peerItem = append(peerItem, PeerItem{
 			Id:          p.ID,
 			Type:        p.Type,
-			AvatarUrl:   &p.AvatarUrl,
+			AvatarUrl:   p.AvatarUrl,
 			Title:       p.Title,
 			Preview:     &p.Preview,
 			PreviewTime: &p.PreviewTime,

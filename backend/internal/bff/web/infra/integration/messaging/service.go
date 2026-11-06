@@ -38,6 +38,7 @@ func (s *Service) ListUserConvesations(ctx context.Context, userID uuid.UUID) ([
 			Type:      c.Type,
 			Title:     c.Title,
 			AvatarURL: c.AvatarURL,
+			DirectParticipantID: c.DirectParticipantID,
 			LastMessage: port.LastMessage{
 				ID:       c.LastMessage.ID,
 				Body:     c.LastMessage.Body,

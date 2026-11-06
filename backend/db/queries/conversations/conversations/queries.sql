@@ -17,10 +17,14 @@ SELECT cnv.id,
     msg.id as msg_id,
     msg.body as msg_body,
     msg.sender_id as msg_sender_id,
-    msg.created_at as msg_created_at
+    msg.created_at as msg_created_at,
+    other_memb.participant_id as direct_participant_id
 FROM conversations.conversations cnv
 LEFT JOIN conversations.group_conversations gcnv ON cnv.id = gcnv.conversation_id
 JOIN conversations.memberships memb ON cnv.id = memb.conversation_id
+LEFT JOIN conversations.memberships other_memb ON cnv.id = other_memb.conversation_id 
+    AND other_memb.participant_id != memb.participant_id 
+    AND cnv.type = 'direct'
 LEFT JOIN lateral (
     SELECT msg.id,
         msg.body,

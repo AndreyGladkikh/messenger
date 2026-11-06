@@ -45,7 +45,7 @@ func (d *DirectConversationResolver) FindOrCreate(
 		return nil, false, err
 	}
 
-	cnv = conversation.New(conversation.ConversationTypeDirect)
+	cnv = conversation.New(conversation.TypeDirect)
 
 	err = d.conversationRepository.SaveDirect(ctx, cnv, participants)
 	if err != nil {

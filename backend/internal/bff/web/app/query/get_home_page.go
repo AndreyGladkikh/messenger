@@ -49,10 +49,10 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 	var entryRefs []port.EntryRef
 	for i, c := range cnvs {
 		if c.Type == port.ConversationTypeDirect {
-			cnvIdxMap[c.ID] = i
+			cnvIdxMap[*c.DirectParticipantID] = i
 			entryRefs = append(entryRefs, port.EntryRef{
-				ID:   c.ID,
-				Type: port.ConversationTypeDirect,
+				ID:   *c.DirectParticipantID,
+				Type: port.DirectoryEntryTypeUser,
 			})
 		}
 	}
@@ -74,8 +74,8 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 		peer := PeerItem{
 			ID:          c.ID,
 			Type:        port.ConversationTypeDirect,
-			AvatarUrl:   *c.AvatarURL,
-			Title:       *c.AvatarURL,
+			AvatarUrl:   c.AvatarURL,
+			Title:       *c.Title,
 			Preview:     c.LastMessage.Body,
 			PreviewTime: c.LastMessage.SentAt,
 		}

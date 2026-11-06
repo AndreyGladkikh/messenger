@@ -32,6 +32,7 @@ func (q *QueryService) ListConversationsForUser(ctx context.Context, userID uuid
 			Type:      cnv.Type,
 			Title:     cnv.Title,
 			AvatarURL: cnv.AvatarUrl,
+			DirectParticipantID: cnv.DirectParticipantID,
 			LastMessage: query.LastMessage{
 				ID:       cnv.MsgID,
 				Body:     cnv.MsgBody,

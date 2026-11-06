@@ -26,6 +26,7 @@ type ConversationSummary struct {
 	Title       *string
 	AvatarURL   *string
 	LastMessage LastMessage
+	DirectParticipantID *uuid.UUID
 }
 
 type LastMessage struct {

@@ -31,4 +31,4 @@ SELECT
     e.handle,
     e.avatar_url
 FROM directory.entries AS e
-JOIN targets ON e.target_id = target.id AND e.target_type = target.type;
+JOIN targets ON e.target_id = targets.id AND e.target_type = targets.type;

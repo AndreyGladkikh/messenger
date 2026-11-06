@@ -38,7 +38,7 @@ func (c *ConversationRepository) GetDirectBetween(ctx context.Context, participa
 
 	return conversation.Rehydrate(
 		cnv.ID,
-		conversation.ConversationType(cnv.Type),
+		conversation.Type(cnv.Type),
 	), nil
 }
 
@@ -63,7 +63,7 @@ func (c *ConversationRepository) Get(ctx context.Context, id uuid.UUID) (*conver
 
 	return conversation.Rehydrate(
 		cnv.ID,
-		conversation.ConversationType(cnv.Type),
+		conversation.Type(cnv.Type),
 	), nil
 }
 

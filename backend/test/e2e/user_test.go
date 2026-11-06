@@ -62,6 +62,16 @@ func newUser(t *testing.T, server *httptest.Server, login string, opts ...userOp
 	return u
 }
 
+func alice(t *testing.T, server *httptest.Server) *user {
+	avatarURL := "https://example.com/alice-avatar.img"
+	return newUser(t, server, "alice", userWithProfile(t, "alice_handle", "Alice DN", &avatarURL))
+}
+
+func bob(t *testing.T, server *httptest.Server) *user {
+	avatarURL := "https://example.com/bob-avatar.img"
+	return newUser(t, server, "bob", userWithProfile(t, "bob_handle", "Bob DN", &avatarURL))
+}
+
 type userOption func(*user)
 
 func userWithProfile(t *testing.T, handle string, displayName string, avatarURL *string) userOption {

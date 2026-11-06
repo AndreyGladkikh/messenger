@@ -94,9 +94,7 @@ func (c *httpClient) doRequest(t *testing.T, method, url string, opts *httpReque
 	}
 
 	rsp, err := c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		rsp.Body.Close()

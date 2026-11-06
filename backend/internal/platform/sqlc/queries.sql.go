@@ -347,10 +347,14 @@ SELECT cnv.id,
     msg.id as msg_id,
     msg.body as msg_body,
     msg.sender_id as msg_sender_id,
-    msg.created_at as msg_created_at
+    msg.created_at as msg_created_at,
+    other_memb.participant_id as direct_participant_id
 FROM conversations.conversations cnv
 LEFT JOIN conversations.group_conversations gcnv ON cnv.id = gcnv.conversation_id
 JOIN conversations.memberships memb ON cnv.id = memb.conversation_id
+LEFT JOIN conversations.memberships other_memb ON cnv.id = other_memb.conversation_id 
+    AND other_memb.participant_id != memb.participant_id 
+    AND cnv.type = 'direct'
 LEFT JOIN lateral (
     SELECT msg.id,
         msg.body,
@@ -368,14 +372,15 @@ ORDER BY msg.created_at DESC, cnv.created_at DESC
 `
 
 type ListConversationsForUserRow struct {
-	ID           uuid.UUID
-	Type         string
-	Title        *string
-	AvatarUrl    *string
-	MsgID        uuid.UUID
-	MsgBody      string
-	MsgSenderID  uuid.UUID
-	MsgCreatedAt time.Time
+	ID                  uuid.UUID
+	Type                string
+	Title               *string
+	AvatarUrl           *string
+	MsgID               uuid.UUID
+	MsgBody             string
+	MsgSenderID         uuid.UUID
+	MsgCreatedAt        time.Time
+	DirectParticipantID *uuid.UUID
 }
 
 func (q *Queries) ListConversationsForUser(ctx context.Context, participantID uuid.UUID) ([]ListConversationsForUserRow, error) {
@@ -396,6 +401,7 @@ func (q *Queries) ListConversationsForUser(ctx context.Context, participantID uu
 			&i.MsgBody,
 			&i.MsgSenderID,
 			&i.MsgCreatedAt,
+			&i.DirectParticipantID,
 		); err != nil {
 			return nil, err
 		}
@@ -423,7 +429,7 @@ SELECT
     e.handle,
     e.avatar_url
 FROM directory.entries AS e
-JOIN targets ON e.target_id = target.id AND e.target_type = target.type
+JOIN targets ON e.target_id = targets.id AND e.target_type = targets.type
 `
 
 type ListDirectoryEntriesByTargetsParams struct {
