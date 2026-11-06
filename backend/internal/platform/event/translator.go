@@ -1,7 +1,7 @@
 package event
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	cnvEvnt "messenger/messenger/internal/messaging/app/event"
 	"messenger/messenger/internal/messaging/domain/model/message"

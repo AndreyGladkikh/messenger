@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"messenger/messenger/internal/platform/sqlc"
@@ -31,7 +31,7 @@ func NewEventService(
 
 func (s *EventService) PutEventToOutbox(ctx context.Context, kind string, e event.Event) error {
 	buf := new(bytes.Buffer)
-	if err := json.NewEncoder(buf).Encode(e); err != nil {
+	if err := json.MarshalWrite(buf, e); err != nil {
 		return err
 	}
 

@@ -1,7 +1,7 @@
 package http
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"messenger/messenger/internal/platform/config"
@@ -66,7 +66,7 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, err error)
 
 	w.Header().Set(headers.ContentType, contenttype.ApplicationProblemPlusJson)
 	w.WriteHeader(*pd.Status)
-	e := json.NewEncoder(w).Encode(pd)
+	e := json.MarshalWrite(w, pd)
 	if e != nil {
 		h.logger.ErrorContext(
 			r.Context(),
