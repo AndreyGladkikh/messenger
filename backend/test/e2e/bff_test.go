@@ -5,6 +5,7 @@ import (
 	appHttp "messenger/messenger/internal/platform/transport/http"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -34,6 +35,7 @@ func TestGetHomePage_Success(t *testing.T) {
 	})
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	cnv := decode[appHttp.Conversation](t, resp.Body)
+	cnv.MessageSentAt = cnv.MessageSentAt.Truncate(time.Microsecond)
 
 	unreadC := 0
 
@@ -43,12 +45,12 @@ func TestGetHomePage_Success(t *testing.T) {
 	assert.Equal(t, appHttp.HomePage{
 		Peers: []appHttp.PeerItem{
 			{
-				Id: cnv.ConversationId,
-				Preview: &msgBody,
+				Id:          cnv.ConversationId,
+				Preview:     &msgBody,
 				PreviewTime: &cnv.MessageSentAt,
-				Title: bob.profile.displayName,
-				Type: conversation.TypeDirect.String(),
-				AvatarUrl: bob.profile.avatarURL,
+				Title:       bob.profile.displayName,
+				Type:        conversation.TypeDirect.String(),
+				AvatarUrl:   bob.profile.avatarURL,
 				UnreadCount: &unreadC,
 			},
 		},
@@ -60,12 +62,12 @@ func TestGetHomePage_Success(t *testing.T) {
 	assert.Equal(t, appHttp.HomePage{
 		Peers: []appHttp.PeerItem{
 			{
-				Id: cnv.ConversationId,
-				Preview: &msgBody,
+				Id:          cnv.ConversationId,
+				Preview:     &msgBody,
 				PreviewTime: &cnv.MessageSentAt,
-				Title: alice.profile.displayName,
-				Type: conversation.TypeDirect.String(),
-				AvatarUrl: alice.profile.avatarURL,
+				Title:       alice.profile.displayName,
+				Type:        conversation.TypeDirect.String(),
+				AvatarUrl:   alice.profile.avatarURL,
 				UnreadCount: &unreadC,
 			},
 		},
