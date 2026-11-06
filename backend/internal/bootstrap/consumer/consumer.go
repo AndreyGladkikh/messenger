@@ -14,6 +14,6 @@ type Consumer struct {
 
 var ConsumerSet = wire.NewSet(
 	wire.Struct(new(Consumer), "*"),
-	realtime.NewPersonalDeliveryHandler,
 	bootstrap.AppSet,
+	realtime.NewPersonalDeliveryHandler,
 )

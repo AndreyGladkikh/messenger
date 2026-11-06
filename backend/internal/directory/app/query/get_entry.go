@@ -26,6 +26,12 @@ type GetEntryHandler struct {
 	Reader Reader
 }
 
+func NewGetEntryHandler(reader Reader) *GetEntryHandler {
+	return &GetEntryHandler{
+		Reader: reader,
+	}
+}
+
 func (h *GetEntryHandler) Handle(ctx context.Context, qry GetEntry) (EntryView, error) {
 	typ, err := entry.ParseTargetType(qry.Type)
 	if err != nil {

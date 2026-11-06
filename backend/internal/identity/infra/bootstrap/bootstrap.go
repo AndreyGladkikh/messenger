@@ -11,7 +11,9 @@ import (
 	"messenger/messenger/internal/identity/infra/persistence"
 	"messenger/messenger/internal/identity/infra/persistence/repository"
 	"messenger/messenger/internal/identity/infra/token"
-	"messenger/messenger/internal/platform/querymiddleware"
+	"messenger/messenger/internal/platform/command_middleware"
+	"messenger/messenger/internal/platform/query_middleware"
+	appCmd "messenger/messenger/internal/shared/app/command"
 	appQuery "messenger/messenger/internal/shared/app/query"
 
 	"github.com/google/wire"
@@ -39,9 +41,42 @@ var PersistenceSet = wire.NewSet(
 
 var CommandHandlersSet = wire.NewSet(
 	command.NewRegisterUserHandler,
+	ProvideRegisterUserHandler,
 	command.NewLoginUserHandler,
+	ProvideLoginUserHandler,
 	command.NewRefreshUserTokensHandler,
+	ProvideRefreshUserTokensHandler,
+	command.NewLogoutUserHandler,
+	ProvideLogoutUserHandler,
 )
+
+func ProvideRegisterUserHandler(
+	h *command.RegisterUserHandler,
+	m *command_middleware.Registry,
+) appCmd.Handler[command.RegisterUser, command.RegisterUserResponse] {
+	return command_middleware.Wrap(h, m)
+}
+
+func ProvideLoginUserHandler(
+	h *command.LoginUserHandler,
+	m *command_middleware.Registry,
+) appCmd.Handler[command.LoginUser, command.LoginUserResponse] {
+	return command_middleware.Wrap(h, m)
+}
+
+func ProvideRefreshUserTokensHandler(
+	h *command.RefreshUserTokensHandler,
+	m *command_middleware.Registry,
+) appCmd.Handler[command.RefreshUserTokens, command.RefreshUserTokensResponse] {
+	return command_middleware.Wrap(h, m)
+}
+
+func ProvideLogoutUserHandler(
+	h *command.LogoutUserHandler,
+	m *command_middleware.Registry,
+) appCmd.Handler[command.LogoutUser, any] {
+	return command_middleware.Wrap(h, m)
+}
 
 var QueryHandlersSet = wire.NewSet(
 	query.NewGetAccountHandler,
@@ -50,7 +85,7 @@ var QueryHandlersSet = wire.NewSet(
 
 func ProvideGetAccountHandler(
 	h *query.GetAccountHandler,
-	m *querymiddleware.Registry,
+	m *query_middleware.Registry,
 ) appQuery.Handler[query.GetAccount, query.AccountView] {
-	return querymiddleware.Wrap(h, m)
+	return query_middleware.Wrap(h, m)
 }

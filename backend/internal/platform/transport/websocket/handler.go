@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"messenger/messenger/internal/platform/auth"
-	"messenger/messenger/internal/platform/commandbus"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/pubsub"
 	"messenger/messenger/internal/platform/store"
@@ -28,10 +27,21 @@ var (
 var _ http.Handler = (*Handler)(nil)
 
 type Handler struct {
-	Logger     *logger.Logger
-	CommandBus *commandbus.Bus
-	Store      *store.Store
-	PubSub     *pubsub.PubSub
+	Logger *logger.Logger
+	Store  *store.Store
+	PubSub *pubsub.PubSub
+}
+
+func NewHandler(
+	logger *logger.Logger,
+	store *store.Store,
+	pubSub *pubsub.PubSub,
+) *Handler {
+	return &Handler{
+		Logger: logger,
+		Store:  store,
+		PubSub: pubSub,
+	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

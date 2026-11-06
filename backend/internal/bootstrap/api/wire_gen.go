@@ -7,31 +7,38 @@
 package api
 
 import (
-	query4 "messenger/messenger/internal/bff/web/application/query"
+	query4 "messenger/messenger/internal/bff/web/app/query"
+	bootstrap4 "messenger/messenger/internal/bff/web/infra/bootstrap"
 	"messenger/messenger/internal/bff/web/infra/integration/directory"
 	"messenger/messenger/internal/bff/web/infra/integration/messaging"
-	"messenger/messenger/internal/bootstrap"
 	command2 "messenger/messenger/internal/conversations/app/command"
-	query3 "messenger/messenger/internal/conversations/app/query"
+	query2 "messenger/messenger/internal/conversations/app/query"
 	"messenger/messenger/internal/conversations/app/service"
+	bootstrap2 "messenger/messenger/internal/conversations/infra/bootstrap"
 	"messenger/messenger/internal/conversations/infra/integration"
 	persistence3 "messenger/messenger/internal/conversations/infra/persistence"
 	repository3 "messenger/messenger/internal/conversations/infra/persistence/repository"
 	command3 "messenger/messenger/internal/directory/app/command"
-	query2 "messenger/messenger/internal/directory/app/query"
-	identity2 "messenger/messenger/internal/directory/infra/integration/identity"
+	query3 "messenger/messenger/internal/directory/app/query"
+	bootstrap3 "messenger/messenger/internal/directory/infra/bootstrap"
+	"messenger/messenger/internal/directory/infra/integration/identity"
 	persistence2 "messenger/messenger/internal/directory/infra/persistence"
 	"messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/identity/app/query"
+	"messenger/messenger/internal/identity/infra/bootstrap"
 	"messenger/messenger/internal/identity/infra/password"
 	"messenger/messenger/internal/identity/infra/persistence"
 	repository2 "messenger/messenger/internal/identity/infra/persistence/repository"
 	"messenger/messenger/internal/identity/infra/token"
+	"messenger/messenger/internal/platform/command_handler"
+	"messenger/messenger/internal/platform/command_middleware"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/event"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/pubsub"
+	"messenger/messenger/internal/platform/query_handler"
+	"messenger/messenger/internal/platform/query_middleware"
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
@@ -44,15 +51,12 @@ import (
 // Injectors from wire.go:
 
 func Initialize(cfg config.Config) (*Api, func(), error) {
-	loggerLogger := logger.New()
 	pool, cleanup, err := postgres.NewPool(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
-	manager := transactions.NewManager(pool)
 	queries := sqlc.New(pool)
 	storeStore := store.NewStore(queries)
-	eventService := event.NewEventService(storeStore)
 	repositoryRepository := repository.NewRepository(storeStore)
 	userRepository := repository2.NewUserRepository(repositoryRepository)
 	sessionRepository := repository2.NewSessionRepository(repositoryRepository)
@@ -63,42 +67,85 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 		return nil, nil, err
 	}
 	registerUserHandler := command.NewRegisterUserHandler(userRepository, sessionRepository, hasher, tokenService)
+	loggerLogger := logger.New()
+	logging := command_middleware.NewLogging(loggerLogger)
+	recovering := command_middleware.NewRecovering()
+	manager := transactions.NewManager(pool)
+	eventService := event.NewEventService(storeStore)
+	transaction := command_middleware.NewTransaction(manager, eventService)
+	registry := &command_middleware.Registry{
+		Logging:     logging,
+		Recovering:  recovering,
+		Transaction: transaction,
+	}
+	handler := bootstrap.ProvideRegisterUserHandler(registerUserHandler, registry)
 	loginUserHandler := command.NewLoginUserHandler(userRepository, sessionRepository, hasher, tokenService)
+	commandHandler := bootstrap.ProvideLoginUserHandler(loginUserHandler, registry)
 	refreshUserTokensHandler := command.NewRefreshUserTokensHandler(sessionRepository, tokenService)
+	handler2 := bootstrap.ProvideRefreshUserTokensHandler(refreshUserTokensHandler, registry)
+	logoutUserHandler := command.NewLogoutUserHandler(userRepository, sessionRepository, hasher, tokenService)
+	handler3 := bootstrap.ProvideLogoutUserHandler(logoutUserHandler, registry)
 	conversationRepository := repository3.NewConversationRepository(repositoryRepository)
 	membershipRepository := repository3.NewMembershipRepository(repositoryRepository)
 	queryService := persistence.NewQueryService(storeStore)
 	getAccountHandler := query.NewGetAccountHandler(queryService)
-	handler := bootstrap.ProvideGetAccountQueryHandler(getAccountHandler, loggerLogger)
-	participantLookup := integration.NewParticipantLookup(handler)
+	query_middlewareLogging := query_middleware.NewLogging(loggerLogger)
+	validation := query_middleware.NewValidation()
+	query_middlewareRegistry := &query_middleware.Registry{
+		Logging:    query_middlewareLogging,
+		Validation: validation,
+	}
+	queryHandler := bootstrap.ProvideGetAccountHandler(getAccountHandler, query_middlewareRegistry)
+	participantLookup := integration.NewParticipantLookup(queryHandler)
 	directConversationResolver := service.NewDirectConversationResolver(conversationRepository, membershipRepository, participantLookup)
 	messageRepository := repository3.NewMessageRepository(repositoryRepository)
 	messageSender := service.NewMessageSender(membershipRepository, messageRepository)
-	publisher := &event.Publisher{}
-	startDirectConversationHandler := &command2.StartDirectConversationHandler{
-		DirectConversationResolver: directConversationResolver,
-		MessageSender:              messageSender,
-		EventPublisher:             publisher,
-	}
+	publisher := event.NewPublisher()
+	startDirectConversationHandler := command2.NewStartDirectConversationHandler(directConversationResolver, messageSender, publisher)
+	handler4 := bootstrap2.ProvideStartDirectConversationHandler(startDirectConversationHandler, registry)
 	sendMessageHandler := command2.NewSendMessageHandler(conversationRepository, messageSender)
+	handler5 := bootstrap2.ProvideSendMessageHandler(sendMessageHandler, registry)
+	groupConversationRepository := repository3.NewGroupConversationRepository(repositoryRepository)
+	createGroupConversationHandler := command2.NewCreateGroupConversationHandler(groupConversationRepository)
+	handler6 := bootstrap2.ProvideCreateGroupConversationHandler(createGroupConversationHandler, registry)
 	entryRepository := persistence2.NewEntryRepository(repositoryRepository)
-	userLookup := identity2.NewUserLookup(handler)
+	userLookup := identity.NewUserLookup(queryHandler)
 	targetLookup := command3.NewTargetLookup(userLookup)
 	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
-	bus := bootstrap.InitCommandBus(loggerLogger, manager, eventService, registerUserHandler, loginUserHandler, refreshUserTokensHandler, startDirectConversationHandler, sendMessageHandler, registerEntryHandler)
-	persistenceQueryService := persistence2.NewQueryService(storeStore)
-	searchHandler := query2.NewSearchHandler(persistenceQueryService)
-	queryHandler := bootstrap.ProvideSearchDirectoryQueryHandler(searchHandler, loggerLogger)
-	queryService2 := persistence3.NewQueryService(storeStore)
-	listUserConversationsHandler := query3.NewListUserConversationsHandler(queryService2)
-	handler2 := bootstrap.ProvideListUserConversationsQueryHandler(listUserConversationsHandler, loggerLogger)
-	messagingService := messaging.NewService(handler2)
-	getEntriesHandler := query2.NewGetEntriesHandler(persistenceQueryService)
-	handler3 := bootstrap.ProvideGetDirectoryEntriesQueryHandler(getEntriesHandler, loggerLogger)
-	directoryService := directory.NewService(handler3)
+	handler7 := bootstrap3.ProvideRegisterEntryHandler(registerEntryHandler, registry)
+	command_handlerRegistry := &command_handler.Registry{
+		RegisterUser:            handler,
+		LoginUser:               commandHandler,
+		RefreshUserTokens:       handler2,
+		LogoutUser:              handler3,
+		StartDirectConversation: handler4,
+		SendMessage:             handler5,
+		CreateGroupConversation: handler6,
+		RegisterDirectoryEntry:  handler7,
+	}
+	persistenceQueryService := persistence3.NewQueryService(storeStore)
+	listUserConversationsHandler := query2.NewListUserConversationsHandler(persistenceQueryService)
+	handler8 := bootstrap2.ProvideGetHomePageHandler(listUserConversationsHandler, query_middlewareRegistry)
+	messagingService := messaging.NewService(handler8)
+	queryService2 := persistence2.NewQueryService(storeStore)
+	getEntriesHandler := query3.NewGetEntriesHandler(queryService2)
+	handler9 := bootstrap3.ProvideGetEntriesHandler(getEntriesHandler, query_middlewareRegistry)
+	directoryService := directory.NewService(handler9)
 	getHomePageHandler := query4.NewGetHomePageHandler(messagingService, directoryService)
-	handler4 := bootstrap.ProvideGetWebHomePageQueryHandler(getHomePageHandler, loggerLogger)
-	apiHandler := http.NewApiHandler(bus, handler, queryHandler, handler4)
+	handler10 := bootstrap4.ProvideGetHomePageHandler(getHomePageHandler, query_middlewareRegistry)
+	getEntryHandler := query3.NewGetEntryHandler(queryService2)
+	handler11 := bootstrap3.ProvideGetEntryHandler(getEntryHandler, query_middlewareRegistry)
+	searchHandler := query3.NewSearchHandler(queryService2)
+	handler12 := bootstrap3.ProvideSearchHandler(searchHandler, query_middlewareRegistry)
+	query_handlerRegistry := &query_handler.Registry{
+		GetHomePage:           handler10,
+		ListUserConversations: handler8,
+		GetDirectoryEntries:   handler9,
+		GetDirectoryEntry:     handler11,
+		SearchDirectoryEntry:  handler12,
+		GetAccount:            queryHandler,
+	}
+	apiHandler := http.NewApiHandler(command_handlerRegistry, query_handlerRegistry)
 	problemTypesRegistry := http.NewProblemTypesRegistry(cfg)
 	errorHandler := http.NewErrorHandler(cfg, loggerLogger, problemTypesRegistry)
 	client, cleanup2, err := redis.NewRedis(cfg)
@@ -107,12 +154,7 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 		return nil, nil, err
 	}
 	pubSub, cleanup3 := pubsub.NewPubSub(loggerLogger, client)
-	websocketHandler := &websocket.Handler{
-		Logger:     loggerLogger,
-		CommandBus: bus,
-		Store:      storeStore,
-		PubSub:     pubSub,
-	}
+	websocketHandler := websocket.NewHandler(loggerLogger, storeStore, pubSub)
 	mux, err := http.NewRouter(apiHandler, errorHandler, tokenService, websocketHandler)
 	if err != nil {
 		cleanup3()

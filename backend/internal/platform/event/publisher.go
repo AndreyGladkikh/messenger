@@ -11,6 +11,10 @@ var _ event.Publisher = (*Publisher)(nil)
 type Publisher struct {
 }
 
+func NewPublisher() *Publisher {
+	return &Publisher{}
+}
+
 func (p *Publisher) Publish(ctx context.Context, event event.Event) {
 	uw, ok := uow.FromContext(ctx)
 	if !ok {

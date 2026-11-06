@@ -17,13 +17,13 @@ type Api struct {
 
 var ApiSet = wire.NewSet(
 	wire.Struct(new(Api), "*"),
-	appHttp.NewServer,
 	bootstrap.AppSet,
+	appHttp.NewServer,
 	appHttp.NewRouter,
 	appHttp.NewApiHandler,
 	appHttp.NewErrorHandler,
-	wire.Struct(new(websocket.Handler), "*"),
 	appHttp.NewProblemTypesRegistry,
+	websocket.NewHandler,
 
 	wire.Bind(new(http.Handler), new(*chi.Mux)),
 	wire.Bind(new(appHttp.StrictServerInterface), new(*appHttp.ApiHandler)),

@@ -1,4 +1,4 @@
-package querymiddleware
+package query_middleware
 
 import (
 	"context"
@@ -10,23 +10,23 @@ type Validator interface {
 }
 
 type Validation struct {
-	validator Validator
+	// validator Validator
 }
 
 func NewValidation(
-	validator Validator,
+// validator Validator,
 ) *Validation {
 	return &Validation{
-		validator: validator,
+		// validator: validator,
 	}
 }
 
 func (v *Validation) Wrap[Q appQuery.Query, R any](next appQuery.Handler[Q, R]) appQuery.Handler[Q, R] {
 	return appQuery.HandlerFunc[Q, R](func(ctx context.Context, qry Q) (R, error) {
-		if err := v.validator.Validate(ctx, qry); err != nil {
-			var zero R
-			return zero, err
-		}
+		// if err := v.validator.Validate(ctx, qry); err != nil {
+		// 	var zero R
+		// 	return zero, err
+		// }
 
 		return next.Handle(ctx, qry)
 	})

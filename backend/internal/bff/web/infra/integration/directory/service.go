@@ -3,7 +3,7 @@ package directory
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/bff/web/application/port"
+	"messenger/messenger/internal/bff/web/app/port"
 	drctrQry "messenger/messenger/internal/directory/app/query"
 	appQuery "messenger/messenger/internal/shared/app/query"
 )

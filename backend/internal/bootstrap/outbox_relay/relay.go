@@ -13,6 +13,6 @@ type Relay struct {
 
 var RelaySet = wire.NewSet(
 	wire.Struct(new(Relay), "*"),
-	wire.Struct(new(outbox_relay.OutboxRelay), "*"),
 	bootstrap.AppSet,
+	outbox_relay.New,
 )

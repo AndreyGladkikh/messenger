@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json/v2"
 
-	webBffQry "messenger/messenger/internal/bff/web/application/query"
+	webBffQry "messenger/messenger/internal/bff/web/app/query"
 	cnvCmd "messenger/messenger/internal/conversations/app/command"
 	drctrCmd "messenger/messenger/internal/directory/app/command"
 	drctrQry "messenger/messenger/internal/directory/app/query"
@@ -14,9 +14,9 @@ import (
 	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/auth"
-	"messenger/messenger/internal/platform/commandbus"
+	"messenger/messenger/internal/platform/command_handler"
+	"messenger/messenger/internal/platform/query_handler"
 	"messenger/messenger/internal/platform/transport/http/cookies"
-	appQuery "messenger/messenger/internal/shared/app/query"
 	"net/http"
 	"net/netip"
 	"time"
@@ -27,23 +27,17 @@ import (
 var _ StrictServerInterface = (*ApiHandler)(nil)
 
 type ApiHandler struct {
-	commandBus      *commandbus.Bus
-	getAccount      appQuery.Handler[idQuery.GetAccount, idQuery.AccountView]
-	searchDirectory appQuery.Handler[drctrQry.Search, []drctrQry.SearchResultItem]
-	getWebHomePage  appQuery.Handler[webBffQry.GetHomePage, webBffQry.HomePage]
+	commands *command_handler.Registry
+	queries  *query_handler.Registry
 }
 
 func NewApiHandler(
-	commandBus *commandbus.Bus,
-	getAccount appQuery.Handler[idQuery.GetAccount, idQuery.AccountView],
-	searchDirectory appQuery.Handler[drctrQry.Search, []drctrQry.SearchResultItem],
-	getWebHomePage appQuery.Handler[webBffQry.GetHomePage, webBffQry.HomePage],
+	commands *command_handler.Registry,
+	queries *query_handler.Registry,
 ) *ApiHandler {
 	return &ApiHandler{
-		commandBus:      commandBus,
-		getAccount:      getAccount,
-		searchDirectory: searchDirectory,
-		getWebHomePage:  getWebHomePage,
+		commands: commands,
+		queries:  queries,
 	}
 }
 
@@ -53,10 +47,10 @@ func (h *ApiHandler) GetMe(ctx context.Context, request GetMeRequestObject) (Get
 		return nil, err
 	}
 
-	q := idQuery.GetAccount{
+	qry := idQuery.GetAccount{
 		ID: a.Principal.Subject.ID,
 	}
-	response, err := h.getAccount.Handle(ctx, q)
+	response, err := h.queries.GetAccount.Handle(ctx, qry)
 	if err != nil {
 		return nil, err
 	}
@@ -83,13 +77,13 @@ func (h *ApiHandler) LoginUser(ctx context.Context, request LoginUserRequestObje
 		return nil, err
 	}
 
-	command := idCommand.LoginUser{
+	cmd := idCommand.LoginUser{
 		Login:     request.Body.Login,
 		Password:  request.Body.Password,
 		IP:        ip,
 		UserAgent: request.Params.UserAgent,
 	}
-	response, err := h.commandBus.Dispatch[idCommand.LoginUserResponse](ctx, command)
+	response, err := h.commands.LoginUser.Handle(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +102,7 @@ func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request Registe
 		Handle:      request.Body.Handle,
 	}
 
-	_, err := h.commandBus.Dispatch[any](ctx, cmd)
+	_, err := h.commands.RegisterDirectoryEntry.Handle(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -117,10 +111,10 @@ func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request Registe
 }
 
 func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error) {
-	command := idCommand.RefreshUserTokens{
+	cmd := idCommand.RefreshUserTokens{
 		RefreshToken: request.Params.RefreshToken,
 	}
-	response, err := h.commandBus.Dispatch[idCommand.RefreshUserTokensResponse](ctx, command)
+	response, err := h.commands.RefreshUserTokens.Handle(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -138,13 +132,13 @@ func (h *ApiHandler) RegisterUser(ctx context.Context, request RegisterUserReque
 		return nil, err
 	}
 
-	command := idCommand.RegisterUser{
+	cmd := idCommand.RegisterUser{
 		Login:     request.Body.Login,
 		Password:  request.Body.Password,
 		IP:        ip,
 		UserAgent: *request.Params.UserAgent,
 	}
-	response, err := h.commandBus.Dispatch[idCommand.RegisterUserResponse](ctx, command)
+	response, err := h.commands.RegisterUser.Handle(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +160,7 @@ func (h *ApiHandler) StartDirectConversation(ctx context.Context, request StartD
 		Recipient: request.Body.ParticipantId,
 		Body:      request.Body.FirstMessage.Body,
 	}
-	resp, err := h.commandBus.Dispatch[cnvCmd.StartDirectConversationResponse](ctx, cmd)
+	resp, err := h.commands.StartDirectConversation.Handle(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -182,12 +176,12 @@ func (h *ApiHandler) SendMessage(ctx context.Context, request SendMessageRequest
 		return nil, err
 	}
 
-	command := cnvCmd.SendMessage{
+	cmd := cnvCmd.SendMessage{
 		SenderID:       a.Principal.Subject.ID,
 		ConversationID: request.ConversationId,
 		Body:           request.Body.Body,
 	}
-	_, err = h.commandBus.Dispatch[any](ctx, command)
+	_, err = h.commands.SendMessage.Handle(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +198,7 @@ func (h *ApiHandler) GetWebHomePage(ctx context.Context, request GetWebHomePageR
 	qry := webBffQry.GetHomePage{
 		UserID: a.Principal.Subject.ID,
 	}
-	resp, err := h.getWebHomePage.Handle(ctx, qry)
+	resp, err := h.queries.GetHomePage.Handle(ctx, qry)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +326,7 @@ func (h *ApiHandler) Test(w http.ResponseWriter, r *http.Request) {
 		Str: rqst.Search,
 	}
 
-	rsp, err := h.searchDirectory.Handle(r.Context(), qry)
+	rsp, err := h.queries.SearchDirectoryEntry.Handle(r.Context(), qry)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

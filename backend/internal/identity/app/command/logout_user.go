@@ -29,6 +29,20 @@ type LogoutUserHandler struct {
 	tokenService token.Service
 }
 
+func NewLogoutUserHandler(
+	userRepo user.Repository,
+	sessionRepo session.Repository,
+	passHasher password.Hasher,
+	tokenService token.Service,
+) *LogoutUserHandler {
+	return &LogoutUserHandler{
+		userRepo:     userRepo,
+		sessionRepo:  sessionRepo,
+		passHasher:   passHasher,
+		tokenService: tokenService,
+	}
+}
+
 func (h *LogoutUserHandler) Handle(ctx context.Context, cmd LogoutUser) (any, error) {
 	session, err := h.sessionRepo.GetByRefreshTokenHash(ctx, h.tokenService.HashRefreshToken(cmd.RefreshToken))
 	if err != nil && !errors.Is(err, apperr.ErrNotFound) {

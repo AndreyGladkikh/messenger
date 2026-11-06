@@ -7,13 +7,14 @@
 package consumer
 
 import (
-	"messenger/messenger/internal/bootstrap"
 	"messenger/messenger/internal/directory/app/query"
+	"messenger/messenger/internal/directory/infra/bootstrap"
 	"messenger/messenger/internal/directory/infra/persistence"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/pubsub"
+	"messenger/messenger/internal/platform/query_middleware"
 	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/rabbitmq/consumers"
 	"messenger/messenger/internal/platform/realtime"
@@ -47,10 +48,14 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	queries := sqlc.New(pool)
 	storeStore := store.NewStore(queries)
 	queryService := persistence.NewQueryService(storeStore)
-	getEntryHandler := &query.GetEntryHandler{
-		Reader: queryService,
+	getEntryHandler := query.NewGetEntryHandler(queryService)
+	logging := query_middleware.NewLogging(loggerLogger)
+	validation := query_middleware.NewValidation()
+	registry := &query_middleware.Registry{
+		Logging:    logging,
+		Validation: validation,
 	}
-	handler := bootstrap.ProvideGetDirectoryEntryQueryHandler(getEntryHandler, loggerLogger)
+	handler := bootstrap.ProvideGetEntryHandler(getEntryHandler, registry)
 	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, handler)
 	realtimePersonalDeliveryConsumer, cleanup5, err := consumers.NewRealtimePersonalDeliveryConsumer(loggerLogger, connection, personalDeliveryHandler)
 	if err != nil {

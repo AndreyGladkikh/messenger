@@ -2,7 +2,7 @@ package query
 
 import (
 	"context"
-	"messenger/messenger/internal/bff/web/application/port"
+	"messenger/messenger/internal/bff/web/app/port"
 	"messenger/messenger/internal/shared/app/query"
 
 	"uuid"

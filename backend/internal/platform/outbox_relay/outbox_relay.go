@@ -46,6 +46,20 @@ type OutboxRelay struct {
 	Producers    *producers.Producers
 }
 
+func New(
+	Logger *logger.Logger,
+	EventService *event.EventService,
+	TXManager *transactions.Manager,
+	Producers *producers.Producers,
+) *OutboxRelay {
+	return &OutboxRelay{
+		Logger:       Logger,
+		EventService: EventService,
+		TXManager:    TXManager,
+		Producers:    Producers,
+	}
+}
+
 func (r *OutboxRelay) Run(ctx context.Context) error {
 	r.Logger.InfoContext(ctx, "outbox relay started")
 

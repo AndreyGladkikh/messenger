@@ -1,12 +1,12 @@
 package bootstrap
 
 import (
-	"messenger/messenger/internal/bff/web/application/query"
-	"messenger/messenger/internal/platform/querymiddleware"
-	appQry "messenger/messenger/internal/shared/app/query"
-	"messenger/messenger/internal/bff/web/application/port"
+	"messenger/messenger/internal/bff/web/app/port"
+	"messenger/messenger/internal/bff/web/app/query"
 	"messenger/messenger/internal/bff/web/infra/integration/directory"
 	"messenger/messenger/internal/bff/web/infra/integration/messaging"
+	"messenger/messenger/internal/platform/query_middleware"
+	appQry "messenger/messenger/internal/shared/app/query"
 
 	"github.com/google/wire"
 )
@@ -21,18 +21,13 @@ var Set = wire.NewSet(
 )
 
 var QueryHandlersSet = wire.NewSet(
-	wire.Struct(new(QueryHandlers), "*"),
 	query.NewGetHomePageHandler,
 	ProvideGetHomePageHandler,
 )
 
-type QueryHandlers struct {
-	GetHomePage appQry.Handler[query.GetHomePage, query.HomePage]
-}
-
 func ProvideGetHomePageHandler(
 	h *query.GetHomePageHandler,
-	m *querymiddleware.Registry,
+	m *query_middleware.Registry,
 ) appQry.Handler[query.GetHomePage, query.HomePage] {
-	return querymiddleware.Wrap(h, m)
+	return query_middleware.Wrap(h, m)
 }

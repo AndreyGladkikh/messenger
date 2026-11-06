@@ -36,6 +36,18 @@ type StartDirectConversationHandler struct {
 	EventPublisher             appEvent.Publisher
 }
 
+func NewStartDirectConversationHandler(
+	directConversationResolver *service.DirectConversationResolver,
+	messageSender *service.MessageSender,
+	eventPublisher appEvent.Publisher,
+) *StartDirectConversationHandler {
+	return &StartDirectConversationHandler{
+		DirectConversationResolver: directConversationResolver,
+		MessageSender:              messageSender,
+		EventPublisher:             eventPublisher,
+	}
+}
+
 func (h *StartDirectConversationHandler) Handle(ctx context.Context, cmd StartDirectConversation) (StartDirectConversationResponse, error) {
 	cnv, found, err := h.DirectConversationResolver.FindOrCreate(ctx, cmd.Sender, cmd.Recipient)
 	if err != nil {

@@ -3,7 +3,7 @@ package messaging
 import (
 	"context"
 	"fmt"
-	"messenger/messenger/internal/bff/web/application/port"
+	"messenger/messenger/internal/bff/web/app/port"
 	cnvQry "messenger/messenger/internal/conversations/app/query"
 	appQuery "messenger/messenger/internal/shared/app/query"
 	"uuid"

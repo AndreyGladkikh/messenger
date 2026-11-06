@@ -12,7 +12,7 @@ import (
 	"messenger/messenger/internal/conversations/infra/persistence"
 	"messenger/messenger/internal/conversations/infra/persistence/repository"
 	"messenger/messenger/internal/platform/command_middleware"
-	"messenger/messenger/internal/platform/querymiddleware"
+	"messenger/messenger/internal/platform/query_middleware"
 	appCmd "messenger/messenger/internal/shared/app/command"
 	appQuery "messenger/messenger/internal/shared/app/query"
 	"uuid"
@@ -48,7 +48,7 @@ var PersistenceSet = wire.NewSet(
 var CommandHandlersSet = wire.NewSet(
 	command.NewSendMessageHandler,
 	ProvideSendMessageHandler,
-	wire.Struct(new(command.StartDirectConversationHandler), "*"),
+	command.NewStartDirectConversationHandler,
 	ProvideStartDirectConversationHandler,
 	command.NewCreateGroupConversationHandler,
 	ProvideCreateGroupConversationHandler,
@@ -82,7 +82,7 @@ var QueryHandlersSet = wire.NewSet(
 
 func ProvideGetHomePageHandler(
 	h *query.ListUserConversationsHandler,
-	m *querymiddleware.Registry,
+	m *query_middleware.Registry,
 ) appQuery.Handler[query.ListUserConversations, []query.ConversationSummary] {
-	return querymiddleware.Wrap(h, m)
+	return query_middleware.Wrap(h, m)
 }

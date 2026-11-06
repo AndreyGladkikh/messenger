@@ -7,7 +7,7 @@ import (
 	"messenger/messenger/internal/directory/infra/integration/identity"
 	"messenger/messenger/internal/directory/infra/persistence"
 	"messenger/messenger/internal/platform/command_middleware"
-	"messenger/messenger/internal/platform/querymiddleware"
+	"messenger/messenger/internal/platform/query_middleware"
 	appCmd "messenger/messenger/internal/shared/app/command"
 	appQuery "messenger/messenger/internal/shared/app/query"
 
@@ -49,7 +49,7 @@ func ProvideRegisterEntryHandler(
 var QueryHandlersSet = wire.NewSet(
 	query.NewSearchHandler,
 	ProvideSearchHandler,
-	wire.Struct(new(query.GetEntryHandler), "*"),
+	query.NewGetEntryHandler,
 	ProvideGetEntryHandler,
 	query.NewGetEntriesHandler,
 	ProvideGetEntriesHandler,
@@ -57,21 +57,21 @@ var QueryHandlersSet = wire.NewSet(
 
 func ProvideSearchHandler(
 	h *query.SearchHandler,
-	m *querymiddleware.Registry,
+	m *query_middleware.Registry,
 ) appQuery.Handler[query.Search, []query.SearchResultItem] {
-	return querymiddleware.Wrap(h, m)
+	return query_middleware.Wrap(h, m)
 }
 
 func ProvideGetEntryHandler(
 	h *query.GetEntryHandler,
-	m *querymiddleware.Registry,
+	m *query_middleware.Registry,
 ) appQuery.Handler[query.GetEntry, query.EntryView] {
-	return querymiddleware.Wrap(h, m)
+	return query_middleware.Wrap(h, m)
 }
 
 func ProvideGetEntriesHandler(
 	h *query.GetEntriesHandler,
-	m *querymiddleware.Registry,
+	m *query_middleware.Registry,
 ) appQuery.Handler[query.GetEntries, []query.EntryView] {
-	return querymiddleware.Wrap(h, m)
+	return query_middleware.Wrap(h, m)
 }

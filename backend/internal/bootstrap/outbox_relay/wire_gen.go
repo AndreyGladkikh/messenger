@@ -45,12 +45,7 @@ func Initialize(cfg config.Config) (*Relay, func(), error) {
 	producersProducers := &producers.Producers{
 		ConversationIntegrationEventsProducer: conversationIntegrationEventsProducer,
 	}
-	outboxRelay := &outbox_relay.OutboxRelay{
-		Logger:       loggerLogger,
-		EventService: eventService,
-		TXManager:    manager,
-		Producers:    producersProducers,
-	}
+	outboxRelay := outbox_relay.New(loggerLogger, eventService, manager, producersProducers)
 	relay := &Relay{
 		OutboxRelay: outboxRelay,
 	}

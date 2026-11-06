@@ -3,12 +3,12 @@ package command_middleware
 import "messenger/messenger/internal/shared/app/command"
 
 type Middleware[C command.Command, R any] interface {
-	Wrap(next command.Handler[C, R]) command.Handler[C ,R]
+	Wrap(next command.Handler[C, R]) command.Handler[C, R]
 }
 
 type Registry struct {
-	Logging *Logging
-	Recovering *Recovering
+	Logging     *Logging
+	Recovering  *Recovering
 	Transaction *Transaction
 }
 

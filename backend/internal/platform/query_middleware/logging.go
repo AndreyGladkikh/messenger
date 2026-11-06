@@ -1,4 +1,4 @@
-package querymiddleware
+package query_middleware
 
 import (
 	"context"

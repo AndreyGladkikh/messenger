@@ -1,4 +1,4 @@
-package querymiddleware
+package query_middleware
 
 import "messenger/messenger/internal/shared/app/query"
 
