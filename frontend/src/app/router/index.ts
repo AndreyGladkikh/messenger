@@ -10,7 +10,6 @@ export function createRouterContext() {
 }
 
 const router = createBrowserRouter(APP_ROUTES, {
-  future: { v8_middleware: true },
   getContext: createRouterContext,
 })
 

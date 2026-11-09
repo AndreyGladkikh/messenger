@@ -25,7 +25,6 @@ function renderRoutes(initialEntry: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const router = createMemoryRouter(APP_ROUTES, {
     initialEntries: [initialEntry],
-    future: { v8_middleware: true },
     getContext() {
       const context = new RouterContextProvider()
       context.set(queryClientContext, queryClient)
