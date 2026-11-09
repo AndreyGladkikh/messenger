@@ -15,8 +15,8 @@ const RegisterEntryCommandName = "RegisterEntry"
 type RegisterEntry struct {
 	TargetID    uuid.UUID
 	TargetType  string
-	DisplayName string
 	Handle      string
+	DisplayName string
 	AvatarURL      *string
 }
 

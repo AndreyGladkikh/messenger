@@ -2,9 +2,14 @@ package persistence
 
 import (
 	"context"
+	"errors"
 	"messenger/messenger/internal/directory/domain/entry"
+	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/shared/app/apperr"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type EntryRepository struct {
@@ -29,6 +34,20 @@ func (r *EntryRepository) Save(ctx context.Context, e *entry.Entry) error {
 		AvatarUrl:   e.AvatarURL,
 	})
 	if err != nil {
+		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == postgres.UniqueViolationErrCode {
+			switch pgErr.ConstraintName {
+			case "entries_handle_key":
+				return apperr.NewAlreadyExists(
+					"Handle already exists",
+					apperr.WithCode(apperr.CodeHandleAlreadyExists),
+				)
+			case "entries_target_id_target_type_key":
+				return apperr.NewAlreadyExists(
+					"Directory entry already exists",
+					apperr.WithCode(apperr.CodeDirectoryEntryAlreadyExists),
+				)
+			}
+		}
 		return err
 	}
 

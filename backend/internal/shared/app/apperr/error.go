@@ -39,6 +39,8 @@ const (
 	CodeAlreadyExists                         = "ALREADY_EXISTS"
 	CodeUserNotFound                          = "USER_NOT_FOUND"
 	CodeLoginAlreadyExists                    = "LOGIN_ALREADY_EXISTS"
+	CodeHandleAlreadyExists                   = "HANDLE_ALREADY_EXISTS"
+	CodeDirectoryEntryAlreadyExists           = "DIRECTORY_ENTRY_ALREADY_EXISTS"
 	CodeChatNotFound                          = "CHAT_NOT_FOUND"
 	CodeChatDeleted                           = "CHAT_DELETED"
 	CodePrivateChatAlreadyExists              = "PRIVATE_CHAT_ALREADY_EXISTS"

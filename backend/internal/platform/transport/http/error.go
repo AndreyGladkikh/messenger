@@ -139,10 +139,6 @@ func (h *ErrorHandler) createFromRequestError(err error) ProblemDetails {
 	return ProblemDetails{}
 }
 
-// func (h *ErrorHandler) problemTypeUrl(typ string) string {
-// 	return fmt.Sprintf("%s/problems-registry/%s", h.cfg.FrontendUrl, typ)
-// }
-
 func problemType(typ string) func(problemsRegistryUrl string) string {
 	return func(problemsRegistryUrl string) string {
 		return fmt.Sprintf("%s/%s", problemsRegistryUrl, typ)
@@ -168,19 +164,6 @@ func statusByAppErr(err *apperr.Error) int {
 	}
 }
 
-// func problemTitle(typ string) string {
-// 	switch typ {
-// 	case problemTypeNotFound:
-// 		return "Not Found"
-// 	case problemTypeValidationError:
-// 		return "Request is not valid"
-// 	case problemTypeServerError:
-// 		return "Server error"
-// 	default:
-// 		return typ
-// 	}
-// }
-
 func (h *ErrorHandler) typeTitleByAppErr(err error) (typ, title string) {
 	if err, ok := errors.AsType[*apperr.Error](err); ok {
 		switch err.Kind {
@@ -204,9 +187,7 @@ func problemErrors(err error) []ErrorDetail {
 	if err, ok := errors.AsType[*apperr.Error](err); ok {
 		switch err.Kind {
 		case apperr.KindInvalidArgument:
-			errs = append(errs, ErrorDetail{
-				// Detail: ,
-			})
+			errs = append(errs, ErrorDetail{})
 		}
 	}
 
