@@ -1,36 +1,5 @@
 # React + TypeScript + Vite
 
-## Development
-
-From this directory, use the Node 24 LTS version in `.nvmrc`:
-
-```sh
-nvm install
-nvm use
-npm ci
-npm run dev
-```
-
-Run `npm test`, `npm run lint`, and `npm run build` to validate changes.
-
-## Dependency updates
-
-```sh
-npx npm-check-updates -u
-npm install
-```
-
-The `.ncurc.json` configuration checks peer dependencies and the project's Node
-engine requirement before selecting upgrades. Review major-version migration
-guides and run the validation commands after updating.
-
-TypeScript stays on `~6.0.3` because `typescript-eslint` 8.72.1 requires
-`>=4.8.4 <6.1.0`. Revisit this constraint when the linter supports TypeScript 7;
-see the [supported dependency versions](https://typescript-eslint.io/users/dependency-versions/).
-
-React Router 8, Vitest 5, and jsdom 31 require newer Node versions than Node 20.
-Use `nvm use` before installing or running the frontend tools.
-
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
@@ -40,7 +9,10 @@ Currently, two official plugins are available:
 
 ## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+
+Note: This will impact Vite dev & build performances.
+You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
 
 ## Expanding the ESLint configuration
 
@@ -75,7 +47,7 @@ export default defineConfig([
 
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
 // eslint.config.js
