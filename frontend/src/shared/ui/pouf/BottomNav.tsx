@@ -4,7 +4,7 @@ import * as RDialog from '@radix-ui/react-dialog'
 import { useState } from 'react'
 import { Icon, renderIcon, type IconLike } from './Icon'
 import { Row } from './layout'
-import { Heading, Text } from './text'
+import { Text } from './text'
 import { toneClass, type Tone } from './tone'
 import { isActivePath, type LinkComponent } from './NavLink'
 
@@ -86,12 +86,17 @@ export function BottomNav({ primary, groups, currentPath, link: Link = Anchor }:
       ))}
 
       <RDialog.Root open={open} onOpenChange={setOpen}>
-        <RDialog.Trigger render={<button type="button" className={clsx('pouf-tab', !onPrimary && 'pouf-tab--active')} aria-current={!onPrimary ? 'page' : undefined} />}><Icon name="menu" size="md" /><span className="pouf-tab__label">Menu</span></RDialog.Trigger>
+        <RDialog.Trigger asChild>
+          <button type="button" className={clsx('pouf-tab', !onPrimary && 'pouf-tab--active')} aria-current={!onPrimary ? 'page' : undefined}>
+            <Icon name="menu" size="md" />
+            <span className="pouf-tab__label">Menu</span>
+          </button>
+        </RDialog.Trigger>
         <RDialog.Portal>
           <RDialog.Overlay className="pouf-overlay" />
           <RDialog.Content className="pouf-sheet" aria-describedby={undefined}>
             <div className="pouf-sheet__handle" />
-            <RDialog.Title render={<div />}><Heading level={3}>All screens</Heading></RDialog.Title>
+            <RDialog.Title asChild><h3 className="pouf-h3 text-[19px] font-black leading-[1.2] tracking-[-0.2px]">All screens</h3></RDialog.Title>
             {/* Grouped by spacing, deliberately unlabelled. The headings read as
                 clutter at this size, and the clusters do the work on their own —
                 proximity groups without adding a word of chrome. */}
@@ -125,10 +130,14 @@ export function BottomNav({ primary, groups, currentPath, link: Link = Anchor }:
                 ))}
               </div>
             </div>
-            <RDialog.Close render={<button type="button" className={buttonClasses({ size: 'sm', variant: 'quiet', block: true })} />}><Row gap={2} wrap={false}>
-                                        <Icon name="close" size="sm" />
-                                        <Text size="sm">Close</Text>
-                                      </Row></RDialog.Close>
+            <RDialog.Close asChild>
+              <button type="button" className={buttonClasses({ size: 'sm', variant: 'quiet', block: true })}>
+                <Row gap={2} wrap={false}>
+                  <Icon name="close" size="sm" />
+                  <Text size="sm">Close</Text>
+                </Row>
+              </button>
+            </RDialog.Close>
           </RDialog.Content>
         </RDialog.Portal>
       </RDialog.Root>

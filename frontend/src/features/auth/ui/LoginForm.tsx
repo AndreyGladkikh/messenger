@@ -1,42 +1,34 @@
-import type { Credentials } from "@/features/auth/model/credentials";
-import { CredentialsForm } from "./CredentialsForm";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { login } from "../api";
-import { ApiError } from "@/shared/api/client";
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router'
+import { login } from '../api'
+import type { Credentials } from '../model/credentials'
+import { CredentialsForm } from './CredentialsForm'
 
 export function LoginForm() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const mutation = useMutation({ mutationFn: login })
 
-  const mutation = useMutation({
-    mutationFn: login,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['me'] })
-    },
-  })
-
-  const onSubmit = (creds: Credentials) => {
-    mutation.mutate(creds)
+  async function submit(credentials: Credentials) {
+    try {
+      await mutation.mutateAsync({
+        login: credentials.login.trim(),
+        password: credentials.password,
+      })
+    } catch {
+      return
+    }
+    await queryClient.cancelQueries()
+    queryClient.removeQueries()
+    navigate('/')
   }
 
-  const err = mutation.isError ? mutation.error : null
-  const isApiErr = err instanceof ApiError
-
   return (
-    <>
-      {err && (
-        <>
-          <div>{err.message}</div>
-          {isApiErr && (
-            <>
-              <div>{err.code}</div>
-              <div>{JSON.stringify(err.details, null, 2)}</div>
-            </>
-          )}
-        </>
-      )}
-
-      <div>{JSON.stringify(mutation.data, null, 2)}</div>
-      <CredentialsForm onSubmit={onSubmit} />
-    </>
+    <CredentialsForm
+      mode="login"
+      pending={mutation.isPending}
+      error={mutation.error?.message}
+      onSubmit={submit}
+    />
   )
 }

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
-import { Card } from '../surface'
-import { Stack, Row } from '../layout'
-import { Heading, Text } from '../text'
-import { Field, Input } from '../Input'
-import { Button } from '../Button'
-import { Separator } from '../separator'
-import { Blob } from '../media'
-import { Empty } from '../feedback'
+import { Card } from './surface'
+import { Stack, Row } from './layout'
+import { Heading, Text } from './text'
+import { Field, Input } from './Input'
+import { Button } from './Button'
+import { Separator } from './separator'
+import { Blob } from './media'
+import { Empty } from './feedback'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -40,7 +40,7 @@ export function LoginBlock() {
   })
   const email = useWatch({ control, name: 'email' })
 
-  const submit = handleSubmit((values) => {
+  const submit = handleSubmit(() => {
     if (mode === 'magic') {
       setMagicSent(true)
       return

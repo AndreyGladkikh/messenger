@@ -1,8 +1,8 @@
-import type { Credentials } from "@/features/auth/model/credentials";
+import type { Account, Credentials } from "../model/credentials";
 import { apiRequest } from "@/shared/api/client";
 import http from "@/shared/constants/http";
 
-export const register = async (creds: Credentials) => await apiRequest('/auth/register', {
+export const register = async (creds: Credentials) => await apiRequest('/auth/users', {
     method: http.method.post,
     body: {
         login: creds.login,
@@ -18,6 +18,6 @@ export const login = async (creds: Credentials) => await apiRequest('/auth/users
     },
 }, false)
 
-export const getCurrentUser = async () => await apiRequest('/auth/me', {
+export const getCurrentUser = async () => await apiRequest<Account>('/auth/me', {
     method: 'GET',
 })
