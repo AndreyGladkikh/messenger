@@ -24,6 +24,10 @@ export const routes: RouteObject[] = [
         middleware: [protectedMiddleware],
       },
       {
+        path: 'test',
+        Component: SignInPage,
+      },
+      {
         path: 'auth',
         middleware: [publicAuthMiddleware],
         children: [
