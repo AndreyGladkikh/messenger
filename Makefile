@@ -7,7 +7,8 @@ front_port := 3000
 front_url := localhost:$(front_port)
 
 test:
-	cd backend && go test ./...
+	cd backend && go test ./... && \
+	cd ../frontend && pnpm test
 
 run:
 	$(MAKE) -j3 api consumer outbox_relay
