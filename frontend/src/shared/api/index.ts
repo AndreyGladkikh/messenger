@@ -1,5 +1,5 @@
-import chats from "./chats";
+import { apiRequest } from "./client";
 
 export default {
-    chats,
+    apiRequest,
 }

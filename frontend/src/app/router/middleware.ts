@@ -18,7 +18,11 @@ async function getProfile(context: LoaderFunctionArgs['context'], account: Accou
 }
 
 export const protectedMiddleware: MiddlewareFunction = async ({ context }, next) => {
+  console.log('protectedMiddleware');
+  
   const account = await getAccount(context)
+  console.log(account);
+  
   if (!account) throw redirect('/auth/login')
 
   const profile = await getProfile(context, account)

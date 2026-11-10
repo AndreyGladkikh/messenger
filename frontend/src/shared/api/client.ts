@@ -4,7 +4,9 @@ import http from "@/shared/constants/http"
 const UNEXPECTED_ERROR_MESSAGE = 'Произошла непредвиденная ошибка.'
 
 interface ProblemDetails {
-  title?: string
+  type?: string
+  title: string
+  detail?: string
   code?: string
   errors?: object
 }
