@@ -1,5 +1,5 @@
 import type { Account, Credentials } from "../model/credentials";
-import { apiRequest } from "@/shared/api/client";
+import { apiRequest } from "@/shared/api";
 import http from "@/shared/constants/http";
 
 export const register = async (creds: Credentials) => await apiRequest('/auth/users', {

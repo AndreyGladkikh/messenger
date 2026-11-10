@@ -1,7 +1,7 @@
 import { redirect, type LoaderFunctionArgs, type MiddlewareFunction } from 'react-router'
 import { currentUserQuery, type Account } from '@/features/auth'
 import { profileQuery } from '@/entities/profile'
-import { UnauthenticatedError } from '@/shared/api/client'
+import { UnauthenticatedError } from '@/shared/api'
 import { queryClientContext } from './context'
 
 async function getAccount(context: LoaderFunctionArgs['context']): Promise<Account | null> {

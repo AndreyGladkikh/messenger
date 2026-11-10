@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query'
-import { apiRequest, ApiError } from '@/shared/api/client'
+import { apiRequest, ApiError } from '@/shared/api'
 import http from '@/shared/constants/http'
 import type { Profile } from '../model/types'
 
