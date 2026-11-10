@@ -18,6 +18,10 @@ export const login = async (creds: Credentials) => await apiRequest('/auth/users
     },
 }, false)
 
+export const logout = () => apiRequest<void>('/auth/users/logout', {
+    method: http.method.post,
+}, false)
+
 export const getCurrentUser = async () => await apiRequest<Account>('/auth/me', {
     method: 'GET',
 })

@@ -2,8 +2,7 @@
 
 import { Archive, MessagesSquare, Settings, Users } from 'lucide-react'
 import { useState } from 'react'
-import { Avatar } from './Avatar'
-import { currentUser } from '@/shared/lib/messenger-data'
+import { AccountMenu } from './AccountMenu'
 import { cn } from '@/shared/lib'
 
 const items = [
@@ -50,7 +49,7 @@ export function NavRail() {
       })}
 
       <div className="mt-auto">
-        <Avatar initials={currentUser.initials} size="sm" online />
+        <AccountMenu />
       </div>
     </nav>
   )

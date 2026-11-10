@@ -1,5 +1,26 @@
 # React + TypeScript + Vite
 
+## Browser tests
+
+From `frontend`, install the dependencies and Playwright's Chromium browser once:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm exec playwright install chromium
+```
+
+Run the browser tests with `pnpm test`. The tests start their own Vite server at
+`http://127.0.0.1:4173`, so that port must be free. They mock the authentication
+and profile HTTP endpoints; no running backend or real credentials are needed.
+The test server overrides `VITE_API_URL` to use the same origin's `/api` prefix.
+
+Failure screenshots and traces are saved in `messenger-playwright-results` inside the
+system temporary directory (normally `/tmp`), outside the repository. Use
+`npm test -- --headed` to watch the tests or `npm test -- --debug` to step through
+them.
+
+/* */
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
