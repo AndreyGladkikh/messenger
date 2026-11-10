@@ -85,6 +85,18 @@ func (h *ApiHandler) LoginUser(ctx context.Context, request LoginUserRequestObje
 	}, nil
 }
 
+func (h *ApiHandler) LogoutUser(ctx context.Context, request LogoutUserRequestObject) (LogoutUserResponseObject, error) {
+	cmd := idCommand.LogoutUser{
+		RefreshToken: request.Params.RefreshToken,
+	}
+	_, err := h.commands.LogoutUser.Handle(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return LogoutUser204ResponseCustom{}, nil
+}
+
 func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error) {
 	cmd := directoryCmd.RegisterEntry{
 		TargetID:    request.Body.TargetId,
@@ -283,6 +295,15 @@ func (response Login200JSONResponseCustom) VisitLoginUserResponse(w http.Respons
 	return response.LoginUser200JSONResponse.VisitLoginUserResponse(w)
 }
 
+type LogoutUser204ResponseCustom struct {
+	LogoutUser204Response
+}
+
+func (response LogoutUser204ResponseCustom) VisitLogoutUserResponse(w http.ResponseWriter) error {
+	unsetAuthCookies(w)
+	return response.LogoutUser204Response.VisitLogoutUserResponse(w)
+}
+
 type RefreshTokens200JSONResponseCustom struct {
 	RefreshTokens200JSONResponse
 }
@@ -306,6 +327,29 @@ func setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 		Value:    refreshToken,
 		Path:     "/",
 		Expires:  time.Now().Add(session.TTL),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(w, accessTokenCookie)
+	http.SetCookie(w, refreshTokenCookie)
+}
+
+func unsetAuthCookies(w http.ResponseWriter) {
+	accessTokenCookie := &http.Cookie{
+		Name:     cookies.AccessToken,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	refreshTokenCookie := &http.Cookie{
+		Name:     cookies.RefreshToken,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,

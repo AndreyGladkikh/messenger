@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"messenger/messenger/internal/identity/domain/model/session"
 	"messenger/messenger/internal/platform/repository"
 	"messenger/messenger/internal/platform/sqlc"
@@ -23,7 +24,7 @@ func NewSessionRepository(repo *repository.Repository) *SessionRepository {
 func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token string) (*session.Session, error) {
 	s, err := r.Queries(ctx).GetSessionByRefreshTokenHash(ctx, token)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, err
+		return nil, fmt.Errorf("get session by refresh token: %w", err)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, apperr.NewNotFound("Session not found by refresh token")
@@ -43,7 +44,7 @@ func (r *SessionRepository) GetByRefreshTokenHash(ctx context.Context, token str
 }
 
 func (r *SessionRepository) Save(ctx context.Context, s *session.Session) error {
-	return r.Queries(ctx).UpsertSession(ctx, sqlc.UpsertSessionParams{
+	err := r.Queries(ctx).UpsertSession(ctx, sqlc.UpsertSessionParams{
 		ID:               s.ID(),
 		UserID:           s.UserID,
 		UserAgent:        s.UserAgent,
@@ -53,4 +54,11 @@ func (r *SessionRepository) Save(ctx context.Context, s *session.Session) error 
 		RevokedAt:        s.RevokedAt,
 		LastUsedAt:       s.LastUsedAt,
 	})
+	if err != nil {
+		return fmt.Errorf("upsert session: %w", err)
+	}
+
+	r.RegisterAggregate(ctx, s)
+
+	return nil
 }

@@ -162,6 +162,30 @@ func TestRefreshUserTokens_Success(t *testing.T) {
 	assert.NotEmpty(t, refreshTokenCookie.Value)
 }
 
+func TestLogoutUser_Success(t *testing.T) {
+	server, _ := initApi(t)
+	
+	user := newUser(t, server, "alice")
+
+	resp, _ := user.httpClient.logoutUser(t)
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	respCookies := resp.Cookies()
+	assert.NotEmpty(t, respCookies)
+	var accessTokenCookie, refreshTokenCookie *http.Cookie
+	for _, c := range respCookies {
+		switch c.Name {
+		case cookies.AccessToken:
+			accessTokenCookie = c
+		case cookies.RefreshToken:
+			refreshTokenCookie = c
+		}
+	}
+
+	assert.Empty(t, accessTokenCookie.Value)
+	assert.Empty(t, refreshTokenCookie.Value)
+}
+
 func TestMalformedRequest(t *testing.T) {
 	_, client := initApi(t)
 

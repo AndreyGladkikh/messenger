@@ -117,6 +117,10 @@ func (c *httpClient) loginUser(t *testing.T, login, pass string) (*http.Response
 	}})
 }
 
+func (c *httpClient) logoutUser(t *testing.T) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "auth/users/logout", nil)
+}
+
 func (c *httpClient) refreshUserTokens(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "auth/users/refresh-tokens", nil)
 }
