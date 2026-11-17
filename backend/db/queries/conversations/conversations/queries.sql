@@ -13,7 +13,7 @@ WHERE id = (
 SELECT cnv.id,
     cnv.type,
     gcnv.title,
-    gcnv.avatar_url,
+    gcnv.avatar_id,
     msg.id as msg_id,
     msg.body as msg_body,
     msg.sender_id as msg_sender_id,

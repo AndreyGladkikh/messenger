@@ -8,7 +8,7 @@ import (
 type PeerItem struct {
 	ID          uuid.UUID
 	Type        string
-	AvatarUrl   *string
+	AvatarURL   *string
 	Title       string
 	Preview     string
 	PreviewTime time.Time

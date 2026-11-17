@@ -17,7 +17,7 @@ type RegisterEntry struct {
 	TargetType  string
 	Handle      string
 	DisplayName string
-	AvatarURL      *string
+	AvatarID    *uuid.UUID
 }
 
 func (r RegisterEntry) IsCommand() {}
@@ -29,8 +29,8 @@ func (r RegisterEntry) Name() string {
 var _ command.Handler[RegisterEntry, any] = (*RegisterEntryHandler)(nil)
 
 type RegisterEntryHandler struct {
-	entryRepo    entry.Repository
-	targetLookup *TargetLookup
+	entryRepo       entry.Repository
+	targetLookup    *TargetLookup
 }
 
 func NewRegisterEntryHandler(
@@ -38,8 +38,8 @@ func NewRegisterEntryHandler(
 	targetLookup *TargetLookup,
 ) *RegisterEntryHandler {
 	return &RegisterEntryHandler{
-		entryRepo:    entryRepo,
-		targetLookup: targetLookup,
+		entryRepo:       entryRepo,
+		targetLookup:    targetLookup,
 	}
 }
 
@@ -63,7 +63,7 @@ func (h *RegisterEntryHandler) Handle(ctx context.Context, qry RegisterEntry) (a
 		trgt,
 		qry.DisplayName,
 		qry.Handle,
-		entry.WithAvatarURL(qry.AvatarURL),
+		entry.WithAvatarID(qry.AvatarID),
 	)
 
 	err = h.entryRepo.Save(ctx, entr)

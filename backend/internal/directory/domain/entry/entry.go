@@ -12,7 +12,7 @@ type Entry struct {
 	TargetID    uuid.UUID
 	TargetType  TargetType
 	DisplayName string
-	AvatarURL   *string
+	AvatarID    *uuid.UUID
 	Handle      string
 }
 
@@ -41,7 +41,7 @@ func New(
 		DisplayName: displayName,
 		Handle:      handle,
 	})
-	
+
 	return e
 }
 
@@ -51,8 +51,8 @@ func (e *Entry) ID() uuid.UUID {
 
 type Option func(*Entry)
 
-func WithAvatarURL(url *string) Option {
+func WithAvatarID(id *uuid.UUID) Option {
 	return func(e *Entry) {
-		e.AvatarURL =  url
+		e.AvatarID = id
 	}
 }

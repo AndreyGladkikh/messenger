@@ -18,6 +18,8 @@ tags:
     description: Conversations
   - name: bff
     description: Backend for frontend
+  - name: media
+    description: Media files management
 paths:
   /auth/users:
     post:
@@ -304,6 +306,121 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
       security:
         - bearerHttpAuthentication: []
+  /media/uploads:
+    post:
+      tags:
+        - media
+      summary: Init media upload.
+      operationId: initMediaUpload
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitMediaUpload'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitedMediaUpload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
+  /media/uploads/{upload_id}/complete:
+    post:
+      tags:
+        - media
+      summary: Complete media upload.
+      operationId: completeMediaUpload
+      parameters:
+        - name: upload_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: uuid.UUID
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Media'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
+  /media/{media_id}/url:
+    get:
+      tags:
+        - media
+      summary: Get URL to download media.
+      operationId: getDownloadMediaUrl
+      parameters:
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: uuid.UUID
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadMediaUrl'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
   /conversations/direct:
     post:
       tags:
@@ -483,7 +600,51 @@ components:
           type: string
         displayName:
           type: string
-        avatarUrl:
+        avatarMediaId:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+
+    InitMediaUpload:
+      type: object
+      required:
+        - fileName
+        - purpose
+      properties:
+        fileName:
+          type: string
+        purpose:
+          type: string
+
+    InitedMediaUpload:
+      type: object
+      required:
+        - id
+        - presignedUrl
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+        presignedUrl:
+          type: string
+
+    Media:
+      type: object
+      required:
+        - mediaId
+      properties:
+        mediaId:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+
+    DownloadMediaUrl:
+      type: object
+      required:
+        - url
+      properties:
+        url:
           type: string
 
     DirectoryEntry:

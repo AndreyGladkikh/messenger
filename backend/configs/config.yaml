@@ -1,12 +1,13 @@
 Auth:
   Jwt:
-    # PrivateKeyPath: ../../keys/private.pem
-    # PublicKeyPath: ../../keys/public.pem
-    PrivateKeyPath: keys/private.pem
-    PublicKeyPath: keys/public.pem
+    PrivateKeyPath: ../../keys/private.pem
+    PublicKeyPath: ../../keys/public.pem
+    # PrivateKeyPath: keys/private.pem
+    # PublicKeyPath: keys/public.pem
 
 HttpServer:
   Addr: :3000
 
 FrontendUrl: http://localhost:3000
 ProblemsRegistryUrl: https://problems-registry.messenger.com
+CDNHost: http://localhost:8333

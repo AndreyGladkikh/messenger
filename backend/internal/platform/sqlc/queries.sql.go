@@ -115,7 +115,7 @@ func (q *Queries) GetDirectConversationBetween(ctx context.Context, arg GetDirec
 }
 
 const getDirectoryEntry = `-- name: GetDirectoryEntry :one
-SELECT display_name, handle, avatar_url 
+SELECT display_name, handle, avatar_id 
 FROM directory.entries
 WHERE target_id = $1
     AND target_type = $2
@@ -129,13 +129,13 @@ type GetDirectoryEntryParams struct {
 type GetDirectoryEntryRow struct {
 	DisplayName string
 	Handle      string
-	AvatarUrl   *string
+	AvatarID    *uuid.UUID
 }
 
 func (q *Queries) GetDirectoryEntry(ctx context.Context, arg GetDirectoryEntryParams) (GetDirectoryEntryRow, error) {
 	row := q.db.QueryRow(ctx, getDirectoryEntry, arg.TargetID, arg.TargetType)
 	var i GetDirectoryEntryRow
-	err := row.Scan(&i.DisplayName, &i.Handle, &i.AvatarUrl)
+	err := row.Scan(&i.DisplayName, &i.Handle, &i.AvatarID)
 	return i, err
 }
 
@@ -173,7 +173,7 @@ func (q *Queries) GetEventToProcess(ctx context.Context) (Outbox, error) {
 }
 
 const getGroupConversation = `-- name: GetGroupConversation :one
-SELECT conversation_id, title, avatar_url
+SELECT conversation_id, title, avatar_id
 FROM conversations.group_conversations
 WHERE conversation_id = $1
 `
@@ -181,7 +181,25 @@ WHERE conversation_id = $1
 func (q *Queries) GetGroupConversation(ctx context.Context, conversationID uuid.UUID) (ConversationsGroupConversation, error) {
 	row := q.db.QueryRow(ctx, getGroupConversation, conversationID)
 	var i ConversationsGroupConversation
-	err := row.Scan(&i.ConversationID, &i.Title, &i.AvatarUrl)
+	err := row.Scan(&i.ConversationID, &i.Title, &i.AvatarID)
+	return i, err
+}
+
+const getMediaAsset = `-- name: GetMediaAsset :one
+SELECT id, status, name, bucket, key FROM media.assets
+WHERE id = $1
+`
+
+func (q *Queries) GetMediaAsset(ctx context.Context, id uuid.UUID) (MediaAsset, error) {
+	row := q.db.QueryRow(ctx, getMediaAsset, id)
+	var i MediaAsset
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.Name,
+		&i.Bucket,
+		&i.Key,
+	)
 	return i, err
 }
 
@@ -228,6 +246,23 @@ func (q *Queries) GetSessionByRefreshTokenHash(ctx context.Context, refreshToken
 	return i, err
 }
 
+const getUpload = `-- name: GetUpload :one
+SELECT id, status, initiator_id, asset_id FROM media.uploads
+WHERE id = $1
+`
+
+func (q *Queries) GetUpload(ctx context.Context, id uuid.UUID) (MediaUpload, error) {
+	row := q.db.QueryRow(ctx, getUpload, id)
+	var i MediaUpload
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.InitiatorID,
+		&i.AssetID,
+	)
+	return i, err
+}
+
 const getUserByLogin = `-- name: GetUserByLogin :one
 SELECT id, login, password_hash FROM identity.users
 WHERE login = $1
@@ -241,7 +276,7 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (IdentityUse
 }
 
 const getUserPeers = `-- name: GetUserPeers :many
-SELECT user_id, target_id, target_type, title, avatar_url, preview, preview_time, unread_count
+SELECT user_id, target_id, target_type, title, avatar_id, preview, preview_time, unread_count
 FROM bff.peers p
 WHERE p.user_id = $1
 ORDER BY p.preview_time DESC
@@ -267,7 +302,7 @@ func (q *Queries) GetUserPeers(ctx context.Context, arg GetUserPeersParams) ([]B
 			&i.TargetID,
 			&i.TargetType,
 			&i.Title,
-			&i.AvatarUrl,
+			&i.AvatarID,
 			&i.Preview,
 			&i.PreviewTime,
 			&i.UnreadCount,
@@ -343,7 +378,7 @@ const listConversationsForUser = `-- name: ListConversationsForUser :many
 SELECT cnv.id,
     cnv.type,
     gcnv.title,
-    gcnv.avatar_url,
+    gcnv.avatar_id,
     msg.id as msg_id,
     msg.body as msg_body,
     msg.sender_id as msg_sender_id,
@@ -375,7 +410,7 @@ type ListConversationsForUserRow struct {
 	ID                  uuid.UUID
 	Type                string
 	Title               *string
-	AvatarUrl           *string
+	AvatarID            *uuid.UUID
 	MsgID               uuid.UUID
 	MsgBody             string
 	MsgSenderID         uuid.UUID
@@ -396,7 +431,7 @@ func (q *Queries) ListConversationsForUser(ctx context.Context, participantID uu
 			&i.ID,
 			&i.Type,
 			&i.Title,
-			&i.AvatarUrl,
+			&i.AvatarID,
 			&i.MsgID,
 			&i.MsgBody,
 			&i.MsgSenderID,
@@ -427,7 +462,7 @@ SELECT
     e.target_type,
     e.display_name,
     e.handle,
-    e.avatar_url
+    e.avatar_id
 FROM directory.entries AS e
 JOIN targets ON e.target_id = targets.id AND e.target_type = targets.type
 `
@@ -443,7 +478,7 @@ type ListDirectoryEntriesByTargetsRow struct {
 	TargetType  string
 	DisplayName string
 	Handle      string
-	AvatarUrl   *string
+	AvatarID    *uuid.UUID
 }
 
 func (q *Queries) ListDirectoryEntriesByTargets(ctx context.Context, arg ListDirectoryEntriesByTargetsParams) ([]ListDirectoryEntriesByTargetsRow, error) {
@@ -461,7 +496,7 @@ func (q *Queries) ListDirectoryEntriesByTargets(ctx context.Context, arg ListDir
 			&i.TargetType,
 			&i.DisplayName,
 			&i.Handle,
-			&i.AvatarUrl,
+			&i.AvatarID,
 		); err != nil {
 			return nil, err
 		}

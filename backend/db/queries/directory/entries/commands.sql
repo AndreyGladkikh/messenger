@@ -5,7 +5,7 @@ INSERT INTO directory.entries (
     target_type,
     display_name,
     handle,
-    avatar_url
+    avatar_id
 ) VALUES (
   $1, $2, $3, $4, $5, $6
 ) ON CONFLICT (id) DO UPDATE

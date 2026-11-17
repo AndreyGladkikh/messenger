@@ -295,7 +295,7 @@ func (h *Handler) readEventsLoop(ctx context.Context, subscription *pubsub.Subsc
 					ConversationId:    p.ConversationID,
 					SenderId:          p.SenderID,
 					SenderDisplayName: p.SenderName,
-					AvatarUrl:         p.SenderAvatarUrl,
+					AvatarUrl:         p.SenderAvatarURL,
 					Message: &MessagePayload{
 						Body:   p.MessageBody,
 						SentAt: p.MessageSentAt,

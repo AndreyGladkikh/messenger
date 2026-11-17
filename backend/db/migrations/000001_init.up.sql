@@ -2,9 +2,9 @@ CREATE SCHEMA identity;
 CREATE SCHEMA conversations;
 CREATE SCHEMA directory;
 CREATE SCHEMA bff;
+CREATE SCHEMA media;
 
 CREATE TYPE account_type AS ENUM ('user', 'bot', 'service');
-
 CREATE TABLE identity.accounts(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type ACCOUNT_TYPE NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE conversations.direct_conversations(
 CREATE TABLE conversations.group_conversations(
     conversation_id UUID PRIMARY KEY REFERENCES conversations.conversations ON DELETE CASCADE,
     title TEXT NOT NULL,
-    avatar_url TEXT
+    avatar_id UUID
 );
 
 CREATE TABLE conversations.memberships(
@@ -81,19 +81,11 @@ CREATE TABLE conversations.messages(
 );
 CREATE INDEX messages_conversation_id_created_at_id_idx ON conversations.messages (conversation_id, created_at DESC, id DESC) WHERE deleted_at IS NULL;
 
-CREATE TABLE conversations.files(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    hash BYTEA NOT NULL,
-    name TEXT,
-    url TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
-
-CREATE TABLE conversations.message_files(
+CREATE TABLE conversations.message_attachments(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     message_id UUID REFERENCES conversations.messages ON DELETE CASCADE,
-    file_id UUID REFERENCES conversations.files ON DELETE CASCADE,
-    name TEXT
+    media_id UUID NOT NULL,
+    name TEXT NOT NULL
 );
 
 CREATE TABLE directory.entries(
@@ -102,7 +94,7 @@ CREATE TABLE directory.entries(
     target_type TEXT NOT NULL,
     display_name TEXT NOT NULL,
     handle TEXT NOT NULL UNIQUE,
-    avatar_url TEXT,
+    avatar_id UUID,
     ts_vec TSVECTOR GENERATED ALWAYS AS (
         to_tsvector('russian', coalesce(display_name, '')) ||
         to_tsvector('english', coalesce(display_name, '') || ' ' || coalesce(handle, '')) ||
@@ -117,7 +109,7 @@ CREATE TABLE bff.peers(
     target_id UUID NOT NULL,
     target_type TEXT NOT NULL,
     title TEXT NOT NULL,
-    avatar_url TEXT,
+    avatar_id UUID,
     preview TEXT,
     preview_time TIMESTAMP WITH TIME ZONE,
     unread_count INT NOT NULL DEFAULT 0,
@@ -125,24 +117,25 @@ CREATE TABLE bff.peers(
 );
 CREATE INDEX bff_peers_user_id_preview_time_idx ON bff.peers(user_id, preview_time);
 
--- CREATE TABLE outbox(
---     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
---     event_id UUID NOT NULL,
---     event_type TEXT NOT NULL,
---     event_payload JSONB,
---     occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
---     status TEXT NOT NULL DEFAULT 'pending',
---     claimed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
---     attempts INT NOT NULL DEFAULT 0,
---     errors TEXT[],
---     next_retry_at TIMESTAMP WITH TIME ZONE
--- );
--- CREATE INDEX outbox_occurred_at_idx ON outbox(occurred_at) WHERE status = 'pending';
--- CREATE INDEX outbox_next_retry_at_occurred_at_idx ON outbox(next_retry_at, occurred_at) WHERE status = 'retry';
+CREATE TYPE asset_status AS ENUM ('pending', 'ready');
+CREATE TABLE media.assets(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    status ASSET_STATUS NOT NULL DEFAULT 'pending',
+    name TEXT NOT NULL,
+    bucket TEXT NOT NULL DEFAULT 'cap',
+    key TEXT NOT NULL DEFAULT 'cap'
+);
+
+CREATE TYPE upload_status AS ENUM ('pending', 'processing', 'completed');
+CREATE TABLE media.uploads(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    status UPLOAD_STATUS NOT NULL DEFAULT 'pending',
+    initiator_id UUID NOT NULL,
+    asset_id UUID NOT NULL REFERENCES media.assets ON DELETE CASCADE
+);
 
 CREATE TYPE outbox_kind AS ENUM ('local', 'integration');
 CREATE TYPE outbox_status AS ENUM ('pending', 'processing', 'retry', 'succeeded', 'dead');
-
 CREATE TABLE outbox(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     kind OUTBOX_KIND NOT NULL,

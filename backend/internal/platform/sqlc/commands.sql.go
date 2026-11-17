@@ -327,6 +327,24 @@ func (q *Queries) UpdateDirectoryEntry(ctx context.Context, arg UpdateDirectoryE
 	return err
 }
 
+const updateMediaAssetLocation = `-- name: UpdateMediaAssetLocation :exec
+UPDATE media.assets
+SET bucket = $2,
+  key = $3
+WHERE id = $1
+`
+
+type UpdateMediaAssetLocationParams struct {
+	ID     uuid.UUID
+	Bucket string
+	Key    string
+}
+
+func (q *Queries) UpdateMediaAssetLocation(ctx context.Context, arg UpdateMediaAssetLocationParams) error {
+	_, err := q.db.Exec(ctx, updateMediaAssetLocation, arg.ID, arg.Bucket, arg.Key)
+	return err
+}
+
 const updateMessage = `-- name: UpdateMessage :exec
 UPDATE conversations.messages
   set body = $2,
@@ -375,7 +393,7 @@ INSERT INTO directory.entries (
     target_type,
     display_name,
     handle,
-    avatar_url
+    avatar_id
 ) VALUES (
   $1, $2, $3, $4, $5, $6
 ) ON CONFLICT (id) DO UPDATE
@@ -389,7 +407,7 @@ type UpsertDirectoryEntryParams struct {
 	TargetType  string
 	DisplayName string
 	Handle      string
-	AvatarUrl   *string
+	AvatarID    *uuid.UUID
 }
 
 func (q *Queries) UpsertDirectoryEntry(ctx context.Context, arg UpsertDirectoryEntryParams) error {
@@ -399,7 +417,7 @@ func (q *Queries) UpsertDirectoryEntry(ctx context.Context, arg UpsertDirectoryE
 		arg.TargetType,
 		arg.DisplayName,
 		arg.Handle,
-		arg.AvatarUrl,
+		arg.AvatarID,
 	)
 	return err
 }
@@ -408,22 +426,76 @@ const upsertGroupConversation = `-- name: UpsertGroupConversation :exec
 INSERT INTO conversations.group_conversations(
     conversation_id,
     title,
-    avatar_url
+    avatar_id
 ) VALUES (
     $1, $2, $3
 ) ON CONFLICT (conversation_id) DO UPDATE
 SET title = EXCLUDED.title,
-    avatar_url = EXCLUDED.avatar_url
+    avatar_id = EXCLUDED.avatar_id
 `
 
 type UpsertGroupConversationParams struct {
 	ConversationID uuid.UUID
 	Title          string
-	AvatarUrl      *string
+	AvatarID       *uuid.UUID
 }
 
 func (q *Queries) UpsertGroupConversation(ctx context.Context, arg UpsertGroupConversationParams) error {
-	_, err := q.db.Exec(ctx, upsertGroupConversation, arg.ConversationID, arg.Title, arg.AvatarUrl)
+	_, err := q.db.Exec(ctx, upsertGroupConversation, arg.ConversationID, arg.Title, arg.AvatarID)
+	return err
+}
+
+const upsertMediaAsset = `-- name: UpsertMediaAsset :exec
+INSERT INTO media.assets (
+  id,
+  status,
+  name
+) VALUES (
+  $1, $2, $3
+)
+ON CONFLICT (id) DO UPDATE
+SET status = EXCLUDED.status
+`
+
+type UpsertMediaAssetParams struct {
+	ID     uuid.UUID
+	Status AssetStatus
+	Name   string
+}
+
+func (q *Queries) UpsertMediaAsset(ctx context.Context, arg UpsertMediaAssetParams) error {
+	_, err := q.db.Exec(ctx, upsertMediaAsset, arg.ID, arg.Status, arg.Name)
+	return err
+}
+
+const upsertMediaUpload = `-- name: UpsertMediaUpload :exec
+INSERT INTO media.uploads (
+  id,
+  status,
+  initiator_id,
+  asset_id
+) VALUES (
+  $1, $2, $3, $4
+)
+ON CONFLICT (id) DO UPDATE
+SET status = EXCLUDED.status,
+  asset_id = EXCLUDED.asset_id
+`
+
+type UpsertMediaUploadParams struct {
+	ID          uuid.UUID
+	Status      UploadStatus
+	InitiatorID uuid.UUID
+	AssetID     uuid.UUID
+}
+
+func (q *Queries) UpsertMediaUpload(ctx context.Context, arg UpsertMediaUploadParams) error {
+	_, err := q.db.Exec(ctx, upsertMediaUpload,
+		arg.ID,
+		arg.Status,
+		arg.InitiatorID,
+		arg.AssetID,
+	)
 	return err
 }
 

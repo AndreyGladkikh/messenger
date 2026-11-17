@@ -29,6 +29,11 @@ type RabbitMQContainer struct {
 	ConnectionString string
 }
 
+type SeaweedFSContainer struct {
+	testcontainers.Container
+	ConnectionString string
+}
+
 func CreatePostgresContainer(ctx context.Context) (*PostgresContainer, error) {
 	templateDBName := "test_template"
 
@@ -111,5 +116,34 @@ func CreateRabbitMQContainer(ctx context.Context) (*RabbitMQContainer, error) {
 	return &RabbitMQContainer{
 		RabbitMQContainer: rabbitmqContainer,
 		ConnectionString:  connStr,
+	}, nil
+}
+
+func CreateSeaweedFSContainer(ctx context.Context) (*SeaweedFSContainer, error) {
+	storage, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "chrislusf/seaweedfs",
+			ExposedPorts: []string{"8333/tcp"},
+			Env: map[string]string{
+				"AWS_ACCESS_KEY_ID":     "media-test",
+				"AWS_SECRET_ACCESS_KEY": "media-test-secret",
+				"S3_BUCKET":             "media",
+			},
+			WaitingFor: wait.ForListeningPort("8333/tcp"),
+		},
+		Started: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint, err := storage.PortEndpoint(ctx, "8333/tcp", "http")
+	if err != nil {
+		return nil, err
+	}
+
+	return &SeaweedFSContainer{
+		Container: storage,
+		ConnectionString: endpoint,
 	}, nil
 }

@@ -13,7 +13,7 @@ var _ command.Command = CreateGroupConversation{}
 
 type CreateGroupConversation struct {
 	Title     string
-	AvatarUrl *string
+	AvatarID *uuid.UUID
 }
 
 func (c CreateGroupConversation) IsCommand() {}
@@ -37,7 +37,7 @@ func NewCreateGroupConversationHandler(
 func (h *CreateGroupConversationHandler) Handle(ctx context.Context, cmd CreateGroupConversation) (uuid.UUID, error) {
 	cnv := group_conversation.New(
 		cmd.Title,
-		cmd.AvatarUrl,
+		cmd.AvatarID,
 	)
 
 	err := h.groupsRepo.Save(ctx, cnv)

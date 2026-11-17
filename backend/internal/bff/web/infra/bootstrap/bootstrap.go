@@ -4,6 +4,7 @@ import (
 	"messenger/messenger/internal/bff/web/app/port"
 	"messenger/messenger/internal/bff/web/app/query"
 	"messenger/messenger/internal/bff/web/infra/integration/directory"
+	"messenger/messenger/internal/bff/web/infra/integration/media"
 	"messenger/messenger/internal/bff/web/infra/integration/messaging"
 	"messenger/messenger/internal/platform/query_middleware"
 	appQry "messenger/messenger/internal/shared/app/query"
@@ -15,9 +16,11 @@ var Set = wire.NewSet(
 	QueryHandlersSet,
 	messaging.NewService,
 	directory.NewService,
+	media.NewService,
 
 	wire.Bind(new(port.MessagingReader), new(*messaging.Service)),
 	wire.Bind(new(port.DirectoryReader), new(*directory.Service)),
+	wire.Bind(new(port.MediaReader), new(*media.Service)),
 )
 
 var QueryHandlersSet = wire.NewSet(

@@ -10,7 +10,7 @@ FROM directory.entries
 WHERE ts_vec @@ to_tsquery('russian', $1);
 
 -- name: GetDirectoryEntry :one
-SELECT display_name, handle, avatar_url 
+SELECT display_name, handle, avatar_id 
 FROM directory.entries
 WHERE target_id = $1
     AND target_type = $2;
@@ -29,6 +29,6 @@ SELECT
     e.target_type,
     e.display_name,
     e.handle,
-    e.avatar_url
+    e.avatar_id
 FROM directory.entries AS e
 JOIN targets ON e.target_id = targets.id AND e.target_type = targets.type;

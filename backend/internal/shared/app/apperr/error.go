@@ -45,6 +45,7 @@ const (
 	CodeChatDeleted                           = "CHAT_DELETED"
 	CodePrivateChatAlreadyExists              = "PRIVATE_CHAT_ALREADY_EXISTS"
 	CodeNotFound                              = "NOT_FOUND"
+	CodeUnsupportableValue                    = "UNSUPPORTABLE_VALUE"
 )
 
 type Error struct {
@@ -98,6 +99,16 @@ func NewAlreadyExists(msg string, opts ...Option) *Error {
 
 func NewInvalidArgument(msg string, opts ...Option) *Error {
 	opts = append(opts, WithKind(KindInvalidArgument))
+	return New(msg, opts...)
+}
+
+func NewDomain(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindDomain))
+	return New(msg, opts...)
+}
+
+func NewUnsupportableValue(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindDomain), WithCode(CodeUnsupportableValue))
 	return New(msg, opts...)
 }
 

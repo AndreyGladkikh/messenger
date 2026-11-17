@@ -34,6 +34,7 @@ func newHttpClient(t *testing.T, server *httptest.Server) *httpClient {
 	client := *server.Client()
 
 	client.Jar = jar
+	client.Timeout = 1 * time.Second
 
 	return &httpClient{
 		Client: &client,
@@ -147,4 +148,16 @@ func (c *httpClient) registerDirectoryEntry(t *testing.T, r appHttp.RegisterDire
 
 func (c *httpClient) getHomePage(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodGet, "bff/web/home-page", nil)
+}
+
+func (c *httpClient) initMediaUpload(t *testing.T, r appHttp.InitMediaUpload) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, "media/uploads", &httpRequestOpts{Body: r})
+}
+
+func (c *httpClient) completeMediaUpload(t *testing.T, r appHttp.CompleteMediaUploadRequestObject) (*http.Response, error) {
+	return c.doRequest(t, http.MethodPost, fmt.Sprintf("media/uploads/%s/complete", r.UploadId.String()), nil)
+}
+
+func (c *httpClient) getMediaDownloadURL(t *testing.T, r appHttp.GetDownloadMediaUrlRequestObject) (*http.Response, error) {
+	return c.doRequest(t, http.MethodGet, fmt.Sprintf("media/%s/url", r.MediaId), nil)
 }

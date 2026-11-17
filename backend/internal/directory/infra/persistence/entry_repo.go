@@ -31,7 +31,7 @@ func (r *EntryRepository) Save(ctx context.Context, e *entry.Entry) error {
 		TargetType:  string(e.TargetType),
 		DisplayName: e.DisplayName,
 		Handle:      e.Handle,
-		AvatarUrl:   e.AvatarURL,
+		AvatarID:   e.AvatarID,
 	})
 	if err != nil {
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == postgres.UniqueViolationErrCode {

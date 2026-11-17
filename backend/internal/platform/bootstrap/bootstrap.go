@@ -4,6 +4,7 @@ import (
 	webBff "messenger/messenger/internal/bff/web/infra/bootstrap"
 	directory "messenger/messenger/internal/directory/infra/bootstrap"
 	identity "messenger/messenger/internal/identity/infra/bootstrap"
+	media "messenger/messenger/internal/media/infra/bootstrap"
 	conversations "messenger/messenger/internal/messaging/infra/bootstrap"
 	"messenger/messenger/internal/platform/command_handler"
 	"messenger/messenger/internal/platform/command_middleware"
@@ -18,6 +19,7 @@ import (
 	"messenger/messenger/internal/platform/rabbitmq/producers"
 	"messenger/messenger/internal/platform/redis"
 	"messenger/messenger/internal/platform/repository"
+	"messenger/messenger/internal/platform/s3"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/store"
 	"messenger/messenger/internal/platform/transactions"
@@ -50,11 +52,14 @@ var AppSet = wire.NewSet(
 	wire.Struct(new(command_middleware.Registry), "*"),
 	wire.Struct(new(query_handler.Registry), "*"),
 	wire.Struct(new(query_middleware.Registry), "*"),
+	s3.New,
+	s3.NewPresigner,
 
 	webBff.Set,
 	conversations.Set,
 	directory.Set,
 	identity.Set,
+	media.Set,
 
 	wire.Bind(new(appEvnt.Publisher), new(*event.Publisher)),
 )

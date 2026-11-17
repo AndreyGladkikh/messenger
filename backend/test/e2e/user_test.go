@@ -79,7 +79,6 @@ func userWithProfile(t *testing.T, handle string, displayName string, avatarURL 
 		resp, err := u.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
 			Handle:      handle,
 			DisplayName: displayName,
-			AvatarUrl:   avatarURL,
 		})
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, resp.StatusCode)

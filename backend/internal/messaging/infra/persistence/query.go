@@ -28,10 +28,10 @@ func (q *QueryService) ListConversationsForUser(ctx context.Context, userID uuid
 	cnvSummaries := make([]query.ConversationSummary, 0, len(cnvs))
 	for _, cnv := range cnvs {
 		cnvSummaries = append(cnvSummaries, query.ConversationSummary{
-			ID:        cnv.ID,
-			Type:      cnv.Type,
-			Title:     cnv.Title,
-			AvatarURL: cnv.AvatarUrl,
+			ID:                  cnv.ID,
+			Type:                cnv.Type,
+			Title:               cnv.Title,
+			AvatarID:            cnv.AvatarID,
 			DirectParticipantID: cnv.DirectParticipantID,
 			LastMessage: query.LastMessage{
 				ID:       cnv.MsgID,

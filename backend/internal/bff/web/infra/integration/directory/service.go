@@ -44,7 +44,7 @@ func (s *Service) GetEntries(ctx context.Context, refs []port.EntryRef) ([]port.
 			ID:          e.ID,
 			Type:        e.Type,
 			DisplayName: e.DisplayName,
-			AvatarURL:   e.AvatarURL,
+			AvatarID:    e.AvatarID,
 		})
 	}
 

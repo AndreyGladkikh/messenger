@@ -14,6 +14,12 @@ services:
       - "5432:5432"
     networks:
       - mynet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "app"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
   
   redis:
     image: redis:8.10.1
@@ -23,8 +29,14 @@ services:
       - "6379:6379"
     networks:
       - mynet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
-  rabbit:
+  rabbitmq:
     image: rabbitmq:4.3.6-management
     hostname: main
     restart: always
@@ -36,9 +48,41 @@ services:
       RABBITMQ_DEFAULT_PASS: secret
     networks:
       - mynet
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  seaweedfs:
+    image: chrislusf/seaweedfs
+    ports:
+      - "8333:8333"
+      - "8888:8888"
+    environment:
+      AWS_ACCESS_KEY_ID: app
+      AWS_SECRET_ACCESS_KEY: secret
+      S3_BUCKET: app
+    volumes:
+      - seaweed_data:/data
+
+  s3-init:
+    image: amazon/aws-cli:2.40.3
+    entrypoint: ["/bin/sh", "/scripts/init.sh"]
+    environment:
+      AWS_ACCESS_KEY_ID: app
+      AWS_SECRET_ACCESS_KEY: secret
+      AWS_DEFAULT_REGION: us-east-1
+      S3_ENDPOINT: http://seaweedfs:8333
+    volumes:
+      - ./backend/deploy/object_storage:/scripts:ro
+    depends_on:
+      - seaweedfs
 
 volumes:
   postgres:
+  seaweed_data:
 
 networks:
   mynet:

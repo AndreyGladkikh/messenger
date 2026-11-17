@@ -21,11 +21,11 @@ func (l ListUserConversations) Name() string {
 }
 
 type ConversationSummary struct {
-	ID          uuid.UUID
-	Type        string
-	Title       *string
-	AvatarURL   *string
-	LastMessage LastMessage
+	ID                  uuid.UUID
+	Type                string
+	Title               *string
+	AvatarID            *uuid.UUID
+	LastMessage         LastMessage
 	DirectParticipantID *uuid.UUID
 }
 
@@ -42,7 +42,7 @@ type ListUserConversationsHandler struct {
 
 func NewListUserConversationsHandler(
 	reader Reader,
-) *ListUserConversationsHandler{
+) *ListUserConversationsHandler {
 	return &ListUserConversationsHandler{
 		reader: reader,
 	}

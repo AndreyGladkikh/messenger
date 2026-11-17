@@ -12,6 +12,8 @@ import (
 	idQuery "messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/app/token"
 	"messenger/messenger/internal/identity/domain/model/session"
+	mediaCmd "messenger/messenger/internal/media/app/command"
+	mediaQry "messenger/messenger/internal/media/app/query"
 	cnvCmd "messenger/messenger/internal/messaging/app/command"
 	"messenger/messenger/internal/platform/auth"
 	"messenger/messenger/internal/platform/command_handler"
@@ -213,7 +215,7 @@ func (h *ApiHandler) GetWebHomePage(ctx context.Context, request GetWebHomePageR
 		peerItem = append(peerItem, PeerItem{
 			Id:          p.ID,
 			Type:        p.Type,
-			AvatarUrl:   p.AvatarUrl,
+			AvatarUrl:   p.AvatarURL,
 			Title:       p.Title,
 			Preview:     &p.Preview,
 			PreviewTime: &p.PreviewTime,
@@ -237,7 +239,7 @@ func (h *ApiHandler) CreateMyProfile(ctx context.Context, request CreateMyProfil
 		TargetType:  string(a.Principal.Subject.Type),
 		DisplayName: request.Body.DisplayName,
 		Handle:      request.Body.Handle,
-		AvatarURL:   request.Body.AvatarUrl,
+		AvatarID:    request.Body.AvatarMediaId,
 	}
 	_, err = h.commands.RegisterDirectoryEntry.Handle(ctx, cmd)
 	if err != nil {
@@ -263,9 +265,69 @@ func (h *ApiHandler) GetMyProfile(ctx context.Context, request GetMyProfileReque
 	}
 
 	return GetMyProfile200JSONResponse{
-		Handle:      resp.Handle,
-		DisplayName: resp.DisplayName,
-		AvatarUrl:   resp.AvatarURL,
+		Handle:        resp.Handle,
+		DisplayName:   resp.DisplayName,
+		AvatarMediaId: resp.AvatarID,
+	}, nil
+}
+
+func (h *ApiHandler) InitMediaUpload(ctx context.Context, request InitMediaUploadRequestObject) (InitMediaUploadResponseObject, error) {
+	a, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := mediaCmd.InitUpload{
+		InitiatorID: a.Principal.Subject.ID,
+		FileName:    request.Body.FileName,
+		Purpose: request.Body.Purpose,
+	}
+	resp, err := h.commands.InitMediaUpload.Handle(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return InitMediaUpload201JSONResponse{
+		Id:           resp.ID,
+		PresignedUrl: resp.PresignedURL,
+	}, nil
+}
+
+func (h *ApiHandler) CompleteMediaUpload(ctx context.Context, request CompleteMediaUploadRequestObject) (CompleteMediaUploadResponseObject, error) {
+	_, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := mediaCmd.ComlpeteUpload{
+		UploadID: request.UploadId,
+	}
+	mediaID, err := h.commands.CompleteMediaUpload.Handle(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return CompleteMediaUpload200JSONResponse{
+		MediaId: mediaID,
+	}, nil
+}
+
+func (h *ApiHandler) GetDownloadMediaUrl(ctx context.Context, request GetDownloadMediaUrlRequestObject) (GetDownloadMediaUrlResponseObject, error) {
+	_, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	qry := mediaQry.GetDownloadURL{
+		MediaID: request.MediaId,
+	}
+	url, err := h.queries.GetDownloadMediaURL.Handle(ctx, qry)
+	if err != nil {
+		return nil, err
+	}
+
+	return GetDownloadMediaUrl200JSONResponse{
+		Url: url,
 	}, nil
 }
 

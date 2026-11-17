@@ -49,6 +49,11 @@ type DirectoryEntry struct {
 	TargetType  string    `json:"targetType"`
 }
 
+// DownloadMediaUrl defines model for DownloadMediaUrl.
+type DownloadMediaUrl struct {
+	Url string `json:"url"`
+}
+
 // ErrorDetail An object to provide explicit details on a problem towards an API consumer.
 type ErrorDetail struct {
 	// Code A string containing additional provider specific codes to identify the error context.
@@ -78,6 +83,23 @@ type FirstMessage struct {
 // HomePage defines model for HomePage.
 type HomePage struct {
 	Peers []PeerItem `json:"peers"`
+}
+
+// InitMediaUpload defines model for InitMediaUpload.
+type InitMediaUpload struct {
+	FileName string `json:"fileName"`
+	Purpose  string `json:"purpose"`
+}
+
+// InitedMediaUpload defines model for InitedMediaUpload.
+type InitedMediaUpload struct {
+	Id           uuid.UUID `json:"id"`
+	PresignedUrl string    `json:"presignedUrl"`
+}
+
+// Media defines model for Media.
+type Media struct {
+	MediaId uuid.UUID `json:"mediaId"`
 }
 
 // Message defines model for Message.
@@ -123,9 +145,9 @@ type ProblemDetails struct {
 
 // Profile defines model for Profile.
 type Profile struct {
-	AvatarUrl   *string `json:"avatarUrl,omitempty"`
-	DisplayName string  `json:"displayName"`
-	Handle      string  `json:"handle"`
+	AvatarMediaId *uuid.UUID `json:"avatarMediaId,omitempty"`
+	DisplayName   string     `json:"displayName"`
+	Handle        string     `json:"handle"`
 }
 
 // Tokens defines model for Tokens.
@@ -198,6 +220,9 @@ type RegisterDirectoryEntryJSONRequestBody = DirectoryEntry
 // CreateMyProfileJSONRequestBody defines body for CreateMyProfile for application/json ContentType.
 type CreateMyProfileJSONRequestBody = Profile
 
+// InitMediaUploadJSONRequestBody defines body for InitMediaUpload for application/json ContentType.
+type InitMediaUploadJSONRequestBody = InitMediaUpload
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetMe Get authenticated user info.
@@ -233,6 +258,15 @@ type ServerInterface interface {
 	// CreateMyProfile Create profile.
 	// (POST /me/profile)
 	CreateMyProfile(w http.ResponseWriter, r *http.Request)
+	// InitMediaUpload Init media upload.
+	// (POST /media/uploads)
+	InitMediaUpload(w http.ResponseWriter, r *http.Request)
+	// CompleteMediaUpload Complete media upload.
+	// (POST /media/uploads/{upload_id}/complete)
+	CompleteMediaUpload(w http.ResponseWriter, r *http.Request, uploadId uuid.UUID)
+	// GetDownloadMediaUrl Get URL to download media.
+	// (GET /media/{media_id}/url)
+	GetDownloadMediaUrl(w http.ResponseWriter, r *http.Request, mediaId uuid.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -302,6 +336,24 @@ func (_ Unimplemented) GetMyProfile(w http.ResponseWriter, r *http.Request) {
 // CreateMyProfile Create profile.
 // (POST /me/profile)
 func (_ Unimplemented) CreateMyProfile(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// InitMediaUpload Init media upload.
+// (POST /media/uploads)
+func (_ Unimplemented) InitMediaUpload(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// CompleteMediaUpload Complete media upload.
+// (POST /media/uploads/{upload_id}/complete)
+func (_ Unimplemented) CompleteMediaUpload(w http.ResponseWriter, r *http.Request, uploadId uuid.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GetDownloadMediaUrl Get URL to download media.
+// (GET /media/{media_id}/url)
+func (_ Unimplemented) GetDownloadMediaUrl(w http.ResponseWriter, r *http.Request, mediaId uuid.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -586,6 +638,72 @@ func (siw *ServerInterfaceWrapper) CreateMyProfile(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// InitMediaUpload operation middleware
+func (siw *ServerInterfaceWrapper) InitMediaUpload(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.InitMediaUpload(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CompleteMediaUpload operation middleware
+func (siw *ServerInterfaceWrapper) CompleteMediaUpload(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "upload_id" -------------
+	var uploadId uuid.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "upload_id", chi.URLParam(r, "upload_id"), &uploadId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "upload_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CompleteMediaUpload(w, r, uploadId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetDownloadMediaUrl operation middleware
+func (siw *ServerInterfaceWrapper) GetDownloadMediaUrl(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "media_id" -------------
+	var mediaId uuid.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "media_id", chi.URLParam(r, "media_id"), &mediaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: r.URL.RawPath == ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "media_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetDownloadMediaUrl(w, r, mediaId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -722,6 +840,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/me/profile", wrapper.CreateMyProfile)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/media/uploads", wrapper.InitMediaUpload)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/media/uploads/{upload_id}/complete", wrapper.CompleteMediaUpload)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/media/{media_id}/url", wrapper.GetDownloadMediaUrl)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/conversations/direct", wrapper.StartDirectConversation)
@@ -2381,6 +2508,456 @@ func (response CreateMyProfile503ApplicationProblemPlusJSONResponse) VisitCreate
 	return err
 }
 
+type InitMediaUploadRequestObject struct {
+	Body *InitMediaUploadJSONRequestBody
+}
+
+type InitMediaUploadResponseObject interface {
+	VisitInitMediaUploadResponse(w http.ResponseWriter) error
+}
+
+type InitMediaUpload201JSONResponse InitedMediaUpload
+
+func (response InitMediaUpload201JSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload400ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload401ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload403ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload404ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload409ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload422ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload500ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InitMediaUpload503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response InitMediaUpload503ApplicationProblemPlusJSONResponse) VisitInitMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUploadRequestObject struct {
+	UploadId uuid.UUID `json:"upload_id"`
+}
+
+type CompleteMediaUploadResponseObject interface {
+	VisitCompleteMediaUploadResponse(w http.ResponseWriter) error
+}
+
+type CompleteMediaUpload200JSONResponse Media
+
+func (response CompleteMediaUpload200JSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload400ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload401ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload403ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload404ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload409ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload422ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload500ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CompleteMediaUpload503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response CompleteMediaUpload503ApplicationProblemPlusJSONResponse) VisitCompleteMediaUploadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrlRequestObject struct {
+	MediaId uuid.UUID `json:"media_id"`
+}
+
+type GetDownloadMediaUrlResponseObject interface {
+	VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error
+}
+
+type GetDownloadMediaUrl200JSONResponse DownloadMediaUrl
+
+func (response GetDownloadMediaUrl200JSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl400ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl401ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl403ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl404ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl409ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl422ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl500ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetDownloadMediaUrl503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GetDownloadMediaUrl503ApplicationProblemPlusJSONResponse) VisitGetDownloadMediaUrlResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetMe Get authenticated user info.
@@ -2416,6 +2993,15 @@ type StrictServerInterface interface {
 	// CreateMyProfile Create profile.
 	// (POST /me/profile)
 	CreateMyProfile(ctx context.Context, request CreateMyProfileRequestObject) (CreateMyProfileResponseObject, error)
+	// InitMediaUpload Init media upload.
+	// (POST /media/uploads)
+	InitMediaUpload(ctx context.Context, request InitMediaUploadRequestObject) (InitMediaUploadResponseObject, error)
+	// CompleteMediaUpload Complete media upload.
+	// (POST /media/uploads/{upload_id}/complete)
+	CompleteMediaUpload(ctx context.Context, request CompleteMediaUploadRequestObject) (CompleteMediaUploadResponseObject, error)
+	// GetDownloadMediaUrl Get URL to download media.
+	// (GET /media/{media_id}/url)
+	GetDownloadMediaUrl(ctx context.Context, request GetDownloadMediaUrlRequestObject) (GetDownloadMediaUrlResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -2773,79 +3359,166 @@ func (sh *strictHandler) CreateMyProfile(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// InitMediaUpload operation middleware
+func (sh *strictHandler) InitMediaUpload(w http.ResponseWriter, r *http.Request) {
+	var request InitMediaUploadRequestObject
+
+	var body InitMediaUploadJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.InitMediaUpload(ctx, request.(InitMediaUploadRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "InitMediaUpload")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(InitMediaUploadResponseObject); ok {
+		if err := validResponse.VisitInitMediaUploadResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CompleteMediaUpload operation middleware
+func (sh *strictHandler) CompleteMediaUpload(w http.ResponseWriter, r *http.Request, uploadId uuid.UUID) {
+	var request CompleteMediaUploadRequestObject
+
+	request.UploadId = uploadId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CompleteMediaUpload(ctx, request.(CompleteMediaUploadRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CompleteMediaUpload")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CompleteMediaUploadResponseObject); ok {
+		if err := validResponse.VisitCompleteMediaUploadResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetDownloadMediaUrl operation middleware
+func (sh *strictHandler) GetDownloadMediaUrl(w http.ResponseWriter, r *http.Request, mediaId uuid.UUID) {
+	var request GetDownloadMediaUrlRequestObject
+
+	request.MediaId = mediaId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetDownloadMediaUrl(ctx, request.(GetDownloadMediaUrlRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetDownloadMediaUrl")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetDownloadMediaUrlResponseObject); ok {
+		if err := validResponse.VisitGetDownloadMediaUrlResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"ZPl5+c8BAA==",
+	"7F1fcxs5jv8qrL57uKmTLNlxds96OsdJbryXZF1xPHmYTY2pbkjippvskGzbWpe++xZI9l+xW/9nkl3N",
+	"S2yRBEAQPwIEIM9zEIokFRy4VsHoOYAnmqQxmJ/HmWIclOrLLIb+AxMx1UxwHIpAhZKl9tfgI6QSFHBt",
+	"xomYEErOz87IKxqRj/AtA6WJBJUKroA8zkAC0TMg0g0xRSKABCLC+AONWUSoImxCJpTFimhBEgBNQpCa",
+	"Mk5yqQhKReAphdDyVSdBL3igcQYoYSgiCEbB+dlZf3ga9IIINGVxMAo+VTiPRTRH9gVfHhEutGHI+LTO",
+	"y9AHKYVUwejX55Lie/rEkiwh3zLKNdNzQuNYPJrtkIuLi6AXpIJxDTIYBYN8UrDoVUh8BhIJw1pMJiDJ",
+	"PYcn3Y/o/J5EELMHkHNUBBe8/+aO0CiSoBSoOmk1Y2nK+PTSDg9CkXEtD8npr9YCFl96gdJUZyoYnZ+d",
+	"9QLNdAzBKHiV6+8jntUvhQX1Aj1PccJM61SNBoNUinEMiepLmDKl5fxEJVTqMVB5Eopk0GaKi0UvmAg5",
+	"ZlEExjCL82+ctxKZDIGEIovtEY/xU51JDsbcKvYoJJoEzqGZngnJ/gFRUNng8EW5wbcF72JLdCwyPRrH",
+	"lH814jnb6qOt9VMpUpB63p8ImVC9JpSGwy4oUWvGOWkSCbDix/AAkk4t2EIhJYSaOMYepAyH/eF5J1JC",
+	"wRGCilCS0BgpQVTwPanpaFjq6NqB6xWSuMmlfJvLsaEldKpzlb77j0zP+jmG/7V0772ZMmUsnZJUKKbZ",
+	"AxDE8BRk26X05Xs+xAq4dzw33aHe3BkUh2rZtpzan9c8NV7QrVuMIbohdn5xAu1F63ZXK5S+d+B8hwfg",
+	"A9ClHSb3HxDP94RVCZ2QmxioAqT1wCIg94ngehbP74mQ5P5bRqUGGc/va2D7j0FC5VcTX1yJJMk4C43a",
+	"BhMjOA83RuGBzcHpsz8DGoHcp+fKT8pSztUYkUeqykuu7dz/1Hbu3puyyYpKmoAGuRJ5ueg/24W73nh+",
+	"Za5U9wEc17cMQz2ButCzUiFo4oXaTg6vfB/qqgTdmqZJ2I8RoWEIqV4NmT/sHIvd7jfm2+n4Xm50fJbV",
+	"5pC5KYTal7aXdLmOwr837Oys/DbI2LcwRERpia9Xw10RKoFc3l6huK9vr9AX5cSCUaCE3AA8f/iJHiYC",
+	"9MQebSdcRAveo/2fjWORfIKHw4YnsmMU0KbrNc7joMHh93k2bRB00aIWaT8Sj/y+yCQQSxLhtkSPrADv",
+	"/eXtlQ0pX99e3e8JwAc0l4Qpxfi0Hlju6eaV3zImISL3SPy+jOIxPhAJ06jB8dy9urnKEntlei3ios0i",
+	"8Bq3e0BzKE6m9m5oReh7t7I2e3NF+5XYqt4DOLnvStVtgKtNJM+cJrBAohKs9Cf1RAeOt6Pldzu6evS4",
+	"p/O6t9TuK/fLNkd1tuFR/fzp000jWl+Jjfr07TXc0GO7ig8Aj+9L3W34sDPIs30m1aCxySvqDzi4ipPb",
+	"z3mZsMH6UQwcdj24FxseXEvUsjZWihW7a70k1an4Q4Dm+z2ENgQ1HmBtPqa01mA9J3Pwc+VC9yci41FX",
+	"XcwshKiskD1SG7HaldU9nJd7+FCZ0FL2ygn2aSyBRvM+PDGl17aji247yg0Dj0HLOepTCxJKoBqHi93o",
+	"GdXESUCcBD5TuvAWiR2RMSB9SzxqUKvD96JU0WWT6YZn21AbqlSBfABpAdl+pnYWAW7KvyBRZE4yXmDA",
+	"ri/Fflm1zlu7+o2b03K4yIOF0M84faAspuMYugViIeBRhZmUwHU8J9WVVVFe1EXBdXe1qS0SZbxSrPWK",
+	"gi5OKaLFV+DGwhVovAmKZH4LILwl49qpn5Yy3/FazdgrrAWHsWcDh1c0cnZuTZJr4OZHmqZxXhxw5vLf",
+	"f1eCN/s03A6wKJDXBN4Wqcb/lDAxVYeyz2OQL15Rh+u1U/7M9OxN4Ri25lHzMH5+v+QHuQUT9yRtp7vz",
+	"NpbzHyU3d6g24bzhgbSkl7tob7GX1aWGJY5FAmHLDS3n+1Zw2GFbnYngdr6bWVxrIqSb/l625bU+FxRU",
+	"bX0li5YXq5fYBpKvzlSULGoWvTbl5jvCT24LkTuej0tMbqovlY2oVwK2VqI7CO+P5I0DD2eQ0DaCdlQN",
+	"bqzTeW1cqLKuqx68VUPuWokOPWvNc6ZSoP+F6IT8jf+Nv3EyY7x3Xwn1TJ4JmRLruIvQT41wGemTX71Z",
+	"mi//tVN2ZvCTpX3tbRGw18f6LLpcXjcng+hdGRkig5/q2qq/3DdXVx0QzV3UqW+tMK9DattJYd3bb6Yg",
+	"MfiJ5P/5N1bM3HlvTa/UpspGlWAfDAvDwOsm783E1sxfqr29W0Sg4zZanddVV1PnIS4of5+xbvQZd/UX",
+	"L3qVjs/tVFXrVu1UTznzQArxNbqiGlKQaJpEz5giIgXpXubcFebsw8ho44PQb/MUwxbK4JXlnboocxkH",
+	"0kVrCsRs86Mbco/6N0UqY4s90yaNzo23pVH2rwZvsoMpqwU0i1riI7cGm20wSrKpgzd5dmIL1ag6hU7F",
+	"1JIh+9bGmjkUt2kWwl09EbLl3pcJrVRBMwtzCE2wsAoTpmrJm0WvnvTYbvfN9E3nvmuT97nhWoqIKV+W",
+	"qMLPCH4l+ANIVTg8F4QxyK+HYvQ6cte/eTYHWcYqGSJb9A96wVN/KvruQ5xycnd3/dq8DkApOoX9ULkF",
+	"ri91jVJENfQ1S2CJnE1YuZrR6NfmpqqiNRl8KWiJ8d8hNK/9KwkRcM1orJYVFospM3psiIAJdqUehYw8",
+	"gw35LI3KCp8Ur5mEUHef3oRJpd/bDa0yrrfVuUZcqVnIUsr1TkfW2FudbK8uYvs+hZy/MV8FWtpjxFQa",
+	"0/kHmoBX7TPKo9g/pKmcgt7RIC2RT/PUx6Ox+YJhbVkhY6+2Ga8yxCOPBY3eQ8TonYyX1ZHZD7vlwEk+",
+	"8sZxvXb55maZ45ITO9NEWK5hHJ7wemTaPXYVelVavIC1eKQyMi1JlzfXtWJY85qJPE1xl3krkettwh9p",
+	"FDEcpnEugyQqhZBNWEiQjImDmQHoxNbgjKszNOBJI++EPr0DPtUzzNf3lu0iatMAmUrKs5hKUhkoAolc",
+	"CstPQmwCEIw76m/kXrMi12sU81QPv8c3ELJSHq/IfD68+JNH6rZWDHSCWNDDRIUuC+qmsMTs98Zc5CQm",
+	"VvYGv9Ph2XnPd5+1lrebLNv63XaXIW+MWT6qv9z+9QO5seP2EIoDqvXNFZmLHYVpQMzZUCvKlBdgVEo6",
+	"L9gWoELxQ7yzKZ9X4JUP5xkmFJNpSNSqu76K84XZ2rVddjocloAwwpgXY8ON1LGLWlx95ZhZPm38LBK4",
+	"8RJOAaya1trTDYDEXQSLgonbQNMDGbI+Ua450/ZmTfGS9fnTGFodTZrJVKg1vEBBpVzTJg1EnfKw3VxX",
+	"KkGxKYfobh2nYWjXlvikNvIuS5rgx/uMI3KCfhk2M1WknMbzT+L9HkLUde2+sNclKekD1VT6z6S3hzN/",
+	"YPDot2A79oklUOPREVkXhWMPOe2PibDULYFGV/gyrYzn3+v02p22gZJl5lVn/W20dLm+cU651qqBl6qM",
+	"XO/Fx7dX5OL85Z/XDU5sTNPw+jiXUGZpzqCMUTTQhGQ8Aqk0fkm/DEzGVEHkgggmiXjkJBXaPjCIpk+C",
+	"i8Q4zyJbulMIM8sSyvt4APj6NQEc5VYdxV60cKmz0PY7hIUnd65nvYgEOos+NWfkypmom9AbCd59vCYS",
+	"JmClsb7aBnkMVD3+apeaXGuSUKNM/Adfx3MGcUQmmdQzwEeyNXrUBpuQCAqW0XoBSd5T4YuITOOjnWDt",
+	"ZAocJK10iwnJpoznyZuJkOsdA/7thmD08uICS3Dc/nZaceQFsipoXYq0Z0LqXtM6VJYkVM4bbAnSNcpU",
+	"s6JCFs4onwKZSJFUBdaiXfwegacQUvO1cuJcoamnxSKkMfuHOYf19J7fNZubTW1PQa9ys0q2edjXeUGh",
+	"42+77t/v7CB72z+FG5tY+zn6CfNMniQINWkoM9ribicS1KxtQkOcKrXG2mWhEIMQZpLp+S1eME6glP32",
+	"FYzvZ2gYRfev6XQcFeMFOZqy/wcT/GJVCuTPWqeXmZ6h6YRFtsWO5Y0kwV8+fwqaGblXZorLyGW2nZPY",
+	"ieYChGJOvcPO+GPQSgsJv2G20FhGLB5t4JfYZ7fZm0slGqlM1FC26DkCL07UI51OQZ4wMRC4YJCvAiOI",
+	"SK2eEPgjXBWMzM9kLjJJzAe94FEyDfloIiJ8X+NvhHE7D90p+nSTmMzPBRmd2Y/wds3TqzQ0wkNi3FRA",
+	"eSSnMY2+sq+z/53ih1gJDJYSnBihAZ+CJGlMtSnyTIDqzKQJXOrO/BEcxBpRM4oDPSKBhkhB9UgokgS4",
+	"tm9sMhbalgrwpiGfr29Ogkqja84s6AUPIJUVYXhyenKKkokUOE1ZMApenJyeDE3CTs+MHo16BxaGUzA7",
+	"LcpQCPLg/0C/h6DRR3c2HHZkn/Osc5kr9j0G1o3CWoMsD6SW08wlEiAimXKeE9mdD4dtDr/Y66DSMGiW",
+	"nK5eUkvRm0UvVi8qS51mxfnqFUU50Cy4WL3AX1jD1WdnayjCW3Ze9IKX66ixWq8ya16st6ZRpanemaZ7",
+	"vP3K+/WL6Qq3UYE1Y0LLOVVjMECiU2VucLy/egF6EWRm0YEzre8QyoOQjybaBXmnDP7K5JgR0XuL49T+",
+	"5RS4Dqollablf7GmD0q/cu/BtRHXFcdWywKLOr60zGCxBPbTvbF2fri9IIRXnXOc1hWpI1Z/XKwW8Msx",
+	"Qijh8GiwtwS7JuIGRYXKj7t3OLwt6Oom/yOAcHgE4RGEO4HwnZgSxtfCnch0J/BEpv3IayQTzGMit2x8",
+	"YudmRVssjaSUIVmD4FCIrwxKBLuZv+nihbURiGtwOl9+hL8T0ylEBPd+NPd/DXMXmV5t786s+rpMErQE",
+	"euWDXv3Apn/0JEdo7RrO1UzZnmwL0MaTyeARxoOZSKCf0mlnquEzjIsy6wHttuDhsVwcI0bOo6X+GyYJ",
+	"ZvnxV815PJk4a6525KlBZFq+2j3GraZSe/rfDvOk8DD6nZ/3y7zr2LrNzIUxyeKy2f0Is383mBlUEIsd",
+	"UgVUFXLVz5UXfM/VX39j0WLg0uodIdwt8ChvuvBnDTAzXoZdDRadgde2bRgHSjDk21z/Cjhi9YjVJawC",
+	"j/Jy1Sp4RnkD9AC4lgzWyJk3eqYP6RcLJkdAHAGxPSAamezC5glw1/GUQ6QYcvBIYJCWrRWtxdZ53n9x",
+	"wPdPzuIYoh2tvPUl5Iy1atKmLtprudOvJFANdfvd/2VeM93jLX60763s29pqq4nb6zpidJCZhvaOSKbZ",
+	"in8Yq29y+Z3f9csd/kfPcUSWF1loKsRgh1js1MEVMerD1+DZ/mCe8ShlDBraQXflZtSBt/o5XzA53EP+",
+	"QBGb2ekRdUfUtfgzB4gNkPds/jGAc1/FbXuSLH2Xdx2o5dR/OKQt7fYIuiPoWh9Jdx/fES1I5IzG4s8L",
+	"vEXx2dI3vh5AzvXMdNzjny91X/zQc1M+tzXWElhoCe7/M7qi09l1klcx6Vl4C1SGM9SFYYffqzO/QAwJ",
+	"1+ZbLkmlvdyRKpMbyxSvarlBby5deZa9ouFXwIZ4IfHLOQjlqFyNJbjlNQakpoVekYRyOoXE9vdVb6Fg",
+	"8WXxzwEA",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -27,7 +27,7 @@ func (c *GroupConversationRepository) Save(ctx context.Context, cnv *group_conve
 	err := c.Queries(ctx).UpsertGroupConversation(ctx, sqlc.UpsertGroupConversationParams{
 		ConversationID: cnv.ID(),
 		Title:          cnv.Title,
-		AvatarUrl:      cnv.AvatarURL,
+		AvatarID:      cnv.AvatarID,
 	})
 	if err != nil {
 		return err
@@ -49,6 +49,6 @@ func (c *GroupConversationRepository) Get(ctx context.Context, id uuid.UUID) (*g
 	return group_conversation.Rehydrate(
 		cnv.ConversationID,
 		cnv.Title,
-		cnv.AvatarUrl,
+		cnv.AvatarID,
 	), nil
 }

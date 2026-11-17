@@ -3,6 +3,7 @@ package command_handler
 import (
 	directoryCmd "messenger/messenger/internal/directory/app/command"
 	identityCmd "messenger/messenger/internal/identity/app/command"
+	mediaCmd "messenger/messenger/internal/media/app/command"
 	conversationsCmd "messenger/messenger/internal/messaging/app/command"
 	appCmd "messenger/messenger/internal/shared/app/command"
 	"uuid"
@@ -19,4 +20,7 @@ type Registry struct {
 	CreateGroupConversation appCmd.Handler[conversationsCmd.CreateGroupConversation, uuid.UUID]
 
 	RegisterDirectoryEntry appCmd.Handler[directoryCmd.RegisterEntry, any]
+
+	InitMediaUpload appCmd.Handler[mediaCmd.InitUpload, mediaCmd.InitedUpload]
+	CompleteMediaUpload appCmd.Handler[mediaCmd.ComlpeteUpload, uuid.UUID]
 }

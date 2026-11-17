@@ -1,9 +1,13 @@
 package e2e
 
 import (
+	"bytes"
+	"image"
+	"image/png"
 	appHttp "messenger/messenger/internal/platform/transport/http"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,14 +17,34 @@ func TestCreateMyProfile_Success(t *testing.T) {
 	server, _ := initApi(t)
 	user := newUser(t, server, "alice")
 
+	storageClient := &http.Client{Timeout: 10 * time.Second}
+
 	handle := "alice_handle"
 	displayName := "Alice Display Name"
-	avatarRL := "http://example.com/avatar"
+
+	response, _ := user.httpClient.initMediaUpload(t, appHttp.InitMediaUploadJSONRequestBody{FileName: "alice_avatar", Purpose: "avatar"})
+	require.Equal(t, http.StatusCreated, response.StatusCode)
+	upload := decode[appHttp.InitedMediaUpload](t, response.Body)
+
+	photo := image.NewRGBA(image.Rect(0, 0, 2, 2))
+	var pngBytes bytes.Buffer
+	require.NoError(t, png.Encode(&pngBytes, photo))
+
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPut, upload.PresignedUrl, bytes.NewReader(pngBytes.Bytes()))
+	require.NoError(t, err)
+	response, err = storageClient.Do(request)
+	require.NoError(t, err)
+	response.Body.Close()
+	require.Equal(t, http.StatusOK, response.StatusCode)
+
+	response, _ = user.httpClient.completeMediaUpload(t, appHttp.CompleteMediaUploadRequestObject{UploadId: upload.Id})
+	require.Equal(t, http.StatusOK, response.StatusCode)
+	mediaAsset := decode[appHttp.Media](t, response.Body)
 
 	resp, err := user.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
 		Handle:      handle,
 		DisplayName: displayName,
-		AvatarUrl:   &avatarRL,
+		AvatarMediaId: &mediaAsset.MediaId,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
@@ -31,7 +55,7 @@ func TestCreateMyProfile_Success(t *testing.T) {
 	assert.Equal(t, appHttp.Profile{
 		Handle:      handle,
 		DisplayName: displayName,
-		AvatarUrl:   &avatarRL,
+		AvatarMediaId: &mediaAsset.MediaId,
 	}, decode[appHttp.Profile](t, resp.Body))
 }
 

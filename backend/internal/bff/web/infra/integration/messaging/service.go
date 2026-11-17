@@ -34,10 +34,10 @@ func (s *Service) ListUserConvesations(ctx context.Context, userID uuid.UUID) ([
 	cnvsSum := make([]port.ConversationSummary, 0, len(cnvs))
 	for _, c := range cnvs {
 		cnvsSum = append(cnvsSum, port.ConversationSummary{
-			ID:        c.ID,
-			Type:      c.Type,
-			Title:     c.Title,
-			AvatarURL: c.AvatarURL,
+			ID:                  c.ID,
+			Type:                c.Type,
+			Title:               c.Title,
+			AvatarID:            c.AvatarID,
 			DirectParticipantID: c.DirectParticipantID,
 			LastMessage: port.LastMessage{
 				ID:       c.LastMessage.ID,

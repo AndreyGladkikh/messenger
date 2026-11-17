@@ -56,6 +56,48 @@ func (ns NullAccountType) Value() (driver.Value, error) {
 	return string(ns.AccountType), nil
 }
 
+type AssetStatus string
+
+const (
+	AssetStatusPending AssetStatus = "pending"
+	AssetStatusReady   AssetStatus = "ready"
+)
+
+func (e *AssetStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AssetStatus(s)
+	case string:
+		*e = AssetStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AssetStatus: %T", src)
+	}
+	return nil
+}
+
+type NullAssetStatus struct {
+	AssetStatus AssetStatus
+	Valid       bool // Valid is true if AssetStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAssetStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.AssetStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AssetStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAssetStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AssetStatus), nil
+}
+
 type OutboxKind string
 
 const (
@@ -143,12 +185,55 @@ func (ns NullOutboxStatus) Value() (driver.Value, error) {
 	return string(ns.OutboxStatus), nil
 }
 
+type UploadStatus string
+
+const (
+	UploadStatusPending    UploadStatus = "pending"
+	UploadStatusProcessing UploadStatus = "processing"
+	UploadStatusCompleted  UploadStatus = "completed"
+)
+
+func (e *UploadStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UploadStatus(s)
+	case string:
+		*e = UploadStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UploadStatus: %T", src)
+	}
+	return nil
+}
+
+type NullUploadStatus struct {
+	UploadStatus UploadStatus
+	Valid        bool // Valid is true if UploadStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUploadStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.UploadStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UploadStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUploadStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UploadStatus), nil
+}
+
 type BffPeer struct {
 	UserID      uuid.UUID
 	TargetID    uuid.UUID
 	TargetType  string
 	Title       string
-	AvatarUrl   *string
+	AvatarID    *uuid.UUID
 	Preview     *string
 	PreviewTime *time.Time
 	UnreadCount int32
@@ -167,18 +252,10 @@ type ConversationsDirectConversation struct {
 	ParticipantIDHigh uuid.UUID
 }
 
-type ConversationsFile struct {
-	ID        uuid.UUID
-	Hash      []byte
-	Name      *string
-	Url       string
-	CreatedAt *time.Time
-}
-
 type ConversationsGroupConversation struct {
 	ConversationID uuid.UUID
 	Title          string
-	AvatarUrl      *string
+	AvatarID       *uuid.UUID
 }
 
 type ConversationsMembership struct {
@@ -200,11 +277,11 @@ type ConversationsMessage struct {
 	DeletedAt        *time.Time
 }
 
-type ConversationsMessageFile struct {
+type ConversationsMessageAttachment struct {
 	ID        uuid.UUID
 	MessageID *uuid.UUID
-	FileID    *uuid.UUID
-	Name      *string
+	MediaID   uuid.UUID
+	Name      string
 }
 
 type DirectoryEntry struct {
@@ -213,7 +290,7 @@ type DirectoryEntry struct {
 	TargetType  string
 	DisplayName string
 	Handle      string
-	AvatarUrl   *string
+	AvatarID    *uuid.UUID
 	TsVec       interface{}
 }
 
@@ -252,6 +329,21 @@ type Inbox struct {
 	EventID    uuid.UUID
 	Handler    string
 	ExecutedAt *time.Time
+}
+
+type MediaAsset struct {
+	ID     uuid.UUID
+	Status AssetStatus
+	Name   string
+	Bucket string
+	Key    string
+}
+
+type MediaUpload struct {
+	ID          uuid.UUID
+	Status      UploadStatus
+	InitiatorID uuid.UUID
+	AssetID     uuid.UUID
 }
 
 type Outbox struct {

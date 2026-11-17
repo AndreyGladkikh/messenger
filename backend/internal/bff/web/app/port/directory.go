@@ -21,7 +21,7 @@ type EntryView struct {
 	ID          uuid.UUID
 	Type        string
 	DisplayName string
-	AvatarURL   *string
+	AvatarID    *uuid.UUID
 }
 
 type DirectoryReader interface {

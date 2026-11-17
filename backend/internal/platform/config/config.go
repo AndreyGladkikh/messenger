@@ -34,17 +34,26 @@ type Config struct {
 	Cache               Cache
 	HttpServer          HttpServer
 	Mq                  Mq
+	ObjectStorage       ObjectStorage
+	CDNHost string
 }
 
 type Auth struct {
-	Jwt struct {
-		PrivateKeyPath string
-		PublicKeyPath  string
-	}
+	Jwt Jwt
+}
+
+type Jwt struct {
+	PrivateKeyPath string
+	PublicKeyPath  string
 }
 
 type Database struct {
 	Dsn string
+}
+
+type Migrations struct {
+	DBDSN string
+	Path  string
 }
 
 type Cache struct {
@@ -55,13 +64,12 @@ type Mq struct {
 	Dsn string
 }
 
-type HttpServer struct {
-	Addr string
+type ObjectStorage struct {
+	Dsn string
 }
 
-type Migrations struct {
-	DBDSN string
-	Path  string
+type HttpServer struct {
+	Addr string
 }
 
 func Load() Config {
@@ -89,7 +97,10 @@ func Load() Config {
 	err := k.Load(env.Provider(".", env.Opt{
 		Prefix: "APP_",
 		TransformFunc: func(k, v string) (string, any) {
-			k = strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(k, "APP_")), "__", ".")
+			k = strings.TrimPrefix(k, "APP_")
+			k = strings.ToLower(k)
+			k = strings.ReplaceAll(k, "__", ".")
+			k = strings.ReplaceAll(k, "_", "")
 
 			if strings.Contains(v, " ") {
 				return k, strings.Split(v, " ")

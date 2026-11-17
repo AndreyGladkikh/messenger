@@ -87,7 +87,7 @@ func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetTy
 		Type:        typ.String(),
 		Handle:      entryRow.Handle,
 		DisplayName: entryRow.DisplayName,
-		AvatarURL:   entryRow.AvatarUrl,
+		AvatarID:    entryRow.AvatarID,
 	}, nil
 }
 
@@ -106,7 +106,7 @@ func (q *QueryService) ListByTargets(ctx context.Context, ids []uuid.UUID, types
 			ID:          r.TargetID,
 			Type:        r.TargetType,
 			DisplayName: r.DisplayName,
-			AvatarURL:   r.AvatarUrl,
+			AvatarID:    r.AvatarID,
 		})
 	}
 

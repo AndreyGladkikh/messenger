@@ -19,6 +19,7 @@ type ProblemTypesRegistry struct {
 	AlreadyExists,
 	MissingRequestParameter,
 	MissingRequestCookie,
+	UnsupportableValue,
 	Blank string
 }
 
@@ -32,6 +33,7 @@ func NewProblemTypesRegistry(cfg config.Config) ProblemTypesRegistry {
 		AlreadyExists:           problemType("already-exists"),
 		MissingRequestParameter: problemType("missing-request-parameter"),
 		MissingRequestCookie:    problemType("missing-request-cookie"),
+		UnsupportableValue:      problemType("unsupportable-value"),
 		Blank:                   "about:blank",
 	}
 }
@@ -175,6 +177,11 @@ func (h *ErrorHandler) typeTitleByAppErr(err error) (typ, title string) {
 			return h.problemTypesRegistry.Blank, err.Kind.String()
 		case apperr.KindAlreadyExists:
 			return h.problemTypesRegistry.AlreadyExists, err.Kind.String()
+		case apperr.KindDomain:
+			switch err.Code {
+			case apperr.CodeUnsupportableValue:
+				return h.problemTypesRegistry.UnsupportableValue, "Unsupportable Value"
+			}
 		}
 	}
 

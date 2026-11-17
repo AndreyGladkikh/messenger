@@ -18,7 +18,7 @@ type SearchResponse struct {
 type GlobalSearchResultPeerItem struct {
 	ID        uuid.UUID
 	Type      string
-	AvatarUrl string
+	AvatarID *uuid.UUID
 	Title     string
 	Handle    string
 }

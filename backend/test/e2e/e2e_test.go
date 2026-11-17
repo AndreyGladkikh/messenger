@@ -33,6 +33,8 @@ var (
 	pgContainer          *testhelpers.PostgresContainer
 	redisContainer       *testhelpers.RedisContainer
 	rmqContainer         *testhelpers.RabbitMQContainer
+	seaweedFSContainer         *testhelpers.SeaweedFSContainer
+
 	pgAdmin              *pgxpool.Pool
 	problemTypesRegistry appHttp.ProblemTypesRegistry
 	problemsRegistryUrl  = "https://problems-registry.messenger.com"
@@ -66,6 +68,10 @@ func setup() (func(), error) {
 	if err != nil {
 		return nil, err
 	}
+	seaweedFSContainer, err = testhelpers.CreateSeaweedFSContainer(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	migrator, migratorCleanup, err := migrate.New(config.Config{Migrations: config.Migrations{DBDSN: pgContainer.MigrationsConnectionString, Path: "../../db/migrations"}})
 	if err != nil {
@@ -94,6 +100,9 @@ func setup() (func(), error) {
 		}
 		if err := testcontainers.TerminateContainer(rmqContainer); err != nil {
 			log.Fatalf("failed to terminate rmq container: %s", err)
+		}
+		if err := testcontainers.TerminateContainer(seaweedFSContainer); err != nil {
+			log.Fatalf("failed to terminate seaweedFS container: %s", err)
 		}
 	}, nil
 }
@@ -124,7 +133,11 @@ func initApi(t *testing.T) (*httptest.Server, *httpClient) {
 		Database: config.Database{Dsn: pgConnString},
 		Cache:    config.Cache{Dsn: redisContainer.ConnectionString},
 		Mq:       config.Mq{Dsn: rmqContainer.ConnectionString},
+		ObjectStorage: config.ObjectStorage{Dsn: seaweedFSContainer.ConnectionString},
 	}
+	t.Setenv("AWS_REGION", "us-east-1")
+	t.Setenv("AWS_ACCESS_KEY_ID", "media-test")
+	t.Setenv("AWS_SECRET_ACCESS_KEY", "media-test-secret")
 
 	appApi, apiCleanup, err := api.Initialize(cfg)
 	require.NoError(t, err)
