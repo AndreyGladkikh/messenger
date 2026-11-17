@@ -1,10 +1,12 @@
 package e2e
 
 import (
+	"bytes"
 	appHttp "messenger/messenger/internal/platform/transport/http"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 	"uuid"
 
 	"github.com/stretchr/testify/require"
@@ -63,22 +65,49 @@ func newUser(t *testing.T, server *httptest.Server, login string, opts ...userOp
 }
 
 func alice(t *testing.T, server *httptest.Server) *user {
-	avatarURL := "https://example.com/alice-avatar.img"
-	return newUser(t, server, "alice", userWithProfile(t, "alice_handle", "Alice DN", &avatarURL))
+	return newUser(t, server, "alice", userWithProfile(t, "alice_handle", "Alice DN", true))
 }
 
 func bob(t *testing.T, server *httptest.Server) *user {
-	avatarURL := "https://example.com/bob-avatar.img"
-	return newUser(t, server, "bob", userWithProfile(t, "bob_handle", "Bob DN", &avatarURL))
+	return newUser(t, server, "bob", userWithProfile(t, "bob_handle", "Bob DN", true))
 }
 
 type userOption func(*user)
 
-func userWithProfile(t *testing.T, handle string, displayName string, avatarURL *string) userOption {
+func userWithProfile(t *testing.T, handle string, displayName string, withAvatar bool) userOption {
 	return func(u *user) {
+		var avatarURL *string
+		var avatarMediaID *uuid.UUID
+		if withAvatar {
+			response, err := u.httpClient.initMediaUpload(t, appHttp.InitMediaUploadJSONRequestBody{
+				FileName: "avatar.png",
+				Purpose:  "avatar",
+			})
+			require.NoError(t, err)
+			require.Equal(t, http.StatusCreated, response.StatusCode)
+			upload := decode[appHttp.InitedMediaUpload](t, response.Body)
+
+			request, err := http.NewRequestWithContext(t.Context(), http.MethodPut, upload.PresignedUrl, bytes.NewReader([]byte("avatar")))
+			require.NoError(t, err)
+			response, err = (&http.Client{Timeout: 10 * time.Second}).Do(request)
+			require.NoError(t, err)
+			response.Body.Close()
+			require.Equal(t, http.StatusOK, response.StatusCode)
+
+			response, err = u.httpClient.completeMediaUpload(t, appHttp.CompleteMediaUploadRequestObject{UploadId: upload.Id})
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, response.StatusCode)
+			asset := decode[appHttp.Media](t, response.Body)
+
+			avatarMediaID = &asset.MediaId
+			url := testCDNHost + "/public/" + asset.MediaId.String() + "/original"
+			avatarURL = &url
+		}
+
 		resp, err := u.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
-			Handle:      handle,
-			DisplayName: displayName,
+			Handle:        handle,
+			DisplayName:   displayName,
+			AvatarMediaId: avatarMediaID,
 		})
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, resp.StatusCode)

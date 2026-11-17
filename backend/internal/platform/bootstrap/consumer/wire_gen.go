@@ -82,7 +82,7 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	getEntriesHandler := query.NewGetEntriesHandler(queryService)
 	handler2 := bootstrap.ProvideGetEntriesHandler(getEntriesHandler, registry)
 	directoryService := directory.NewService(handler2)
-	getPublicURLsHandler := query3.NewGetPublicURLsHandler()
+	getPublicURLsHandler := query3.NewGetPublicURLsHandler(cfg)
 	handler3 := bootstrap3.ProvideGetPublicURLsHandler(getPublicURLsHandler, registry)
 	mediaService := media.NewService(handler3)
 	getHomePageHandler := query4.NewGetHomePageHandler(service, directoryService, mediaService)

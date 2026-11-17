@@ -76,9 +76,11 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 		}
 
 		for _, dp := range dirParticipants {
-			cnv := cnvsByID[cnvIDsByDirectParticipantID[dp.ID]]
+			cnvID := cnvIDsByDirectParticipantID[dp.ID]
+			cnv := cnvsByID[cnvID]
 			cnv.Title = &dp.DisplayName
 			cnv.AvatarID = dp.AvatarID
+			cnvsByID[cnvID] = cnv
 
 			if dp.AvatarID != nil {
 				cnvIDsByAvatarID[*dp.AvatarID] = cnvIDsByDirectParticipantID[dp.ID]
@@ -103,7 +105,7 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 				avatarURL = &u
 			}
 		}
-		
+
 		peer := PeerItem{
 			ID:          c.ID,
 			Type:        port.ConversationTypeDirect,

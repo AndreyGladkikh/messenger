@@ -155,7 +155,7 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	getEntriesHandler := query3.NewGetEntriesHandler(queryService2)
 	handler11 := bootstrap3.ProvideGetEntriesHandler(getEntriesHandler, query_middlewareRegistry)
 	directoryService := directory.NewService(handler11)
-	getPublicURLsHandler := query4.NewGetPublicURLsHandler()
+	getPublicURLsHandler := query4.NewGetPublicURLsHandler(cfg)
 	handler12 := bootstrap4.ProvideGetPublicURLsHandler(getPublicURLsHandler, query_middlewareRegistry)
 	mediaService := media.NewService(handler12)
 	getHomePageHandler := query5.NewGetHomePageHandler(messagingService, directoryService, mediaService)

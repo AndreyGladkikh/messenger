@@ -40,6 +40,8 @@ var (
 	problemsRegistryUrl  = "https://problems-registry.messenger.com"
 )
 
+const testCDNHost = "https://cdn.example.com"
+
 func TestMain(m *testing.M) {
 	cleanup, err := setup()
 	if err != nil {
@@ -134,6 +136,7 @@ func initApi(t *testing.T) (*httptest.Server, *httpClient) {
 		Cache:    config.Cache{Dsn: redisContainer.ConnectionString},
 		Mq:       config.Mq{Dsn: rmqContainer.ConnectionString},
 		ObjectStorage: config.ObjectStorage{Dsn: seaweedFSContainer.ConnectionString},
+		CDNHost:       testCDNHost,
 	}
 	t.Setenv("AWS_REGION", "us-east-1")
 	t.Setenv("AWS_ACCESS_KEY_ID", "media-test")
@@ -203,7 +206,7 @@ func startConsumers(t *testing.T, cfg config.Config) func() {
 
 func decode[T any](t *testing.T, data io.Reader) T {
 	t.Helper()
-	
+
 	var decoded T
 	err := json.UnmarshalRead(data, &decoded)
 	require.NoError(t, err)

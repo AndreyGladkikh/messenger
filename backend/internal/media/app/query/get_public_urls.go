@@ -25,8 +25,8 @@ type GetPublicURLsHandler struct {
 	cfg config.Config
 }
 
-func NewGetPublicURLsHandler() *GetPublicURLsHandler {
-	return &GetPublicURLsHandler{}
+func NewGetPublicURLsHandler(cfg config.Config) *GetPublicURLsHandler {
+	return &GetPublicURLsHandler{cfg: cfg}
 }
 
 func (h *GetPublicURLsHandler) Handle(ctx context.Context, qry GetPublicURLs) (map[uuid.UUID]string, error) {
