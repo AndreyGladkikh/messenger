@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import type { Profile } from '@/entities/profile'
 
 const accountId = 'account-menu-user'
 const queryClientModule = '/src/shared/lib/query-client.ts'
@@ -12,14 +13,14 @@ function problem(route: Route, status: number) {
   })
 }
 
-async function mockSession(page: Page) {
+async function mockSession(page: Page, profile: Profile = { displayName: 'Аня Соколова', handle: 'anya' }) {
   const session = { signedIn: true, refreshRequests: 0 }
 
   await page.route('**/api/auth/me', (route) => session.signedIn
     ? route.fulfill({ json: { id: accountId, type: 'user' } })
     : problem(route, 401))
   await page.route('**/api/me/profile', (route) => route.fulfill({
-    json: { displayName: 'Аня Соколова', handle: 'anya' },
+    json: profile,
   }))
   await page.route('**/api/auth/users/refresh-tokens', (route) => {
     session.refreshRequests += 1
@@ -37,6 +38,7 @@ test('avatar menu shows the account and an icon, supports keyboard use and dismi
   const menu = page.getByRole('menu')
   const signOut = page.getByRole('menuitem', { name: 'Sign out', exact: true })
 
+  await expect(trigger.getByText('АС', { exact: true })).toBeVisible()
   await expect(menu).not.toBeVisible()
   await trigger.click()
   await expect(trigger).toHaveAttribute('aria-expanded', 'true')
@@ -59,6 +61,67 @@ test('avatar menu shows the account and an icon, supports keyboard use and dismi
   await page.mouse.click(1000, 100)
   await expect(menu).not.toBeVisible()
   await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('the account menu resolves a saved media ID and refreshes its short-lived URL after reload', async ({ page, baseURL }) => {
+  await mockSession(page, {
+    displayName: 'Mira Chen',
+    handle: 'mira_chen',
+    avatarMediaId: 'saved-avatar-id',
+  })
+  let avatarUrlReads = 0
+  await page.route('**/api/media/saved-avatar-id/url', (route) => {
+    avatarUrlReads += 1
+    return route.fulfill({ json: { url: `${baseURL}/saved-avatar.png?version=${avatarUrlReads}` } })
+  })
+  await page.route('**/saved-avatar.png?version=*', (route) => route.fulfill({
+    contentType: 'image/png',
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==', 'base64'),
+  }))
+  await page.goto('/')
+
+  const trigger = page.getByRole('button', { name: 'Account menu' })
+  const avatar = trigger.getByRole('img', { name: 'Mira Chen profile photo' })
+  await expect(avatar).toHaveAttribute('src', `${baseURL}/saved-avatar.png?version=1`)
+  await expect(avatar).toHaveJSProperty('naturalWidth', 1)
+  await trigger.click()
+  const menu = page.getByRole('menu')
+  await expect(menu.getByText('Mira Chen', { exact: true })).toBeVisible()
+  await expect(menu.getByText('@mira_chen', { exact: true })).toBeVisible()
+
+  await page.reload()
+  await expect(avatar).toHaveAttribute('src', `${baseURL}/saved-avatar.png?version=2`)
+  await expect(avatar).toHaveJSProperty('naturalWidth', 1)
+  expect(avatarUrlReads).toBe(2)
+})
+
+test('an unavailable resolved image falls back to the saved profile initials', async ({ page }) => {
+  const avatarUrl = 'https://cdn.example.test/avatar.png'
+  await mockSession(page, { displayName: 'Mira Chen', handle: 'mira_chen', avatarMediaId: 'missing-image' })
+  await page.route('**/api/media/missing-image/url', (route) => route.fulfill({ json: { url: avatarUrl } }))
+  await page.route(avatarUrl, (route) => route.fulfill({ status: 404 }))
+  const avatarRequest = page.waitForRequest(avatarUrl)
+  await page.goto('/')
+  expect((await avatarRequest).url()).toBe(avatarUrl)
+
+  const trigger = page.getByRole('button', { name: 'Account menu' })
+  await expect(trigger.getByRole('img')).toHaveCount(0)
+  await expect(trigger.getByText('MC', { exact: true })).toBeVisible()
+  await trigger.click()
+  await expect(page.getByRole('menu').getByText('Mira Chen', { exact: true })).toBeVisible()
+})
+
+test('an avatar URL lookup failure does not block the profile or account menu', async ({ page }) => {
+  await mockSession(page, { displayName: 'Mira Chen', handle: 'mira_chen', avatarMediaId: 'unavailable-media' })
+  await page.route('**/api/media/unavailable-media/url', (route) => problem(route, 503))
+
+  await page.goto('/')
+
+  const trigger = page.getByRole('button', { name: 'Account menu' })
+  await expect(trigger.getByRole('img')).toHaveCount(0)
+  await expect(trigger.getByText('MC', { exact: true })).toBeVisible()
+  await trigger.click()
+  await expect(page.getByRole('menu').getByText('Mira Chen', { exact: true })).toBeVisible()
 })
 
 test('sign out sends the session cookie once, waits, clears private cache and replaces the page', async ({ page, context, baseURL }) => {

@@ -162,7 +162,13 @@ for (const form of forms) {
     completeSubmission()
 
     await expect(page).toHaveURL(form.hasProfile ? '/' : '/onboarding/profile')
-    if (form.hasProfile) await expect(page.getByRole('button', { name: 'Account menu' })).toBeVisible()
+    if (form.hasProfile) {
+      await expect(page.getByRole('button', { name: 'Account menu' })).toBeVisible()
+    } else {
+      await expect(page.getByRole('heading', { name: 'Create your profile.', level: 1 })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Create profile', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Account menu' })).not.toBeVisible()
+    }
     expect(await page.evaluate(() => history.length)).toBe(historyLength)
     expect((await context.cookies()).find((cookie) => cookie.name === 'refresh_token')?.value).toBe('new-refresh-token')
     const cachedData = await page.evaluate(async ({ moduleUrl, queryKey }) => {

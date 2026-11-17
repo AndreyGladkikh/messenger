@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router'
 import { PageLoading, RootErrorBoundary } from '@/pages/error'
 import {
   accountLoader,
+  homeProfileLoader,
   onboardingMiddleware,
   protectedMiddleware,
   publicAuthMiddleware,
@@ -19,13 +20,10 @@ export const routes: RouteObject[] = [
     HydrateFallback: PageLoading,
     children: [
       {
-        index: true,
-        Component: HomePage,
         middleware: [protectedMiddleware],
-      },
-      {
-        path: 'test',
-        Component: SignInPage,
+        children: [
+          { index: true, loader: homeProfileLoader, Component: HomePage },
+        ],
       },
       {
         path: 'auth',

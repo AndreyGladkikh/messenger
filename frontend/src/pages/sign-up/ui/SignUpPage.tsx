@@ -26,7 +26,7 @@ export function SignUpPage() {
             <CardDescription>A new conversation starts here.</CardDescription>
           </CardHeader>
           <CardContent className="px-6">
-            <CredentialsForm mode="sign-up" onSuccess={() => navigate('/', { replace: true })} />
+            <CredentialsForm mode="sign-up" onSuccess={() => navigate('/onboarding/profile', { replace: true })} />
           </CardContent>
           <CardFooter className="justify-center gap-1.5 py-5">
             <span className="text-muted-foreground">Already have an account?</span>

@@ -6,6 +6,8 @@ export default defineConfig({
   testDir: './src',
   testMatch: '**/*.spec.ts',
   fullyParallel: true,
+  // Bound browser resource use so the full suite stays reliable on developer machines.
+  workers: 2,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   reporter: 'list',

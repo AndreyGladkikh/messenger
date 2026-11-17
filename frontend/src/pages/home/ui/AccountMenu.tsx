@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query'
 import { LogOut } from 'lucide-react'
-import { useNavigate } from 'react-router'
+import { useLoaderData, useNavigate } from 'react-router'
 import { useSignOut } from '@/features/auth'
-import { currentUser } from '@/shared/lib/messenger-data'
+import { profileAvatarQuery, type Profile } from '@/entities/profile'
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Button } from '@/shared/ui/button'
 import {
@@ -16,8 +17,13 @@ import {
 import { Avatar } from './Avatar'
 
 export function AccountMenu() {
+  const profile = useLoaderData<Profile>()
   const navigate = useNavigate()
   const signOut = useSignOut()
+  const displayName = profile.displayName
+  const initials = displayName.trim().split(/\s+/).slice(0, 2)
+    .map((word) => Array.from(word)[0]).join('').toUpperCase()
+  const avatar = useQuery(profileAvatarQuery(profile.avatarMediaId))
 
   function handleSignOut() {
     if (signOut.isPending) return
@@ -35,13 +41,13 @@ export function AccountMenu() {
         render={<Button variant="ghost" size="icon" className="size-10 rounded-full" />}
         aria-label="Account menu"
       >
-        <Avatar initials={currentUser.initials} size="sm" online />
+        <Avatar initials={initials} src={avatar.data} alt={`${displayName} profile photo`} size="sm" online />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={12} className="w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel>
-            <span className="block">{currentUser.name}</span>
-            <span className="block">{currentUser.handle}</span>
+            <span className="block break-words">{displayName}</span>
+            <span className="block break-words">@{profile.handle}</span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

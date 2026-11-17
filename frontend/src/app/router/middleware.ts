@@ -1,6 +1,6 @@
 import { redirect, type LoaderFunctionArgs, type MiddlewareFunction } from 'react-router'
 import { currentUserQuery, type Account } from '@/features/auth'
-import { profileQuery } from '@/entities/profile'
+import { profileQuery, profileQueryKey, type Profile } from '@/entities/profile'
 import { UnauthenticatedError } from '@/shared/api'
 import { queryClientContext } from './context'
 
@@ -18,11 +18,7 @@ async function getProfile(context: LoaderFunctionArgs['context'], account: Accou
 }
 
 export const protectedMiddleware: MiddlewareFunction = async ({ context }, next) => {
-  console.log('protectedMiddleware');
-  
   const account = await getAccount(context)
-  console.log(account);
-  
   if (!account) throw redirect('/auth/login')
 
   const profile = await getProfile(context, account)
@@ -53,4 +49,11 @@ export async function accountLoader({ context }: LoaderFunctionArgs): Promise<Ac
   const account = context.get(queryClientContext).getQueryData(currentUserQuery().queryKey) as Account | undefined
   if (!account) throw redirect('/auth/login')
   return account
+}
+
+export async function homeProfileLoader(args: LoaderFunctionArgs): Promise<Profile> {
+  const account = await accountLoader(args)
+  const profile = args.context.get(queryClientContext).getQueryData<Profile | null>(profileQueryKey(account.id))
+  if (!profile) throw redirect('/onboarding/profile')
+  return profile
 }

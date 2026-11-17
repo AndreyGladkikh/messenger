@@ -76,10 +76,13 @@ export async function apiRequest<T = unknown>(
 }
 
 async function buildRequest(path: string, options: RequestOptions): Promise<Request> {
-  const headers = new Headers({
-    [http.header.contentType]: http.contentType.json,
-    ...options.headers,
-  })
+  const headers = new Headers(options.headers)
+  if (options.body instanceof FormData) {
+    // The browser supplies the multipart boundary when constructing the request.
+    headers.delete(http.header.contentType)
+  } else if (!headers.has(http.header.contentType)) {
+    headers.set(http.header.contentType, http.contentType.json)
+  }
 
   if ('cookieStore' in window && window.cookieStore) {
     const accessTokenCookie = await window.cookieStore.get(http.cookie.accessToken)
