@@ -19,16 +19,16 @@ const (
 	KindPermissionDenied
 	KindNotFound
 	KindAlreadyExists
-	KindDomain
+	KindBusinessRuleViolation
 )
 
 var kindName = map[kind]string{
-	KindInvalidArgument:  "Invalid argument",
-	KindUnauthenticated:  "Unauthenticated",
-	KindPermissionDenied: "Permission denied",
-	KindNotFound:         "Not found",
-	KindAlreadyExists:    "Already exists",
-	KindDomain:           "Business rule violation",
+	KindInvalidArgument:       "Invalid argument",
+	KindUnauthenticated:       "Unauthenticated",
+	KindPermissionDenied:      "Permission denied",
+	KindNotFound:              "Not found",
+	KindAlreadyExists:         "Already exists",
+	KindBusinessRuleViolation: "Business rule violation",
 }
 
 const (
@@ -102,14 +102,14 @@ func NewInvalidArgument(msg string, opts ...Option) *Error {
 	return New(msg, opts...)
 }
 
-func NewDomain(msg string, opts ...Option) *Error {
-	opts = append(opts, WithKind(KindDomain))
+func NewBusinessRuleViolation(msg string, opts ...Option) *Error {
+	opts = append(opts, WithKind(KindBusinessRuleViolation))
 	return New(msg, opts...)
 }
 
 func NewUnsupportableValue(msg string, opts ...Option) *Error {
-	opts = append(opts, WithKind(KindDomain), WithCode(CodeUnsupportableValue))
-	return New(msg, opts...)
+	opts = append(opts, WithCode(CodeUnsupportableValue))
+	return NewBusinessRuleViolation(msg, opts...)
 }
 
 type Option func(*Error)

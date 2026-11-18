@@ -210,39 +210,6 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
       security:
         - bearerHttpAuthentication: []
-  /directory/entries:
-    post:
-      tags:
-        - directory
-      summary: Register a new directory entry.
-      operationId: registerDirectoryEntry
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DirectoryEntry'
-        required: true
-      responses:
-        '201':
-          description: Successful operation
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/ResourceAlreadyExists'
-        '422':
-          $ref: '#/components/responses/BusinessRuleViolation'
-        '500':
-          $ref: '#/components/responses/ServerError'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-      security:
-        - bearerHttpAuthentication: []
   /me/profile:
     get:
       tags:
@@ -499,7 +466,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
       security:
         - bearerHttpAuthentication: []
-  /bff/web/home-page:
+  /home-page:
     get:
       tags:
         - bff
@@ -512,6 +479,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HomePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ResourceAlreadyExists'
+        '422':
+          $ref: '#/components/responses/BusinessRuleViolation'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      security:
+        - bearerHttpAuthentication: []
+  /search:
+    get:
+      tags:
+        - directory
+      summary: Global search.
+      operationId: globalSearch
+      parameters:
+        - name: string
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalSearchResults'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -593,13 +597,18 @@ components:
     Profile:
       type: object
       required:
-        - handle
         - displayName
       properties:
         handle:
           type: string
         displayName:
           type: string
+        bio:
+          type: string
+        birthday:
+          type: string
+          format: date
+          x-go-type: time.Time
         avatarMediaId:
           type: string
           format: uuid
@@ -647,25 +656,6 @@ components:
         url:
           type: string
 
-    DirectoryEntry:
-      type: object
-      required:
-        - targetId
-        - targetType
-        - handle
-        - displayName
-      properties:
-        targetId:
-          type: string
-          format: uuid
-          x-go-type: uuid.UUID
-        targetType:
-          type: string
-        handle:
-          type: string
-        displayName:
-          type: string
-
     DirectConversation:
       type: object
       required:
@@ -708,6 +698,24 @@ components:
           items:
             $ref: '#/components/schemas/PeerItem'
 
+    GlobalSearchResults:
+      type: object
+      required:
+        - peers
+      properties:
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeerItem'
+        global:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeerItem'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/PeerItem'
+
     PeerItem:
       type: object
       required:
@@ -724,6 +732,8 @@ components:
         avatarUrl:
           type: string
         title:
+          type: string
+        handle:
           type: string
         preview:
           type: string

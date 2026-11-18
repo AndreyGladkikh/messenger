@@ -1,4 +1,4 @@
-package query
+package view
 
 import (
 	"time"
@@ -10,7 +10,8 @@ type PeerItem struct {
 	Type        string
 	AvatarURL   *string
 	Title       string
-	Preview     string
-	PreviewTime time.Time
+	Handle       *string
+	Preview     *string
+	PreviewTime *time.Time
 	UnreadCount int
 }

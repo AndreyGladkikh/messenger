@@ -42,7 +42,7 @@ func TestCreateMyProfile_Success(t *testing.T) {
 	mediaAsset := decode[appHttp.Media](t, response.Body)
 
 	resp, err := user.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
-		Handle:      handle,
+		Handle:      &handle,
 		DisplayName: displayName,
 		AvatarMediaId: &mediaAsset.MediaId,
 	})
@@ -53,7 +53,7 @@ func TestCreateMyProfile_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, appHttp.Profile{
-		Handle:      handle,
+		Handle:      &handle,
 		DisplayName: displayName,
 		AvatarMediaId: &mediaAsset.MediaId,
 	}, decode[appHttp.Profile](t, resp.Body))
@@ -64,14 +64,17 @@ func TestCreateMyProfile_HandleAlreadyExists(t *testing.T) {
 	aliceA := newUser(t, server, "aliceA")
 	aliceB := newUser(t, server, "aliceB")
 
+	aliceAHandle := "alice"
+	aliceBHandle := "alice"
+
 	resp, _ := aliceA.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
-		Handle:      "alice",
+		Handle:      &aliceAHandle,
 		DisplayName: "Alice A",
 	})
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	resp, _ = aliceB.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
-		Handle:      "alice",
+		Handle:      &aliceBHandle,
 		DisplayName: "Alice B",
 	})
 	require.Equal(t, http.StatusConflict, resp.StatusCode)
@@ -81,8 +84,9 @@ func TestCreateMyProfile_HandleAlreadyExists(t *testing.T) {
 	resp, _ = aliceB.httpClient.getMyProfile(t)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 
+	aliceBHandle = "alice_b"
 	resp, _ = aliceB.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
-		Handle:      "alice_b",
+		Handle:      &aliceBHandle,
 		DisplayName: "Alice B",
 	})
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
@@ -96,7 +100,7 @@ func TestCreateMyProfile_ProfileAlreadyExists(t *testing.T) {
 	displayName := "Alice"
 
 	request := appHttp.CreateMyProfileJSONRequestBody{
-		Handle:      handle,
+		Handle:      &handle,
 		DisplayName: displayName,
 	}
 

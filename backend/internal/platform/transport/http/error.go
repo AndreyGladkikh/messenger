@@ -19,6 +19,7 @@ type ProblemTypesRegistry struct {
 	AlreadyExists,
 	MissingRequestParameter,
 	MissingRequestCookie,
+	BusinessRuleViolation,
 	UnsupportableValue,
 	Blank string
 }
@@ -33,6 +34,7 @@ func NewProblemTypesRegistry(cfg config.Config) ProblemTypesRegistry {
 		AlreadyExists:           problemType("already-exists"),
 		MissingRequestParameter: problemType("missing-request-parameter"),
 		MissingRequestCookie:    problemType("missing-request-cookie"),
+		BusinessRuleViolation:   problemType("business-rule-violation"),
 		UnsupportableValue:      problemType("unsupportable-value"),
 		Blank:                   "about:blank",
 	}
@@ -159,7 +161,7 @@ func statusByAppErr(err *apperr.Error) int {
 		return http.StatusNotFound
 	case apperr.KindAlreadyExists:
 		return http.StatusConflict
-	case apperr.KindDomain:
+	case apperr.KindBusinessRuleViolation:
 		return http.StatusUnprocessableEntity
 	default:
 		return http.StatusInternalServerError
@@ -177,10 +179,12 @@ func (h *ErrorHandler) typeTitleByAppErr(err error) (typ, title string) {
 			return h.problemTypesRegistry.Blank, err.Kind.String()
 		case apperr.KindAlreadyExists:
 			return h.problemTypesRegistry.AlreadyExists, err.Kind.String()
-		case apperr.KindDomain:
+		case apperr.KindBusinessRuleViolation:
 			switch err.Code {
 			case apperr.CodeUnsupportableValue:
 				return h.problemTypesRegistry.UnsupportableValue, "Unsupportable Value"
+			default:
+				return h.problemTypesRegistry.BusinessRuleViolation, err.Kind.String()
 			}
 		}
 	}

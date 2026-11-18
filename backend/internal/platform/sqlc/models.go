@@ -284,14 +284,27 @@ type ConversationsMessageAttachment struct {
 	Name      string
 }
 
-type DirectoryEntry struct {
-	ID          uuid.UUID
+type DirectoryHandle struct {
+	TargetID   uuid.UUID
+	TargetType string
+	Handle     string
+}
+
+type DirectorySearchIndex struct {
 	TargetID    uuid.UUID
 	TargetType  string
+	Handle      *string
 	DisplayName string
-	Handle      string
 	AvatarID    *uuid.UUID
 	TsVec       interface{}
+}
+
+type DirectoryUserProfile struct {
+	UserID      uuid.UUID
+	DisplayName string
+	AvatarID    *uuid.UUID
+	Bio         *string
+	Birthday    *time.Time
 }
 
 type IdentityAccount struct {

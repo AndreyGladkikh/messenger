@@ -142,10 +142,6 @@ func (c *httpClient) startDirectConversation(t *testing.T, r appHttp.StartDirect
 	return c.doRequest(t, http.MethodPost, "conversations/direct", &httpRequestOpts{Body: r})
 }
 
-func (c *httpClient) registerDirectoryEntry(t *testing.T, r appHttp.RegisterDirectoryEntryJSONRequestBody) (*http.Response, error) {
-	return c.doRequest(t, http.MethodPost, "directory/entries", &httpRequestOpts{Body: r})
-}
-
 func (c *httpClient) getHomePage(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodGet, "bff/web/home-page", nil)
 }

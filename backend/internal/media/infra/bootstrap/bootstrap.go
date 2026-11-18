@@ -31,10 +31,12 @@ var PersistenceSet = wire.NewSet(
 	repository.NewMediaRepository,
 	repository.NewUploadRepository,
 	persistence.NewMediaLocationStore,
+	persistence.NewQueryService,
 
 	wire.Bind(new(media.Repository), new(*repository.MediaRepository)),
 	wire.Bind(new(upload.Repository), new(*repository.UploadRepository)),
 	wire.Bind(new(port.MediaLocationStore), new(*persistence.MediaLocationStore)),
+	wire.Bind(new(port.MediaReader), new(*persistence.QueryService)),
 )
 
 var CommandHandlersSet = wire.NewSet(
@@ -42,6 +44,15 @@ var CommandHandlersSet = wire.NewSet(
 	ProvideComlpeteUploadHandler,
 	command.NewInitUploadHandler,
 	ProvideInitUploadHandler,
+)
+
+var QueryHandlersSet = wire.NewSet(
+	query.NewGetDownloadURLHandler,
+	ProvideGetMediaDownloadURLHandler,
+	query.NewGetPublicURLsHandler,
+	ProvideGetPublicURLsHandler,
+	query.NewMediaExistsHandler,
+	ProvideMediaExistsHandler,
 )
 
 func ProvideComlpeteUploadHandler(
@@ -58,13 +69,6 @@ func ProvideInitUploadHandler(
 	return command_middleware.Wrap(h, m)
 }
 
-var QueryHandlersSet = wire.NewSet(
-	query.NewGetDownloadURLHandler,
-	ProvideGetMediaDownloadURLHandler,
-	query.NewGetPublicURLsHandler,
-	ProvideGetPublicURLsHandler,
-)
-
 func ProvideGetMediaDownloadURLHandler(
 	h *query.GetDownloadURLHandler,
 	m *query_middleware.Registry,
@@ -76,5 +80,12 @@ func ProvideGetPublicURLsHandler(
 	h *query.GetPublicURLsHandler,
 	m *query_middleware.Registry,
 ) appQry.Handler[query.GetPublicURLs, map[uuid.UUID]string] {
+	return query_middleware.Wrap(h, m)
+}
+
+func ProvideMediaExistsHandler(
+	h *query.MediaExistsHandler,
+	m *query_middleware.Registry,
+) appQry.Handler[query.MediaExists, bool] {
 	return query_middleware.Wrap(h, m)
 }

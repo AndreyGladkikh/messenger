@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -39,14 +40,6 @@ type Credentials struct {
 type DirectConversation struct {
 	FirstMessage  FirstMessage `json:"firstMessage"`
 	ParticipantId uuid.UUID    `json:"participantId"`
-}
-
-// DirectoryEntry defines model for DirectoryEntry.
-type DirectoryEntry struct {
-	DisplayName string    `json:"displayName"`
-	Handle      string    `json:"handle"`
-	TargetId    uuid.UUID `json:"targetId"`
-	TargetType  string    `json:"targetType"`
 }
 
 // DownloadMediaUrl defines model for DownloadMediaUrl.
@@ -80,6 +73,13 @@ type FirstMessage struct {
 	Body string `json:"body"`
 }
 
+// GlobalSearchResults defines model for GlobalSearchResults.
+type GlobalSearchResults struct {
+	Contacts *[]PeerItem `json:"contacts,omitempty"`
+	Global   *[]PeerItem `json:"global,omitempty"`
+	Messages *[]PeerItem `json:"messages,omitempty"`
+}
+
 // HomePage defines model for HomePage.
 type HomePage struct {
 	Peers []PeerItem `json:"peers"`
@@ -111,6 +111,7 @@ type Message struct {
 // PeerItem defines model for PeerItem.
 type PeerItem struct {
 	AvatarUrl   *string    `json:"avatarUrl,omitempty"`
+	Handle      *string    `json:"handle,omitempty"`
 	Id          uuid.UUID  `json:"id"`
 	Preview     *string    `json:"preview,omitempty"`
 	PreviewTime *time.Time `json:"previewTime,omitempty"`
@@ -146,8 +147,10 @@ type ProblemDetails struct {
 // Profile defines model for Profile.
 type Profile struct {
 	AvatarMediaId *uuid.UUID `json:"avatarMediaId,omitempty"`
+	Bio           *string    `json:"bio,omitempty"`
+	Birthday      *time.Time `json:"birthday,omitempty"`
 	DisplayName   string     `json:"displayName"`
-	Handle        string     `json:"handle"`
+	Handle        *string    `json:"handle,omitempty"`
 }
 
 // Tokens defines model for Tokens.
@@ -202,6 +205,11 @@ type RefreshTokensParams struct {
 	RefreshToken string `form:"refresh_token" json:"refresh_token"`
 }
 
+// GlobalSearchParams defines parameters for GlobalSearch.
+type GlobalSearchParams struct {
+	String string `form:"string" json:"string"`
+}
+
 // RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
 type RegisterUserJSONRequestBody = Credentials
 
@@ -213,9 +221,6 @@ type StartDirectConversationJSONRequestBody = DirectConversation
 
 // SendMessageJSONRequestBody defines body for SendMessage for application/json ContentType.
 type SendMessageJSONRequestBody = Message
-
-// RegisterDirectoryEntryJSONRequestBody defines body for RegisterDirectoryEntry for application/json ContentType.
-type RegisterDirectoryEntryJSONRequestBody = DirectoryEntry
 
 // CreateMyProfileJSONRequestBody defines body for CreateMyProfile for application/json ContentType.
 type CreateMyProfileJSONRequestBody = Profile
@@ -240,18 +245,15 @@ type ServerInterface interface {
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/users/refresh-tokens)
 	RefreshTokens(w http.ResponseWriter, r *http.Request, params RefreshTokensParams)
-	// GetWebHomePage Get home page.
-	// (GET /bff/web/home-page)
-	GetWebHomePage(w http.ResponseWriter, r *http.Request)
 	// StartDirectConversation Start direct conversation.
 	// (POST /conversations/direct)
 	StartDirectConversation(w http.ResponseWriter, r *http.Request)
 	// SendMessage Send message.
 	// (POST /conversations/{conversation_id}/messages)
 	SendMessage(w http.ResponseWriter, r *http.Request, conversationId uuid.UUID)
-	// RegisterDirectoryEntry Register a new directory entry.
-	// (POST /directory/entries)
-	RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request)
+	// GetWebHomePage Get home page.
+	// (GET /home-page)
+	GetWebHomePage(w http.ResponseWriter, r *http.Request)
 	// GetMyProfile Get profile.
 	// (GET /me/profile)
 	GetMyProfile(w http.ResponseWriter, r *http.Request)
@@ -267,6 +269,9 @@ type ServerInterface interface {
 	// GetDownloadMediaUrl Get URL to download media.
 	// (GET /media/{media_id}/url)
 	GetDownloadMediaUrl(w http.ResponseWriter, r *http.Request, mediaId uuid.UUID)
+	// GlobalSearch Global search.
+	// (GET /search)
+	GlobalSearch(w http.ResponseWriter, r *http.Request, params GlobalSearchParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -303,12 +308,6 @@ func (_ Unimplemented) RefreshTokens(w http.ResponseWriter, r *http.Request, par
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// GetWebHomePage Get home page.
-// (GET /bff/web/home-page)
-func (_ Unimplemented) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // StartDirectConversation Start direct conversation.
 // (POST /conversations/direct)
 func (_ Unimplemented) StartDirectConversation(w http.ResponseWriter, r *http.Request) {
@@ -321,9 +320,9 @@ func (_ Unimplemented) SendMessage(w http.ResponseWriter, r *http.Request, conve
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// RegisterDirectoryEntry Register a new directory entry.
-// (POST /directory/entries)
-func (_ Unimplemented) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request) {
+// GetWebHomePage Get home page.
+// (GET /home-page)
+func (_ Unimplemented) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -354,6 +353,12 @@ func (_ Unimplemented) CompleteMediaUpload(w http.ResponseWriter, r *http.Reques
 // GetDownloadMediaUrl Get URL to download media.
 // (GET /media/{media_id}/url)
 func (_ Unimplemented) GetDownloadMediaUrl(w http.ResponseWriter, r *http.Request, mediaId uuid.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// GlobalSearch Global search.
+// (GET /search)
+func (_ Unimplemented) GlobalSearch(w http.ResponseWriter, r *http.Request, params GlobalSearchParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -542,20 +547,6 @@ func (siw *ServerInterfaceWrapper) RefreshTokens(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// GetWebHomePage operation middleware
-func (siw *ServerInterfaceWrapper) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWebHomePage(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // StartDirectConversation operation middleware
 func (siw *ServerInterfaceWrapper) StartDirectConversation(w http.ResponseWriter, r *http.Request) {
 
@@ -596,11 +587,11 @@ func (siw *ServerInterfaceWrapper) SendMessage(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// RegisterDirectoryEntry operation middleware
-func (siw *ServerInterfaceWrapper) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request) {
+// GetWebHomePage operation middleware
+func (siw *ServerInterfaceWrapper) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RegisterDirectoryEntry(w, r)
+		siw.Handler.GetWebHomePage(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -695,6 +686,39 @@ func (siw *ServerInterfaceWrapper) GetDownloadMediaUrl(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDownloadMediaUrl(w, r, mediaId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GlobalSearch operation middleware
+func (siw *ServerInterfaceWrapper) GlobalSearch(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GlobalSearchParams
+
+	// ------------- Required query parameter "string" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "string", r.URL.Query(), &params.String, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "string"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "string", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GlobalSearch(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -833,9 +857,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/auth/me", wrapper.GetMe)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/directory/entries", wrapper.RegisterDirectoryEntry)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/me/profile", wrapper.GetMyProfile)
 	})
 	r.Group(func(r chi.Router) {
@@ -857,7 +878,10 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/conversations/{conversation_id}/messages", wrapper.SendMessage)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/bff/web/home-page", wrapper.GetWebHomePage)
+		r.Get(options.BaseURL+"/home-page", wrapper.GetWebHomePage)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/search", wrapper.GlobalSearch)
 	})
 
 	return r
@@ -1627,155 +1651,6 @@ func (response RefreshTokens503ApplicationProblemPlusJSONResponse) VisitRefreshT
 	return err
 }
 
-type GetWebHomePageRequestObject struct {
-}
-
-type GetWebHomePageResponseObject interface {
-	VisitGetWebHomePageResponse(w http.ResponseWriter) error
-}
-
-type GetWebHomePage200JSONResponse HomePage
-
-func (response GetWebHomePage200JSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage400ApplicationProblemPlusJSONResponse struct {
-	BadRequestApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage400ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(400)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage401ApplicationProblemPlusJSONResponse struct {
-	UnauthorizedApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage401ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage403ApplicationProblemPlusJSONResponse struct {
-	ForbiddenApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage403ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(403)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage404ApplicationProblemPlusJSONResponse struct {
-	NotFoundApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage404ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(404)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage409ApplicationProblemPlusJSONResponse struct {
-	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage409ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(409)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage422ApplicationProblemPlusJSONResponse struct {
-	BusinessRuleViolationApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage422ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage500ApplicationProblemPlusJSONResponse struct {
-	ServerErrorApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage500ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(500)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type GetWebHomePage503ApplicationProblemPlusJSONResponse struct {
-	ServiceUnavailableApplicationProblemPlusJSONResponse
-}
-
-func (response GetWebHomePage503ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(503)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
 type StartDirectConversationRequestObject struct {
 	Body *StartDirectConversationJSONRequestBody
 }
@@ -2071,27 +1946,32 @@ func (response SendMessage503ApplicationProblemPlusJSONResponse) VisitSendMessag
 	return err
 }
 
-type RegisterDirectoryEntryRequestObject struct {
-	Body *RegisterDirectoryEntryJSONRequestBody
+type GetWebHomePageRequestObject struct {
 }
 
-type RegisterDirectoryEntryResponseObject interface {
-	VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error
+type GetWebHomePageResponseObject interface {
+	VisitGetWebHomePageResponse(w http.ResponseWriter) error
 }
 
-type RegisterDirectoryEntry201Response struct {
+type GetWebHomePage200JSONResponse HomePage
+
+func (response GetWebHomePage200JSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
-func (response RegisterDirectoryEntry201Response) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
-	w.WriteHeader(201)
-	return nil
-}
-
-type RegisterDirectoryEntry400ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage400ApplicationProblemPlusJSONResponse struct {
 	BadRequestApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry400ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage400ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2103,11 +1983,11 @@ func (response RegisterDirectoryEntry400ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type RegisterDirectoryEntry401ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage401ApplicationProblemPlusJSONResponse struct {
 	UnauthorizedApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry401ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage401ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2119,11 +1999,11 @@ func (response RegisterDirectoryEntry401ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type RegisterDirectoryEntry403ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage403ApplicationProblemPlusJSONResponse struct {
 	ForbiddenApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry403ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage403ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2135,11 +2015,11 @@ func (response RegisterDirectoryEntry403ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type RegisterDirectoryEntry404ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage404ApplicationProblemPlusJSONResponse struct {
 	NotFoundApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry404ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage404ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2151,11 +2031,11 @@ func (response RegisterDirectoryEntry404ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type RegisterDirectoryEntry409ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage409ApplicationProblemPlusJSONResponse struct {
 	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry409ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage409ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2167,11 +2047,11 @@ func (response RegisterDirectoryEntry409ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type RegisterDirectoryEntry422ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage422ApplicationProblemPlusJSONResponse struct {
 	BusinessRuleViolationApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry422ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage422ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2183,11 +2063,11 @@ func (response RegisterDirectoryEntry422ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type RegisterDirectoryEntry500ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage500ApplicationProblemPlusJSONResponse struct {
 	ServerErrorApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry500ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage500ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2199,11 +2079,11 @@ func (response RegisterDirectoryEntry500ApplicationProblemPlusJSONResponse) Visi
 	return err
 }
 
-type RegisterDirectoryEntry503ApplicationProblemPlusJSONResponse struct {
+type GetWebHomePage503ApplicationProblemPlusJSONResponse struct {
 	ServiceUnavailableApplicationProblemPlusJSONResponse
 }
 
-func (response RegisterDirectoryEntry503ApplicationProblemPlusJSONResponse) VisitRegisterDirectoryEntryResponse(w http.ResponseWriter) error {
+func (response GetWebHomePage503ApplicationProblemPlusJSONResponse) VisitGetWebHomePageResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2958,6 +2838,156 @@ func (response GetDownloadMediaUrl503ApplicationProblemPlusJSONResponse) VisitGe
 	return err
 }
 
+type GlobalSearchRequestObject struct {
+	Params GlobalSearchParams
+}
+
+type GlobalSearchResponseObject interface {
+	VisitGlobalSearchResponse(w http.ResponseWriter) error
+}
+
+type GlobalSearch200JSONResponse GlobalSearchResults
+
+func (response GlobalSearch200JSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch400ApplicationProblemPlusJSONResponse struct {
+	BadRequestApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch400ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch401ApplicationProblemPlusJSONResponse struct {
+	UnauthorizedApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch401ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch403ApplicationProblemPlusJSONResponse struct {
+	ForbiddenApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch403ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch404ApplicationProblemPlusJSONResponse struct {
+	NotFoundApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch404ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch409ApplicationProblemPlusJSONResponse struct {
+	ResourceAlreadyExistsApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch409ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch422ApplicationProblemPlusJSONResponse struct {
+	BusinessRuleViolationApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch422ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch500ApplicationProblemPlusJSONResponse struct {
+	ServerErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch500ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GlobalSearch503ApplicationProblemPlusJSONResponse struct {
+	ServiceUnavailableApplicationProblemPlusJSONResponse
+}
+
+func (response GlobalSearch503ApplicationProblemPlusJSONResponse) VisitGlobalSearchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetMe Get authenticated user info.
@@ -2975,18 +3005,15 @@ type StrictServerInterface interface {
 	// RefreshTokens Refresh access tokens.
 	// (POST /auth/users/refresh-tokens)
 	RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error)
-	// GetWebHomePage Get home page.
-	// (GET /bff/web/home-page)
-	GetWebHomePage(ctx context.Context, request GetWebHomePageRequestObject) (GetWebHomePageResponseObject, error)
 	// StartDirectConversation Start direct conversation.
 	// (POST /conversations/direct)
 	StartDirectConversation(ctx context.Context, request StartDirectConversationRequestObject) (StartDirectConversationResponseObject, error)
 	// SendMessage Send message.
 	// (POST /conversations/{conversation_id}/messages)
 	SendMessage(ctx context.Context, request SendMessageRequestObject) (SendMessageResponseObject, error)
-	// RegisterDirectoryEntry Register a new directory entry.
-	// (POST /directory/entries)
-	RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error)
+	// GetWebHomePage Get home page.
+	// (GET /home-page)
+	GetWebHomePage(ctx context.Context, request GetWebHomePageRequestObject) (GetWebHomePageResponseObject, error)
 	// GetMyProfile Get profile.
 	// (GET /me/profile)
 	GetMyProfile(ctx context.Context, request GetMyProfileRequestObject) (GetMyProfileResponseObject, error)
@@ -3002,6 +3029,9 @@ type StrictServerInterface interface {
 	// GetDownloadMediaUrl Get URL to download media.
 	// (GET /media/{media_id}/url)
 	GetDownloadMediaUrl(ctx context.Context, request GetDownloadMediaUrlRequestObject) (GetDownloadMediaUrlResponseObject, error)
+	// GlobalSearch Global search.
+	// (GET /search)
+	GlobalSearch(ctx context.Context, request GlobalSearchRequestObject) (GlobalSearchResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -3185,30 +3215,6 @@ func (sh *strictHandler) RefreshTokens(w http.ResponseWriter, r *http.Request, p
 	}
 }
 
-// GetWebHomePage operation middleware
-func (sh *strictHandler) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
-	var request GetWebHomePageRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.GetWebHomePage(ctx, request.(GetWebHomePageRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetWebHomePage")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(GetWebHomePageResponseObject); ok {
-		if err := validResponse.VisitGetWebHomePageResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // StartDirectConversation operation middleware
 func (sh *strictHandler) StartDirectConversation(w http.ResponseWriter, r *http.Request) {
 	var request StartDirectConversationRequestObject
@@ -3273,30 +3279,23 @@ func (sh *strictHandler) SendMessage(w http.ResponseWriter, r *http.Request, con
 	}
 }
 
-// RegisterDirectoryEntry operation middleware
-func (sh *strictHandler) RegisterDirectoryEntry(w http.ResponseWriter, r *http.Request) {
-	var request RegisterDirectoryEntryRequestObject
-
-	var body RegisterDirectoryEntryJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
+// GetWebHomePage operation middleware
+func (sh *strictHandler) GetWebHomePage(w http.ResponseWriter, r *http.Request) {
+	var request GetWebHomePageRequestObject
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.RegisterDirectoryEntry(ctx, request.(RegisterDirectoryEntryRequestObject))
+		return sh.ssi.GetWebHomePage(ctx, request.(GetWebHomePageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "RegisterDirectoryEntry")
+		handler = middleware(handler, "GetWebHomePage")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(RegisterDirectoryEntryResponseObject); ok {
-		if err := validResponse.VisitRegisterDirectoryEntryResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetWebHomePageResponseObject); ok {
+		if err := validResponse.VisitGetWebHomePageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3442,83 +3441,109 @@ func (sh *strictHandler) GetDownloadMediaUrl(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// GlobalSearch operation middleware
+func (sh *strictHandler) GlobalSearch(w http.ResponseWriter, r *http.Request, params GlobalSearchParams) {
+	var request GlobalSearchRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GlobalSearch(ctx, request.(GlobalSearchRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GlobalSearch")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GlobalSearchResponseObject); ok {
+		if err := validResponse.VisitGlobalSearchResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"8WXxzwEA",
+	"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",
+	"c4xTM730iiSU0xkkttGv7rWD58/P/z8A",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

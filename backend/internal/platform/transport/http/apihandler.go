@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json/v2"
+	"uuid"
 
 	webBffQry "messenger/messenger/internal/bff/web/app/query"
 	directoryCmd "messenger/messenger/internal/directory/app/command"
@@ -97,22 +98,6 @@ func (h *ApiHandler) LogoutUser(ctx context.Context, request LogoutUserRequestOb
 	}
 
 	return LogoutUser204ResponseCustom{}, nil
-}
-
-func (h *ApiHandler) RegisterDirectoryEntry(ctx context.Context, request RegisterDirectoryEntryRequestObject) (RegisterDirectoryEntryResponseObject, error) {
-	cmd := directoryCmd.RegisterEntry{
-		TargetID:    request.Body.TargetId,
-		TargetType:  request.Body.TargetType,
-		DisplayName: request.Body.DisplayName,
-		Handle:      request.Body.Handle,
-	}
-
-	_, err := h.commands.RegisterDirectoryEntry.Handle(ctx, cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	return RegisterDirectoryEntry201Response{}, nil
 }
 
 func (h *ApiHandler) RefreshTokens(ctx context.Context, request RefreshTokensRequestObject) (RefreshTokensResponseObject, error) {
@@ -217,8 +202,8 @@ func (h *ApiHandler) GetWebHomePage(ctx context.Context, request GetWebHomePageR
 			Type:        p.Type,
 			AvatarUrl:   p.AvatarURL,
 			Title:       p.Title,
-			Preview:     &p.Preview,
-			PreviewTime: &p.PreviewTime,
+			Preview:     p.Preview,
+			PreviewTime: p.PreviewTime,
 			UnreadCount: &p.UnreadCount,
 		})
 	}
@@ -234,14 +219,15 @@ func (h *ApiHandler) CreateMyProfile(ctx context.Context, request CreateMyProfil
 		return nil, err
 	}
 
-	cmd := directoryCmd.RegisterEntry{
-		TargetID:    a.Principal.Subject.ID,
-		TargetType:  string(a.Principal.Subject.Type),
-		DisplayName: request.Body.DisplayName,
+	cmd := directoryCmd.SetUserProfile{
+		UserID:      a.Principal.Subject.ID,
 		Handle:      request.Body.Handle,
+		DisplayName: request.Body.DisplayName,
 		AvatarID:    request.Body.AvatarMediaId,
+		Bio:         request.Body.Bio,
+		Birthday:    request.Body.Birthday,
 	}
-	_, err = h.commands.RegisterDirectoryEntry.Handle(ctx, cmd)
+	_, err = h.commands.SetUserProfile.Handle(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -255,19 +241,20 @@ func (h *ApiHandler) GetMyProfile(ctx context.Context, request GetMyProfileReque
 		return nil, err
 	}
 
-	qry := directoryQry.GetEntry{
-		ID:   a.Principal.Subject.ID,
-		Type: string(a.Principal.Subject.Type),
+	qry := directoryQry.GetUserProfiles{
+		UserIDs: []uuid.UUID{a.Principal.Subject.ID},
 	}
-	resp, err := h.queries.GetDirectoryEntry.Handle(ctx, qry)
+	resp, err := h.queries.GetUserProfiles.Handle(ctx, qry)
 	if err != nil {
 		return nil, err
 	}
 
+	profile := resp[0]
+
 	return GetMyProfile200JSONResponse{
-		Handle:        resp.Handle,
-		DisplayName:   resp.DisplayName,
-		AvatarMediaId: resp.AvatarID,
+		Handle:        profile.Handle,
+		DisplayName:   profile.DisplayName,
+		AvatarMediaId: profile.AvatarID,
 	}, nil
 }
 
@@ -280,7 +267,7 @@ func (h *ApiHandler) InitMediaUpload(ctx context.Context, request InitMediaUploa
 	cmd := mediaCmd.InitUpload{
 		InitiatorID: a.Principal.Subject.ID,
 		FileName:    request.Body.FileName,
-		Purpose: request.Body.Purpose,
+		Purpose:     request.Body.Purpose,
 	}
 	resp, err := h.commands.InitMediaUpload.Handle(ctx, cmd)
 	if err != nil {
@@ -328,6 +315,33 @@ func (h *ApiHandler) GetDownloadMediaUrl(ctx context.Context, request GetDownloa
 
 	return GetDownloadMediaUrl200JSONResponse{
 		Url: url,
+	}, nil
+}
+
+func (h *ApiHandler) GlobalSearch(ctx context.Context, request GlobalSearchRequestObject) (GlobalSearchResponseObject, error) {
+	_, err := getAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	qry := webBffQry.Search{Str: request.Params.String}
+	resp, err := h.queries.Search.Handle(ctx, qry)
+	if err != nil {
+		return nil, err
+	}
+
+	globalPeers := make([]PeerItem, 0, len(resp.Global))
+	for _, r := range resp.Global {
+		globalPeers = append(globalPeers, PeerItem{
+			Id:        r.ID,
+			Type:      r.Type,
+			Title:     r.Title,
+			AvatarUrl: r.AvatarURL,
+			Handle:    r.Handle,
+		})
+	}
+	return GlobalSearch200JSONResponse{
+		Global: &globalPeers,
 	}, nil
 }
 

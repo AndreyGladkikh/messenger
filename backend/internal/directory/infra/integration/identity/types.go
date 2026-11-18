@@ -2,7 +2,7 @@ package identity
 
 import (
 	"fmt"
-	"messenger/messenger/internal/directory/domain/entry"
+	"messenger/messenger/internal/directory/domain/model"
 )
 
 type identityType string
@@ -27,12 +27,12 @@ func parseIdentityType(t string) (identityType, error) {
 	}
 }
 
-var typeMap = map[identityType]entry.TargetType{
-	identityTypeUser: entry.TargetTypeUser,
-	identityTypeBot:  entry.TargetTypeBot,
+var typeMap = map[identityType]model.TargetType{
+	identityTypeUser: model.TargetTypeUser,
+	identityTypeBot:  model.TargetTypeBot,
 }
 
-func mapIdentityTypeToTarget(t string) (entry.TargetType, error) {
+func mapIdentityTypeToTarget(t string) (model.TargetType, error) {
 	idT, err := parseIdentityType(t)
 	if err != nil {
 		return "", err

@@ -39,3 +39,7 @@ type MediaLocationStore interface {
 	Save(ctx context.Context, mediaID uuid.UUID, ref MediaLocationRef) error
 	Get(ctx context.Context, mediaID uuid.UUID) (MediaLocationRef, error)
 }
+
+type MediaReader interface {
+	MediaAssetExists(ctx context.Context, mediaID uuid.UUID) (bool, error)
+}

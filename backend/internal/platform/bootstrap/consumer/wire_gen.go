@@ -7,37 +7,20 @@
 package consumer
 
 import (
-	query4 "messenger/messenger/internal/bff/web/app/query"
-	bootstrap4 "messenger/messenger/internal/bff/web/infra/bootstrap"
-	"messenger/messenger/internal/bff/web/infra/integration/directory"
-	"messenger/messenger/internal/bff/web/infra/integration/media"
-	"messenger/messenger/internal/bff/web/infra/integration/messaging"
 	"messenger/messenger/internal/directory/app/query"
 	"messenger/messenger/internal/directory/infra/bootstrap"
 	"messenger/messenger/internal/directory/infra/persistence"
-	query5 "messenger/messenger/internal/identity/app/query"
-	bootstrap5 "messenger/messenger/internal/identity/infra/bootstrap"
-	persistence3 "messenger/messenger/internal/identity/infra/persistence"
-	query3 "messenger/messenger/internal/media/app/query"
-	bootstrap3 "messenger/messenger/internal/media/infra/bootstrap"
-	"messenger/messenger/internal/media/infra/object_storage"
-	persistence4 "messenger/messenger/internal/media/infra/persistence"
-	repository2 "messenger/messenger/internal/media/infra/persistence/repository"
-	query2 "messenger/messenger/internal/messaging/app/query"
-	bootstrap2 "messenger/messenger/internal/messaging/infra/bootstrap"
-	persistence2 "messenger/messenger/internal/messaging/infra/persistence"
+	query2 "messenger/messenger/internal/media/app/query"
+	bootstrap2 "messenger/messenger/internal/media/infra/bootstrap"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
 	"messenger/messenger/internal/platform/pubsub"
-	"messenger/messenger/internal/platform/query_handler"
 	"messenger/messenger/internal/platform/query_middleware"
 	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/platform/rabbitmq/consumers"
 	"messenger/messenger/internal/platform/realtime"
 	"messenger/messenger/internal/platform/redis"
-	"messenger/messenger/internal/platform/repository"
-	"messenger/messenger/internal/platform/s3"
 	"messenger/messenger/internal/platform/sqlc"
 	"messenger/messenger/internal/platform/store"
 )
@@ -67,57 +50,17 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 	queries := sqlc.New(pool)
 	storeStore := store.NewStore(queries)
 	queryService := persistence.NewQueryService(storeStore)
-	getEntryHandler := query.NewGetEntryHandler(queryService)
+	getUserProfilesHandler := query.NewGetUserProfilesHandler(queryService)
 	logging := query_middleware.NewLogging(loggerLogger)
 	validation := query_middleware.NewValidation()
 	registry := &query_middleware.Registry{
 		Logging:    logging,
 		Validation: validation,
 	}
-	handler := bootstrap.ProvideGetEntryHandler(getEntryHandler, registry)
-	persistenceQueryService := persistence2.NewQueryService(storeStore)
-	listUserConversationsHandler := query2.NewListUserConversationsHandler(persistenceQueryService)
-	queryHandler := bootstrap2.ProvideGetHomePageHandler(listUserConversationsHandler, registry)
-	service := messaging.NewService(queryHandler)
-	getEntriesHandler := query.NewGetEntriesHandler(queryService)
-	handler2 := bootstrap.ProvideGetEntriesHandler(getEntriesHandler, registry)
-	directoryService := directory.NewService(handler2)
-	getPublicURLsHandler := query3.NewGetPublicURLsHandler(cfg)
-	handler3 := bootstrap3.ProvideGetPublicURLsHandler(getPublicURLsHandler, registry)
-	mediaService := media.NewService(handler3)
-	getHomePageHandler := query4.NewGetHomePageHandler(service, directoryService, mediaService)
-	handler4 := bootstrap4.ProvideGetHomePageHandler(getHomePageHandler, registry)
-	searchHandler := query.NewSearchHandler(queryService)
-	handler5 := bootstrap.ProvideSearchHandler(searchHandler, registry)
-	queryService2 := persistence3.NewQueryService(storeStore)
-	getAccountHandler := query5.NewGetAccountHandler(queryService2)
-	handler6 := bootstrap5.ProvideGetAccountHandler(getAccountHandler, registry)
-	repositoryRepository := repository.NewRepository(storeStore)
-	mediaRepository := repository2.NewMediaRepository(repositoryRepository)
-	mediaLocationStore := persistence4.NewMediaLocationStore(storeStore)
-	s3Client, err := s3.New(cfg)
-	if err != nil {
-		cleanup4()
-		cleanup3()
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	presigner := s3.NewPresigner(s3Client)
-	objectStorage := object_storage.NewObjectStorage(presigner, s3Client)
-	getDownloadURLHandler := query3.NewGetDownloadURLHandler(mediaRepository, mediaLocationStore, objectStorage)
-	handler7 := bootstrap3.ProvideGetMediaDownloadURLHandler(getDownloadURLHandler, registry)
-	query_handlerRegistry := &query_handler.Registry{
-		GetHomePage:               handler4,
-		ListUserConversations:     queryHandler,
-		GetDirectoryEntries:       handler2,
-		GetDirectoryEntry:         handler,
-		SearchDirectoryEntry:      handler5,
-		GetAccount:                handler6,
-		GetDownloadMediaURL:       handler7,
-		GetMediaPublicURLsHandler: handler3,
-	}
-	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, handler, query_handlerRegistry)
+	handler := bootstrap.ProvideGetUserProfilesHandler(getUserProfilesHandler, registry)
+	getPublicURLsHandler := query2.NewGetPublicURLsHandler(cfg)
+	queryHandler := bootstrap2.ProvideGetPublicURLsHandler(getPublicURLsHandler, registry)
+	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, handler, queryHandler)
 	realtimePersonalDeliveryConsumer, cleanup5, err := consumers.NewRealtimePersonalDeliveryConsumer(loggerLogger, connection, personalDeliveryHandler)
 	if err != nil {
 		cleanup4()

@@ -19,7 +19,7 @@ type Registry struct {
 	SendMessage             appCmd.Handler[conversationsCmd.SendMessage, any]
 	CreateGroupConversation appCmd.Handler[conversationsCmd.CreateGroupConversation, uuid.UUID]
 
-	RegisterDirectoryEntry appCmd.Handler[directoryCmd.RegisterEntry, any]
+	SetUserProfile appCmd.Handler[directoryCmd.SetUserProfile, any]
 
 	InitMediaUpload appCmd.Handler[mediaCmd.InitUpload, mediaCmd.InitedUpload]
 	CompleteMediaUpload appCmd.Handler[mediaCmd.ComlpeteUpload, uuid.UUID]

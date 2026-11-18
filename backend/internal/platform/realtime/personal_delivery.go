@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json/v2"
 	directoryQry "messenger/messenger/internal/directory/app/query"
-	"messenger/messenger/internal/directory/domain/entry"
-	"messenger/messenger/internal/media/app/query"
+	directoryView "messenger/messenger/internal/directory/app/view"
+	mediaQry "messenger/messenger/internal/media/app/query"
 	messagingEvent "messenger/messenger/internal/messaging/app/event"
 	"messenger/messenger/internal/platform/pubsub"
-	"messenger/messenger/internal/platform/query_handler"
 	"messenger/messenger/internal/platform/rabbitmq"
 	"messenger/messenger/internal/shared/app/event"
 	appQuery "messenger/messenger/internal/shared/app/query"
@@ -19,19 +18,19 @@ var _ rabbitmq.Handler = (*PersonalDeliveryHandler)(nil)
 
 type PersonalDeliveryHandler struct {
 	personalEventsPubSub *pubsub.PersonalEventsPubSub
-	getEntry             appQuery.Handler[directoryQry.GetEntry, directoryQry.EntryView]
-	queries *query_handler.Registry
+	getUserProfiles             appQuery.Handler[directoryQry.GetUserProfiles, []directoryView.UserProfile]
+	getPublicURLs        appQuery.Handler[mediaQry.GetPublicURLs, map[uuid.UUID]string]
 }
 
 func NewPersonalDeliveryHandler(
 	personalEventsPubSub *pubsub.PersonalEventsPubSub,
-	getEntry appQuery.Handler[directoryQry.GetEntry, directoryQry.EntryView],
-	queries *query_handler.Registry,
+	getUserProfiles appQuery.Handler[directoryQry.GetUserProfiles, []directoryView.UserProfile],
+	getPublicURLs appQuery.Handler[mediaQry.GetPublicURLs, map[uuid.UUID]string],
 ) *PersonalDeliveryHandler {
 	return &PersonalDeliveryHandler{
 		personalEventsPubSub: personalEventsPubSub,
-		getEntry:             getEntry,
-		queries: queries,
+		getUserProfiles:             getUserProfiles,
+		getPublicURLs:        getPublicURLs,
 	}
 }
 
@@ -46,21 +45,19 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 
 		evnt := envlp.Event
 
-		entr, err := h.getEntry.Handle(ctx, directoryQry.GetEntry{
-			ID:   evnt.SenderID,
-			Type: entry.TargetTypeUser.String(),
-		})
+		ups, err := h.getUserProfiles.Handle(ctx, directoryQry.GetUserProfiles{UserIDs: []uuid.UUID{evnt.SenderID}})
 		if err != nil {
 			return err
 		}
+		userProfile := ups[0]
 
 		var avatarURL *string
-		if entr.AvatarID != nil {
-			urls, err := h.queries.GetMediaPublicURLsHandler.Handle(ctx, query.GetPublicURLs{MediaIDs: []uuid.UUID{*entr.AvatarID}})
+		if userProfile.AvatarID != nil {
+			urls, err := h.getPublicURLs.Handle(ctx, mediaQry.GetPublicURLs{MediaIDs: []uuid.UUID{*userProfile.AvatarID}})
 			if err != nil {
 				return err
 			}
-			if url, ok := urls[*entr.AvatarID]; ok {
+			if url, ok := urls[*userProfile.AvatarID]; ok {
 				avatarURL = &url
 			}
 		}
@@ -69,7 +66,7 @@ func (h *PersonalDeliveryHandler) Handle(ctx context.Context, msg rabbitmq.Envel
 			ConversationID:  evnt.ConversationID,
 			SenderID:        evnt.SenderID,
 			SenderAvatarURL: avatarURL,
-			SenderName:      entr.DisplayName,
+			SenderName:      userProfile.DisplayName,
 			MessageBody:     evnt.MessageBody,
 			MessageSentAt:   evnt.MessageSentAt,
 		})

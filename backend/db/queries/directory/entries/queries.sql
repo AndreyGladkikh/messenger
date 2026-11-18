@@ -1,34 +1,44 @@
 -- name: HandleExists :one
-SELECT EXISTS(
-    SELECT 1 FROM directory.entries
-    WHERE handle = $1
-);
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            directory.handles
+        WHERE
+            handle = $1
+    )
+;
 
 -- name: SearchDirectoryEntry :many
-SELECT target_id, target_type, display_name, handle 
-FROM directory.entries
-WHERE ts_vec @@ to_tsquery('russian', $1);
-
--- name: GetDirectoryEntry :one
-SELECT display_name, handle, avatar_id 
-FROM directory.entries
-WHERE target_id = $1
-    AND target_type = $2;
-
--- name: ListDirectoryEntriesByTargets :many
-WITH targets AS (
-  SELECT 
-    target_ids.val::uuid AS id,
-    target_types.val::text AS type
-  FROM unnest(@target_ids::uuid[]) WITH ORDINALITY AS target_ids(val, ord)
-  JOIN unnest(@target_types::text[]) WITH ORDINALITY AS target_types(val, ord) ON target_ids.ord = target_types.ord
-)
 SELECT
-    e.id,
-    e.target_id,
-    e.target_type,
-    e.display_name,
-    e.handle,
-    e.avatar_id
-FROM directory.entries AS e
-JOIN targets ON e.target_id = targets.id AND e.target_type = targets.type;
+    target_id,
+    target_type,
+    display_name,
+    handle,
+    avatar_id
+FROM
+    directory.search_index
+WHERE
+    ts_vec @@ TO_TSQUERY('russian', $1)
+;
+
+-- name: GetUserProfile :one
+SELECT
+    *
+FROM
+    directory.user_profiles
+WHERE
+    user_id = $1
+;
+
+-- name: GetUserProfilesByIDs :many
+SELECT
+    *
+FROM
+    directory.user_profiles p
+    LEFT JOIN directory.handles h ON p.user_id = h.target_id
+    AND h.target_type = 'user'
+WHERE
+    user_id = ANY ($1::UUID[])
+;

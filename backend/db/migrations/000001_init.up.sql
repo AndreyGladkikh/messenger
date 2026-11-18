@@ -13,13 +13,13 @@ CREATE TABLE identity.accounts(
 );
 
 CREATE TABLE identity.users(
-    id UUID PRIMARY KEY REFERENCES identity.accounts ON DELETE CASCADE,
+    id UUID PRIMARY KEY NOT NULL REFERENCES identity.accounts ON DELETE CASCADE,
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL
 );
 
 CREATE TABLE identity.bots(
-    id UUID PRIMARY KEY REFERENCES identity.accounts ON DELETE CASCADE,
+    id UUID PRIMARY KEY NOT NULL REFERENCES identity.accounts ON DELETE CASCADE,
     token_hash TEXT NOT NULL
 );
 
@@ -88,21 +88,37 @@ CREATE TABLE conversations.message_attachments(
     name TEXT NOT NULL
 );
 
-CREATE TABLE directory.entries(
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+CREATE TABLE directory.handles(
     target_id UUID NOT NULL,
     target_type TEXT NOT NULL,
+    handle TEXT NOT NULL,
+    PRIMARY KEY (target_id, target_type)
+);
+CREATE UNIQUE INDEX directory_handles_handle_lower_idx ON directory.handles (lower(handle));
+
+CREATE TABLE directory.search_index(
+    target_id UUID NOT NULL,
+    target_type TEXT NOT NULL,
+    handle TEXT,
     display_name TEXT NOT NULL,
-    handle TEXT NOT NULL UNIQUE,
     avatar_id UUID,
     ts_vec TSVECTOR GENERATED ALWAYS AS (
         to_tsvector('russian', coalesce(display_name, '')) ||
         to_tsvector('english', coalesce(display_name, '') || ' ' || coalesce(handle, '')) ||
         to_tsvector('simple', coalesce(display_name, '') || ' ' || coalesce(handle, ''))
     ) STORED,
-    UNIQUE(target_id, target_type)
+    PRIMARY KEY (target_id, target_type)
 );
-CREATE INDEX directory_entries_textsearch_idx ON directory.entries USING GIN (ts_vec);
+CREATE INDEX directory_search_index_textsearch_idx ON directory.search_index USING GIN (ts_vec);
+
+CREATE TABLE directory.user_profiles(
+    user_id UUID PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    avatar_id UUID,
+    bio TEXT,
+    birthday DATE
+);
+CREATE INDEX directory_user_profiles_user_id_idx ON directory.user_profiles(user_id);
 
 CREATE TABLE bff.peers(
     user_id UUID NOT NULL,

@@ -2,10 +2,15 @@ package bootstrap
 
 import (
 	"messenger/messenger/internal/directory/app/command"
+	"messenger/messenger/internal/directory/app/port"
 	"messenger/messenger/internal/directory/app/query"
-	"messenger/messenger/internal/directory/domain/entry"
+	"messenger/messenger/internal/directory/app/view"
+	"messenger/messenger/internal/directory/domain/model/handle"
+	"messenger/messenger/internal/directory/domain/model/user_profile"
 	"messenger/messenger/internal/directory/infra/integration/identity"
+	"messenger/messenger/internal/directory/infra/integration/media"
 	"messenger/messenger/internal/directory/infra/persistence"
+	"messenger/messenger/internal/directory/infra/persistence/repository"
 	"messenger/messenger/internal/platform/command_middleware"
 	"messenger/messenger/internal/platform/query_middleware"
 	appCmd "messenger/messenger/internal/shared/app/command"
@@ -19,40 +24,41 @@ var Set = wire.NewSet(
 	CommandHandlersSet,
 	QueryHandlersSet,
 
-	identity.NewUserLookup,
-	command.NewTargetLookup,
+	identity.NewService,
+	media.NewService,
 
-	wire.Bind(new(command.UserLookup), new(*identity.UserLookup)),
+	wire.Bind(new(port.IdentityReader), new(*identity.Service)),
+	wire.Bind(new(port.MediaReader), new(*media.Service)),
 )
 
 var PersistenceSet = wire.NewSet(
 	persistence.NewQueryService,
-	persistence.NewEntryRepository,
+	repository.NewUserProfile,
+	repository.NewHandle,
 
-	wire.Bind(new(entry.Repository), new(*persistence.EntryRepository)),
+	wire.Bind(new(user_profile.Repository), new(*repository.UserProfile)),
+	wire.Bind(new(handle.Repository), new(*repository.Handle)),
 	wire.Bind(new(query.Searcher), new(*persistence.QueryService)),
-	wire.Bind(new(query.Reader), new(*persistence.QueryService)),
+	wire.Bind(new(port.DirectoryReader), new(*persistence.QueryService)),
 )
 
 var CommandHandlersSet = wire.NewSet(
-	command.NewRegisterEntryHandler,
-	ProvideRegisterEntryHandler,
+	command.NewSetUserProfileHandler,
+	ProvideSetUserProfileHandler,
 )
 
-func ProvideRegisterEntryHandler(
-	h *command.RegisterEntryHandler,
+func ProvideSetUserProfileHandler(
+	h *command.SetUserProfileHandler,
 	m *command_middleware.Registry,
-) appCmd.Handler[command.RegisterEntry, any] {
+) appCmd.Handler[command.SetUserProfile, any] {
 	return command_middleware.Wrap(h, m)
 }
 
 var QueryHandlersSet = wire.NewSet(
 	query.NewSearchHandler,
 	ProvideSearchHandler,
-	query.NewGetEntryHandler,
-	ProvideGetEntryHandler,
-	query.NewGetEntriesHandler,
-	ProvideGetEntriesHandler,
+	query.NewGetUserProfilesHandler,
+	ProvideGetUserProfilesHandler,
 )
 
 func ProvideSearchHandler(
@@ -62,16 +68,9 @@ func ProvideSearchHandler(
 	return query_middleware.Wrap(h, m)
 }
 
-func ProvideGetEntryHandler(
-	h *query.GetEntryHandler,
+func ProvideGetUserProfilesHandler(
+	h *query.GetUserProfilesHandler,
 	m *query_middleware.Registry,
-) appQuery.Handler[query.GetEntry, query.EntryView] {
-	return query_middleware.Wrap(h, m)
-}
-
-func ProvideGetEntriesHandler(
-	h *query.GetEntriesHandler,
-	m *query_middleware.Registry,
-) appQuery.Handler[query.GetEntries, []query.EntryView] {
+) appQuery.Handler[query.GetUserProfiles, []view.UserProfile] {
 	return query_middleware.Wrap(h, m)
 }

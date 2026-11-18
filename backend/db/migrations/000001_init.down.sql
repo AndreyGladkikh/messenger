@@ -3,7 +3,9 @@ DROP TABLE outbox;
 
 DROP TABLE bff.peers;
 
-DROP TABLE directory.entries;
+DROP TABLE directory.user_profiles;
+DROP TABLE directory.search_index;
+DROP TABLE directory.handles;
 
 DROP TABLE conversations.message_attachments;
 DROP TABLE conversations.messages;

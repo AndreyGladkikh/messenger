@@ -114,31 +114,6 @@ func (q *Queries) GetDirectConversationBetween(ctx context.Context, arg GetDirec
 	return i, err
 }
 
-const getDirectoryEntry = `-- name: GetDirectoryEntry :one
-SELECT display_name, handle, avatar_id 
-FROM directory.entries
-WHERE target_id = $1
-    AND target_type = $2
-`
-
-type GetDirectoryEntryParams struct {
-	TargetID   uuid.UUID
-	TargetType string
-}
-
-type GetDirectoryEntryRow struct {
-	DisplayName string
-	Handle      string
-	AvatarID    *uuid.UUID
-}
-
-func (q *Queries) GetDirectoryEntry(ctx context.Context, arg GetDirectoryEntryParams) (GetDirectoryEntryRow, error) {
-	row := q.db.QueryRow(ctx, getDirectoryEntry, arg.TargetID, arg.TargetType)
-	var i GetDirectoryEntryRow
-	err := row.Scan(&i.DisplayName, &i.Handle, &i.AvatarID)
-	return i, err
-}
-
 const getEventToProcess = `-- name: GetEventToProcess :one
 WITH events_to_process as (
     SELECT id, kind, type, payload, status, occurred_at, attempts, error, next_retry_at FROM outbox
@@ -186,8 +161,12 @@ func (q *Queries) GetGroupConversation(ctx context.Context, conversationID uuid.
 }
 
 const getMediaAsset = `-- name: GetMediaAsset :one
-SELECT id, status, name, bucket, key FROM media.assets
-WHERE id = $1
+SELECT
+    id, status, name, bucket, key
+FROM
+    media.assets
+WHERE
+    id = $1
 `
 
 func (q *Queries) GetMediaAsset(ctx context.Context, id uuid.UUID) (MediaAsset, error) {
@@ -317,11 +296,89 @@ func (q *Queries) GetUserPeers(ctx context.Context, arg GetUserPeersParams) ([]B
 	return items, nil
 }
 
+const getUserProfile = `-- name: GetUserProfile :one
+SELECT
+    user_id, display_name, avatar_id, bio, birthday
+FROM
+    directory.user_profiles
+WHERE
+    user_id = $1
+`
+
+func (q *Queries) GetUserProfile(ctx context.Context, userID uuid.UUID) (DirectoryUserProfile, error) {
+	row := q.db.QueryRow(ctx, getUserProfile, userID)
+	var i DirectoryUserProfile
+	err := row.Scan(
+		&i.UserID,
+		&i.DisplayName,
+		&i.AvatarID,
+		&i.Bio,
+		&i.Birthday,
+	)
+	return i, err
+}
+
+const getUserProfilesByIDs = `-- name: GetUserProfilesByIDs :many
+SELECT
+    user_id, display_name, avatar_id, bio, birthday, target_id, target_type, handle
+FROM
+    directory.user_profiles p
+    LEFT JOIN directory.handles h ON p.user_id = h.target_id
+    AND h.target_type = 'user'
+WHERE
+    user_id = ANY ($1::UUID[])
+`
+
+type GetUserProfilesByIDsRow struct {
+	UserID      uuid.UUID
+	DisplayName string
+	AvatarID    *uuid.UUID
+	Bio         *string
+	Birthday    *time.Time
+	TargetID    *uuid.UUID
+	TargetType  *string
+	Handle      *string
+}
+
+func (q *Queries) GetUserProfilesByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]GetUserProfilesByIDsRow, error) {
+	rows, err := q.db.Query(ctx, getUserProfilesByIDs, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserProfilesByIDsRow
+	for rows.Next() {
+		var i GetUserProfilesByIDsRow
+		if err := rows.Scan(
+			&i.UserID,
+			&i.DisplayName,
+			&i.AvatarID,
+			&i.Bio,
+			&i.Birthday,
+			&i.TargetID,
+			&i.TargetType,
+			&i.Handle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const handleExists = `-- name: HandleExists :one
-SELECT EXISTS(
-    SELECT 1 FROM directory.entries
-    WHERE handle = $1
-)
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            directory.handles
+        WHERE
+            handle = $1
+    )
 `
 
 func (q *Queries) HandleExists(ctx context.Context, handle string) (bool, error) {
@@ -448,66 +505,6 @@ func (q *Queries) ListConversationsForUser(ctx context.Context, participantID uu
 	return items, nil
 }
 
-const listDirectoryEntriesByTargets = `-- name: ListDirectoryEntriesByTargets :many
-WITH targets AS (
-  SELECT 
-    target_ids.val::uuid AS id,
-    target_types.val::text AS type
-  FROM unnest($1::uuid[]) WITH ORDINALITY AS target_ids(val, ord)
-  JOIN unnest($2::text[]) WITH ORDINALITY AS target_types(val, ord) ON target_ids.ord = target_types.ord
-)
-SELECT
-    e.id,
-    e.target_id,
-    e.target_type,
-    e.display_name,
-    e.handle,
-    e.avatar_id
-FROM directory.entries AS e
-JOIN targets ON e.target_id = targets.id AND e.target_type = targets.type
-`
-
-type ListDirectoryEntriesByTargetsParams struct {
-	TargetIds   []uuid.UUID
-	TargetTypes []string
-}
-
-type ListDirectoryEntriesByTargetsRow struct {
-	ID          uuid.UUID
-	TargetID    uuid.UUID
-	TargetType  string
-	DisplayName string
-	Handle      string
-	AvatarID    *uuid.UUID
-}
-
-func (q *Queries) ListDirectoryEntriesByTargets(ctx context.Context, arg ListDirectoryEntriesByTargetsParams) ([]ListDirectoryEntriesByTargetsRow, error) {
-	rows, err := q.db.Query(ctx, listDirectoryEntriesByTargets, arg.TargetIds, arg.TargetTypes)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListDirectoryEntriesByTargetsRow
-	for rows.Next() {
-		var i ListDirectoryEntriesByTargetsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.TargetID,
-			&i.TargetType,
-			&i.DisplayName,
-			&i.Handle,
-			&i.AvatarID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listMessagesForConversation = `-- name: ListMessagesForConversation :many
 SELECT id, sender_id, conversation_id, body, reply_to_message_id, created_at, updated_at, deleted_at FROM conversations.messages
 WHERE conversation_id = $1
@@ -551,17 +548,44 @@ func (q *Queries) ListMessagesForConversation(ctx context.Context, arg ListMessa
 	return items, nil
 }
 
+const mediaAssetExists = `-- name: MediaAssetExists :one
+SELECT
+    EXISTS (
+        SELECT
+            1
+        FROM
+            media.assets
+        WHERE
+            id = $1
+    )
+`
+
+func (q *Queries) MediaAssetExists(ctx context.Context, id uuid.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, mediaAssetExists, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const searchDirectoryEntry = `-- name: SearchDirectoryEntry :many
-SELECT target_id, target_type, display_name, handle 
-FROM directory.entries
-WHERE ts_vec @@ to_tsquery('russian', $1)
+SELECT
+    target_id,
+    target_type,
+    display_name,
+    handle,
+    avatar_id
+FROM
+    directory.search_index
+WHERE
+    ts_vec @@ TO_TSQUERY('russian', $1)
 `
 
 type SearchDirectoryEntryRow struct {
 	TargetID    uuid.UUID
 	TargetType  string
 	DisplayName string
-	Handle      string
+	Handle      *string
+	AvatarID    *uuid.UUID
 }
 
 func (q *Queries) SearchDirectoryEntry(ctx context.Context, toTsquery string) ([]SearchDirectoryEntryRow, error) {
@@ -578,6 +602,7 @@ func (q *Queries) SearchDirectoryEntry(ctx context.Context, toTsquery string) ([
 			&i.TargetType,
 			&i.DisplayName,
 			&i.Handle,
+			&i.AvatarID,
 		); err != nil {
 			return nil, err
 		}

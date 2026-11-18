@@ -2,26 +2,29 @@ package identity
 
 import (
 	"context"
-	"messenger/messenger/internal/directory/domain/entry"
+	"messenger/messenger/internal/directory/app/port"
+	"messenger/messenger/internal/directory/domain/model"
 	idQry "messenger/messenger/internal/identity/app/query"
 	appQuery "messenger/messenger/internal/shared/app/query"
 	"uuid"
 )
 
-type UserLookup struct {
+var _ port.IdentityReader = (*Service)(nil)
+
+type Service struct {
 	getAccount appQuery.Handler[idQry.GetAccount, idQry.AccountView]
 }
 
-func NewUserLookup(
+func NewService(
 	getAccount appQuery.Handler[idQry.GetAccount, idQry.AccountView],
-) *UserLookup {
-	return &UserLookup{
+) *Service {
+	return &Service{
 		getAccount: getAccount,
 	}
 }
 
-func (u *UserLookup) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
-	rspns, err := u.getAccount.Handle(ctx, idQry.GetAccount{ID: id})
+func (u *Service) ExistsUser(ctx context.Context, userID uuid.UUID) (bool, error) {
+	rspns, err := u.getAccount.Handle(ctx, idQry.GetAccount{ID: userID})
 	if err != nil {
 		return false, err
 	}
@@ -31,7 +34,7 @@ func (u *UserLookup) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 		return false, err
 	}
 
-	if trgtT != entry.TargetTypeUser {
+	if trgtT != model.TargetTypeUser {
 		return false, err
 	}
 

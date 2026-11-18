@@ -4,6 +4,7 @@ import (
 	"context"
 	"maps"
 	"messenger/messenger/internal/bff/web/app/port"
+	"messenger/messenger/internal/bff/web/app/view"
 	"messenger/messenger/internal/shared/app/query"
 	"slices"
 
@@ -23,7 +24,7 @@ func (g GetHomePage) Name() string {
 }
 
 type HomePage struct {
-	Peers []PeerItem
+	Peers []view.PeerItem
 }
 
 type GetHomePageHandler struct {
@@ -53,7 +54,7 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 	cnvsByID := make(map[uuid.UUID]port.ConversationSummary)
 	cnvIDsByAvatarID := make(map[uuid.UUID]uuid.UUID)
 	cnvIDsByDirectParticipantID := make(map[uuid.UUID]uuid.UUID)
-	var directParticipantEntryRefs []port.EntryRef
+	var directParticipantEntryRefs []uuid.UUID
 	for _, c := range cnvs {
 		cnvsByID[c.ID] = c
 		if c.AvatarID != nil {
@@ -62,28 +63,25 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 
 		if c.Type == port.ConversationTypeDirect {
 			cnvIDsByDirectParticipantID[*c.DirectParticipantID] = c.ID
-			directParticipantEntryRefs = append(directParticipantEntryRefs, port.EntryRef{
-				ID:   *c.DirectParticipantID,
-				Type: port.DirectoryEntryTypeUser,
-			})
+			directParticipantEntryRefs = append(directParticipantEntryRefs, *c.DirectParticipantID)
 		}
 	}
 
 	if len(directParticipantEntryRefs) > 0 {
-		dirParticipants, err := h.directoryReader.GetEntries(ctx, directParticipantEntryRefs)
+		dirParticipants, err := h.directoryReader.GetUserProfiles(ctx, directParticipantEntryRefs)
 		if err != nil {
 			return HomePage{}, err
 		}
 
 		for _, dp := range dirParticipants {
-			cnvID := cnvIDsByDirectParticipantID[dp.ID]
+			cnvID := cnvIDsByDirectParticipantID[dp.UserID]
 			cnv := cnvsByID[cnvID]
 			cnv.Title = &dp.DisplayName
 			cnv.AvatarID = dp.AvatarID
 			cnvsByID[cnvID] = cnv
 
 			if dp.AvatarID != nil {
-				cnvIDsByAvatarID[*dp.AvatarID] = cnvIDsByDirectParticipantID[dp.ID]
+				cnvIDsByAvatarID[*dp.AvatarID] = cnvIDsByDirectParticipantID[dp.UserID]
 			}
 		}
 	}
@@ -97,7 +95,7 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 		}
 	}
 
-	peers := make([]PeerItem, 0, len(cnvs))
+	peers := make([]view.PeerItem, 0, len(cnvs))
 	for _, c := range cnvsByID {
 		var avatarURL *string
 		if c.AvatarID != nil {
@@ -106,13 +104,13 @@ func (h *GetHomePageHandler) Handle(ctx context.Context, qry GetHomePage) (HomeP
 			}
 		}
 
-		peer := PeerItem{
+		peer := view.PeerItem{
 			ID:          c.ID,
 			Type:        port.ConversationTypeDirect,
 			AvatarURL:   avatarURL,
 			Title:       *c.Title,
-			Preview:     c.LastMessage.Body,
-			PreviewTime: c.LastMessage.SentAt,
+			Preview:     &c.LastMessage.Body,
+			PreviewTime: &c.LastMessage.SentAt,
 		}
 
 		peers = append(peers, peer)

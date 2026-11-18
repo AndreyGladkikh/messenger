@@ -10,13 +10,15 @@ import (
 	query5 "messenger/messenger/internal/bff/web/app/query"
 	bootstrap5 "messenger/messenger/internal/bff/web/infra/bootstrap"
 	"messenger/messenger/internal/bff/web/infra/integration/directory"
-	"messenger/messenger/internal/bff/web/infra/integration/media"
+	media2 "messenger/messenger/internal/bff/web/infra/integration/media"
 	"messenger/messenger/internal/bff/web/infra/integration/messaging"
 	command3 "messenger/messenger/internal/directory/app/command"
-	query3 "messenger/messenger/internal/directory/app/query"
-	bootstrap3 "messenger/messenger/internal/directory/infra/bootstrap"
+	query4 "messenger/messenger/internal/directory/app/query"
+	bootstrap4 "messenger/messenger/internal/directory/infra/bootstrap"
 	"messenger/messenger/internal/directory/infra/integration/identity"
-	persistence2 "messenger/messenger/internal/directory/infra/persistence"
+	"messenger/messenger/internal/directory/infra/integration/media"
+	persistence4 "messenger/messenger/internal/directory/infra/persistence"
+	repository4 "messenger/messenger/internal/directory/infra/persistence/repository"
 	"messenger/messenger/internal/identity/app/command"
 	"messenger/messenger/internal/identity/app/query"
 	"messenger/messenger/internal/identity/infra/bootstrap"
@@ -25,17 +27,17 @@ import (
 	repository2 "messenger/messenger/internal/identity/infra/persistence/repository"
 	"messenger/messenger/internal/identity/infra/token"
 	command4 "messenger/messenger/internal/media/app/command"
-	query4 "messenger/messenger/internal/media/app/query"
-	bootstrap4 "messenger/messenger/internal/media/infra/bootstrap"
+	query2 "messenger/messenger/internal/media/app/query"
+	bootstrap3 "messenger/messenger/internal/media/infra/bootstrap"
 	"messenger/messenger/internal/media/infra/object_storage"
-	persistence3 "messenger/messenger/internal/media/infra/persistence"
-	repository4 "messenger/messenger/internal/media/infra/persistence/repository"
+	persistence2 "messenger/messenger/internal/media/infra/persistence"
+	repository5 "messenger/messenger/internal/media/infra/persistence/repository"
 	command2 "messenger/messenger/internal/messaging/app/command"
-	query2 "messenger/messenger/internal/messaging/app/query"
+	query3 "messenger/messenger/internal/messaging/app/query"
 	"messenger/messenger/internal/messaging/app/service"
 	bootstrap2 "messenger/messenger/internal/messaging/infra/bootstrap"
 	"messenger/messenger/internal/messaging/infra/integration"
-	persistence4 "messenger/messenger/internal/messaging/infra/persistence"
+	persistence3 "messenger/messenger/internal/messaging/infra/persistence"
 	repository3 "messenger/messenger/internal/messaging/infra/persistence/repository"
 	"messenger/messenger/internal/platform/command_handler"
 	"messenger/messenger/internal/platform/command_middleware"
@@ -116,11 +118,15 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	groupConversationRepository := repository3.NewGroupConversationRepository(repositoryRepository)
 	createGroupConversationHandler := command2.NewCreateGroupConversationHandler(groupConversationRepository)
 	handler6 := bootstrap2.ProvideCreateGroupConversationHandler(createGroupConversationHandler, registry)
-	entryRepository := persistence2.NewEntryRepository(repositoryRepository)
-	userLookup := identity.NewUserLookup(queryHandler)
-	targetLookup := command3.NewTargetLookup(userLookup)
-	registerEntryHandler := command3.NewRegisterEntryHandler(entryRepository, targetLookup)
-	handler7 := bootstrap3.ProvideRegisterEntryHandler(registerEntryHandler, registry)
+	identityService := identity.NewService(queryHandler)
+	persistenceQueryService := persistence2.NewQueryService(storeStore)
+	mediaExistsHandler := query2.NewMediaExistsHandler(persistenceQueryService)
+	handler7 := bootstrap3.ProvideMediaExistsHandler(mediaExistsHandler, query_middlewareRegistry)
+	mediaService := media.NewService(handler7)
+	userProfile := repository4.NewUserProfile(repositoryRepository)
+	handle := repository4.NewHandle(repositoryRepository)
+	setUserProfileHandler := command3.NewSetUserProfileHandler(identityService, mediaService, userProfile, handle)
+	handler8 := bootstrap4.ProvideSetUserProfileHandler(setUserProfileHandler, registry)
 	client, err := s3.New(cfg)
 	if err != nil {
 		cleanup()
@@ -128,13 +134,13 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	}
 	presigner := s3.NewPresigner(client)
 	objectStorage := object_storage.NewObjectStorage(presigner, client)
-	mediaRepository := repository4.NewMediaRepository(repositoryRepository)
-	uploadRepository := repository4.NewUploadRepository(repositoryRepository)
-	mediaLocationStore := persistence3.NewMediaLocationStore(storeStore)
+	mediaRepository := repository5.NewMediaRepository(repositoryRepository)
+	uploadRepository := repository5.NewUploadRepository(repositoryRepository)
+	mediaLocationStore := persistence2.NewMediaLocationStore(storeStore)
 	initUploadHandler := command4.NewInitUploadHandler(objectStorage, mediaRepository, uploadRepository, mediaLocationStore)
-	handler8 := bootstrap4.ProvideInitUploadHandler(initUploadHandler, registry)
+	handler9 := bootstrap3.ProvideInitUploadHandler(initUploadHandler, registry)
 	comlpeteUploadHandler := command4.NewComlpeteUploadHandler(objectStorage, mediaLocationStore, mediaRepository, uploadRepository)
-	handler9 := bootstrap4.ProvideComlpeteUploadHandler(comlpeteUploadHandler, registry)
+	handler10 := bootstrap3.ProvideComlpeteUploadHandler(comlpeteUploadHandler, registry)
 	command_handlerRegistry := &command_handler.Registry{
 		RegisterUser:            handler,
 		LoginUser:               commandHandler,
@@ -143,38 +149,39 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 		StartDirectConversation: handler4,
 		SendMessage:             handler5,
 		CreateGroupConversation: handler6,
-		RegisterDirectoryEntry:  handler7,
-		InitMediaUpload:         handler8,
-		CompleteMediaUpload:     handler9,
+		SetUserProfile:          handler8,
+		InitMediaUpload:         handler9,
+		CompleteMediaUpload:     handler10,
 	}
-	persistenceQueryService := persistence4.NewQueryService(storeStore)
-	listUserConversationsHandler := query2.NewListUserConversationsHandler(persistenceQueryService)
-	handler10 := bootstrap2.ProvideGetHomePageHandler(listUserConversationsHandler, query_middlewareRegistry)
-	messagingService := messaging.NewService(handler10)
-	queryService2 := persistence2.NewQueryService(storeStore)
-	getEntriesHandler := query3.NewGetEntriesHandler(queryService2)
-	handler11 := bootstrap3.ProvideGetEntriesHandler(getEntriesHandler, query_middlewareRegistry)
-	directoryService := directory.NewService(handler11)
-	getPublicURLsHandler := query4.NewGetPublicURLsHandler(cfg)
-	handler12 := bootstrap4.ProvideGetPublicURLsHandler(getPublicURLsHandler, query_middlewareRegistry)
-	mediaService := media.NewService(handler12)
-	getHomePageHandler := query5.NewGetHomePageHandler(messagingService, directoryService, mediaService)
-	handler13 := bootstrap5.ProvideGetHomePageHandler(getHomePageHandler, query_middlewareRegistry)
-	getEntryHandler := query3.NewGetEntryHandler(queryService2)
-	handler14 := bootstrap3.ProvideGetEntryHandler(getEntryHandler, query_middlewareRegistry)
-	searchHandler := query3.NewSearchHandler(queryService2)
-	handler15 := bootstrap3.ProvideSearchHandler(searchHandler, query_middlewareRegistry)
-	getDownloadURLHandler := query4.NewGetDownloadURLHandler(mediaRepository, mediaLocationStore, objectStorage)
-	handler16 := bootstrap4.ProvideGetMediaDownloadURLHandler(getDownloadURLHandler, query_middlewareRegistry)
+	queryService2 := persistence3.NewQueryService(storeStore)
+	listUserConversationsHandler := query3.NewListUserConversationsHandler(queryService2)
+	handler11 := bootstrap2.ProvideGetHomePageHandler(listUserConversationsHandler, query_middlewareRegistry)
+	messagingService := messaging.NewService(handler11)
+	queryService3 := persistence4.NewQueryService(storeStore)
+	getUserProfilesHandler := query4.NewGetUserProfilesHandler(queryService3)
+	handler12 := bootstrap4.ProvideGetUserProfilesHandler(getUserProfilesHandler, query_middlewareRegistry)
+	searchHandler := query4.NewSearchHandler(queryService3)
+	handler13 := bootstrap4.ProvideSearchHandler(searchHandler, query_middlewareRegistry)
+	directoryService := directory.NewService(handler12, handler13)
+	getPublicURLsHandler := query2.NewGetPublicURLsHandler(cfg)
+	handler14 := bootstrap3.ProvideGetPublicURLsHandler(getPublicURLsHandler, query_middlewareRegistry)
+	service2 := media2.NewService(handler14)
+	getHomePageHandler := query5.NewGetHomePageHandler(messagingService, directoryService, service2)
+	handler15 := bootstrap5.ProvideGetHomePageHandler(getHomePageHandler, query_middlewareRegistry)
+	querySearchHandler := query5.NewSearchHandler(directoryService, service2)
+	handler16 := bootstrap5.ProvideSearchHandler(querySearchHandler, query_middlewareRegistry)
+	getDownloadURLHandler := query2.NewGetDownloadURLHandler(mediaRepository, mediaLocationStore, objectStorage)
+	handler17 := bootstrap3.ProvideGetMediaDownloadURLHandler(getDownloadURLHandler, query_middlewareRegistry)
 	query_handlerRegistry := &query_handler.Registry{
-		GetHomePage:               handler13,
-		ListUserConversations:     handler10,
-		GetDirectoryEntries:       handler11,
-		GetDirectoryEntry:         handler14,
-		SearchDirectoryEntry:      handler15,
+		GetHomePage:               handler15,
+		Search:                    handler16,
+		ListUserConversations:     handler11,
+		GetUserProfiles:           handler12,
+		SearchDirectoryEntry:      handler13,
 		GetAccount:                queryHandler,
-		GetDownloadMediaURL:       handler16,
-		GetMediaPublicURLsHandler: handler12,
+		GetDownloadMediaURL:       handler17,
+		GetMediaPublicURLsHandler: handler14,
+		MediaExists:               handler7,
 	}
 	apiHandler := http.NewApiHandler(command_handlerRegistry, query_handlerRegistry)
 	problemTypesRegistry := http.NewProblemTypesRegistry(cfg)

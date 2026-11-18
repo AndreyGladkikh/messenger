@@ -5,17 +5,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"messenger/messenger/internal/directory/app/port"
 	"messenger/messenger/internal/directory/app/query"
-	"messenger/messenger/internal/directory/domain/entry"
-	"messenger/messenger/internal/platform/sqlc"
+	"messenger/messenger/internal/directory/app/view"
 	"messenger/messenger/internal/platform/store"
-	"messenger/messenger/internal/shared/app/apperr"
 	"strings"
 	"uuid"
 )
 
 var _ query.Searcher = (*QueryService)(nil)
-var _ query.Reader = (*QueryService)(nil)
+var _ port.DirectoryReader = (*QueryService)(nil)
 
 type QueryService struct {
 	*store.Store
@@ -60,6 +59,7 @@ func (q *QueryService) Search(ctx context.Context, terms []query.SearchTerm) ([]
 			Type:        s.TargetType,
 			Handle:      s.Handle,
 			DisplayName: s.DisplayName,
+			AvatarID:    s.AvatarID,
 		})
 	}
 
@@ -70,43 +70,21 @@ func termWildcard(term string) string {
 	return fmt.Sprintf("%s:*", term)
 }
 
-func (q *QueryService) Get(ctx context.Context, id uuid.UUID, typ entry.TargetType) (query.EntryView, error) {
-	entryRow, err := q.Queries(ctx).GetDirectoryEntry(ctx, sqlc.GetDirectoryEntryParams{
-		TargetID:   id,
-		TargetType: typ.String(),
-	})
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return query.EntryView{}, err
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return query.EntryView{}, apperr.NewNotFound(fmt.Sprintf("Directory entry with id %q and type %q not found", id, typ.String()))
-	}
-
-	return query.EntryView{
-		ID:          id,
-		Type:        typ.String(),
-		Handle:      entryRow.Handle,
-		DisplayName: entryRow.DisplayName,
-		AvatarID:    entryRow.AvatarID,
-	}, nil
-}
-
-func (q *QueryService) ListByTargets(ctx context.Context, ids []uuid.UUID, types []string) ([]query.EntryView, error) {
-	entryRows, err := q.Queries(ctx).ListDirectoryEntriesByTargets(ctx, sqlc.ListDirectoryEntriesByTargetsParams{
-		TargetIds:   ids,
-		TargetTypes: types,
-	})
+func (q *QueryService) GetUserProfilesByIDs(ctx context.Context, ids []uuid.UUID) ([]view.UserProfile, error) {
+	upRows, err := q.Queries(ctx).GetUserProfilesByIDs(ctx, ids)
 	if err != nil {
-		return nil, fmt.Errorf("list directory entries by targets: %w", err)
+		return nil, fmt.Errorf("list user profiles by ids: %w", err)
 	}
 
-	entries := make([]query.EntryView, 0, len(entryRows))
-	for _, r := range entryRows {
-		entries = append(entries, query.EntryView{
-			ID:          r.TargetID,
-			Type:        r.TargetType,
+	entries := make([]view.UserProfile, 0, len(upRows))
+	for _, r := range upRows {
+		entries = append(entries, view.UserProfile{
+			UserID:      r.UserID,
+			Bio:         r.Bio,
 			DisplayName: r.DisplayName,
 			AvatarID:    r.AvatarID,
+			Birthday:    r.Birthday,
+			Handle:      r.Handle,
 		})
 	}
 

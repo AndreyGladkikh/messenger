@@ -23,8 +23,9 @@ func (g Search) Name() string {
 type SearchResultItem struct {
 	ID          uuid.UUID
 	Type        string
-	Handle      string
+	Handle      *string
 	DisplayName string
+	AvatarID    *uuid.UUID
 }
 
 type Searcher interface {

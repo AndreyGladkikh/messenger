@@ -105,7 +105,7 @@ func userWithProfile(t *testing.T, handle string, displayName string, withAvatar
 		}
 
 		resp, err := u.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
-			Handle:        handle,
+			Handle:        &handle,
 			DisplayName:   displayName,
 			AvatarMediaId: avatarMediaID,
 		})

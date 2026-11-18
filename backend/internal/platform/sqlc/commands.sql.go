@@ -173,6 +173,23 @@ func (q *Queries) DeleteConversation(ctx context.Context, arg DeleteConversation
 	return err
 }
 
+const deleteDirectoryHandle = `-- name: DeleteDirectoryHandle :exec
+DELETE FROM directory.handles
+WHERE
+  target_id = $1
+  AND target_type = $2
+`
+
+type DeleteDirectoryHandleParams struct {
+	TargetID   uuid.UUID
+	TargetType string
+}
+
+func (q *Queries) DeleteDirectoryHandle(ctx context.Context, arg DeleteDirectoryHandleParams) error {
+	_, err := q.db.Exec(ctx, deleteDirectoryHandle, arg.TargetID, arg.TargetType)
+	return err
+}
+
 const deleteMessage = `-- name: DeleteMessage :exec
 UPDATE conversations.messages
   set deleted_at = $2
@@ -302,31 +319,6 @@ func (q *Queries) PutToOutbox(ctx context.Context, arg PutToOutboxParams) error 
 	return err
 }
 
-const updateDirectoryEntry = `-- name: UpdateDirectoryEntry :exec
-UPDATE directory.entries
-  set display_name = $3,
-  handle = $4
-WHERE target_id = $1
-AND target_type = $2
-`
-
-type UpdateDirectoryEntryParams struct {
-	TargetID    uuid.UUID
-	TargetType  string
-	DisplayName string
-	Handle      string
-}
-
-func (q *Queries) UpdateDirectoryEntry(ctx context.Context, arg UpdateDirectoryEntryParams) error {
-	_, err := q.db.Exec(ctx, updateDirectoryEntry,
-		arg.TargetID,
-		arg.TargetType,
-		arg.DisplayName,
-		arg.Handle,
-	)
-	return err
-}
-
 const updateMediaAssetLocation = `-- name: UpdateMediaAssetLocation :exec
 UPDATE media.assets
 SET bucket = $2,
@@ -386,39 +378,24 @@ func (q *Queries) UpdateWebBffPeer(ctx context.Context, arg UpdateWebBffPeerPara
 	return err
 }
 
-const upsertDirectoryEntry = `-- name: UpsertDirectoryEntry :exec
-INSERT INTO directory.entries (
-    id,
-    target_id,
-    target_type,
-    display_name,
-    handle,
-    avatar_id
-) VALUES (
-  $1, $2, $3, $4, $5, $6
-) ON CONFLICT (id) DO UPDATE
-SET display_name = EXCLUDED.display_name,
-  handle = EXCLUDED.handle
+const upsertDirectoryHandle = `-- name: UpsertDirectoryHandle :exec
+INSERT INTO
+  directory.handles (target_id, target_type, handle)
+VALUES
+  ($1, $2, $3)
+ON CONFLICT (target_id, target_type) DO UPDATE
+SET
+  handle = excluded.handle
 `
 
-type UpsertDirectoryEntryParams struct {
-	ID          uuid.UUID
-	TargetID    uuid.UUID
-	TargetType  string
-	DisplayName string
-	Handle      string
-	AvatarID    *uuid.UUID
+type UpsertDirectoryHandleParams struct {
+	TargetID   uuid.UUID
+	TargetType string
+	Handle     string
 }
 
-func (q *Queries) UpsertDirectoryEntry(ctx context.Context, arg UpsertDirectoryEntryParams) error {
-	_, err := q.db.Exec(ctx, upsertDirectoryEntry,
-		arg.ID,
-		arg.TargetID,
-		arg.TargetType,
-		arg.DisplayName,
-		arg.Handle,
-		arg.AvatarID,
-	)
+func (q *Queries) UpsertDirectoryHandle(ctx context.Context, arg UpsertDirectoryHandleParams) error {
+	_, err := q.db.Exec(ctx, upsertDirectoryHandle, arg.TargetID, arg.TargetType, arg.Handle)
 	return err
 }
 
@@ -542,6 +519,38 @@ func (q *Queries) UpsertSession(ctx context.Context, arg UpsertSessionParams) er
 		arg.Ip,
 		arg.RevokedAt,
 		arg.LastUsedAt,
+	)
+	return err
+}
+
+const upsertUserProfile = `-- name: UpsertUserProfile :exec
+INSERT INTO
+  directory.user_profiles (user_id, display_name, avatar_id, bio, birthday)
+VALUES
+  ($1, $2, $3, $4, $5)
+ON CONFLICT (user_id) DO UPDATE
+SET
+  display_name = excluded.display_name,
+  avatar_id = excluded.avatar_id,
+  bio = excluded.bio,
+  birthday = excluded.birthday
+`
+
+type UpsertUserProfileParams struct {
+	UserID      uuid.UUID
+	DisplayName string
+	AvatarID    *uuid.UUID
+	Bio         *string
+	Birthday    *time.Time
+}
+
+func (q *Queries) UpsertUserProfile(ctx context.Context, arg UpsertUserProfileParams) error {
+	_, err := q.db.Exec(ctx, upsertUserProfile,
+		arg.UserID,
+		arg.DisplayName,
+		arg.AvatarID,
+		arg.Bio,
+		arg.Birthday,
 	)
 	return err
 }
