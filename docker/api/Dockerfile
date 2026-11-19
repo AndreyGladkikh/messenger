@@ -1,35 +1,39 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.27.1 AS build-prod
+FROM golang:1.27.1 AS build-stage
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY ./ ./
+COPY *.go ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/app ./cmd/web/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/api ./cmd/api
 
-FROM build-prod as build-test
+FROM build-stage AS run-test-stage
 
-COPY ./configs /etc/app/configs
+RUN go test -v ./...
 
-EXPOSE 8080 50051
+# FROM build-stage as build-test
 
-USER 1000:1000
+# COPY ./configs /etc/app/configs
 
-ENTRYPOINT ["/bin/app"]
+# EXPOSE 8080 50051
 
-FROM gcr.io/distroless/base-debian11 AS build-release-prod
+# USER 1000:1000
+
+# ENTRYPOINT ["/bin/app"]
+
+FROM gcr.io/distroless/base-debian13 AS build-release-stage
 
 WORKDIR /
 
-COPY --from=build-prod /app/configs /etc/app/configs
-COPY --from=build-prod /bin/app /bin/app
+# COPY --from=build-stage /app/configs /etc/app/configs
+COPY --from=build-stage /bin/api /bin/api
 
 EXPOSE 8080 50051
 
-USER 1000:1000
+USER nonroot:nonroot
 
-ENTRYPOINT ["/bin/app"]
+ENTRYPOINT ["/bin/api"]

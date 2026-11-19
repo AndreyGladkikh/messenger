@@ -1,5 +1,24 @@
 services:
+  api:
+    container_name: messenger-api
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - seaweedfs
+    build:
+      context: ./
+      dockerfile: ./docker/api/Dockerfile
+      target: build-release-prod
+    networks:
+      - mynet
+    ports:
+      - 3000:3000
+    deploy:
+      restart_policy:
+        condition: on-failure
   postgres:
+    container_name: messenger-postgres
     image: postgres:18.4
     restart: always
     shm_size: 128mb
@@ -22,6 +41,7 @@ services:
       start_period: 10s
   
   redis:
+    container_name: messenger-redis
     image: redis:8.10.1
     restart: always
     shm_size: 128mb
@@ -37,6 +57,7 @@ services:
       start_period: 10s
 
   rabbitmq:
+    container_name: messenger-rabbitmq
     image: rabbitmq:4.3.6-management
     hostname: main
     restart: always
@@ -56,6 +77,7 @@ services:
       start_period: 10s
 
   seaweedfs:
+    container_name: messenger-seaweedfs
     image: chrislusf/seaweedfs
     ports:
       - "8333:8333"
@@ -68,6 +90,7 @@ services:
       - seaweed_data:/data
 
   s3-init:
+    container_name: messenger-s3-init
     image: amazon/aws-cli:2.40.3
     entrypoint: ["/bin/sh", "/scripts/init.sh"]
     environment:
