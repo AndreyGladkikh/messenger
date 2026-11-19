@@ -11,7 +11,7 @@ test:
 	cd ../frontend && pnpm test
 
 run:
-	$(MAKE) -j3 api consumer outbox_relay
+	$(MAKE) -j4 api consumer outbox_relay frontend
 
 api:
 	cd backend && APP_ENV=local go run ./cmd/api
@@ -21,6 +21,9 @@ consumer:
 
 outbox_relay:
 	cd backend && APP_ENV=local go run ./cmd/outbox_relay
+
+frontend:
+	cd frontend && pnpm run dev
 
 init: generate_keys generate_code
 	cd backend && \

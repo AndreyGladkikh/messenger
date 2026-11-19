@@ -94,7 +94,7 @@ CREATE TABLE directory.handles(
     handle TEXT NOT NULL,
     PRIMARY KEY (target_id, target_type)
 );
-CREATE UNIQUE INDEX directory_handles_handle_lower_idx ON directory.handles (lower(handle));
+CREATE UNIQUE INDEX directory_handles_handle_idx ON directory.handles (lower(handle));
 
 CREATE TABLE directory.search_index(
     target_id UUID NOT NULL,

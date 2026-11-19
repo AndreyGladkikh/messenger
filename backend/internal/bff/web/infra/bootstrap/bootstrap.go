@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"messenger/messenger/internal/bff/web/app/port"
 	"messenger/messenger/internal/bff/web/app/query"
+	"messenger/messenger/internal/bff/web/app/view"
 	"messenger/messenger/internal/bff/web/infra/integration/directory"
 	"messenger/messenger/internal/bff/web/infra/integration/media"
 	"messenger/messenger/internal/bff/web/infra/integration/messaging"
@@ -28,6 +29,8 @@ var QueryHandlersSet = wire.NewSet(
 	ProvideGetHomePageHandler,
 	query.NewSearchHandler,
 	ProvideSearchHandler,
+	query.NewGetUserProfileHandler,
+	ProvideGetUserProfileHandler,
 )
 
 func ProvideGetHomePageHandler(
@@ -41,5 +44,12 @@ func ProvideSearchHandler(
 	h *query.SearchHandler,
 	m *query_middleware.Registry,
 ) appQry.Handler[query.Search, query.SearchResponse] {
+	return query_middleware.Wrap(h, m)
+}
+
+func ProvideGetUserProfileHandler(
+	h *query.GetUserProfileHandler,
+	m *query_middleware.Registry,
+) appQry.Handler[query.GetUserProfile, view.UserProfile] {
 	return query_middleware.Wrap(h, m)
 }

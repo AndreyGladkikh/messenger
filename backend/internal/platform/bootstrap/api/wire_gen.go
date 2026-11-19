@@ -170,16 +170,19 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	handler15 := bootstrap5.ProvideGetHomePageHandler(getHomePageHandler, query_middlewareRegistry)
 	querySearchHandler := query5.NewSearchHandler(directoryService, service2)
 	handler16 := bootstrap5.ProvideSearchHandler(querySearchHandler, query_middlewareRegistry)
+	getUserProfileHandler := query5.NewGetUserProfileHandler(directoryService, service2)
+	handler17 := bootstrap5.ProvideGetUserProfileHandler(getUserProfileHandler, query_middlewareRegistry)
 	getDownloadURLHandler := query2.NewGetDownloadURLHandler(mediaRepository, mediaLocationStore, objectStorage)
-	handler17 := bootstrap3.ProvideGetMediaDownloadURLHandler(getDownloadURLHandler, query_middlewareRegistry)
+	handler18 := bootstrap3.ProvideGetMediaDownloadURLHandler(getDownloadURLHandler, query_middlewareRegistry)
 	query_handlerRegistry := &query_handler.Registry{
 		GetHomePage:               handler15,
 		Search:                    handler16,
+		GetUserProfile:            handler17,
 		ListUserConversations:     handler11,
 		GetUserProfiles:           handler12,
 		SearchDirectoryEntry:      handler13,
 		GetAccount:                queryHandler,
-		GetDownloadMediaURL:       handler17,
+		GetDownloadMediaURL:       handler18,
 		GetMediaPublicURLsHandler: handler14,
 		MediaExists:               handler7,
 	}

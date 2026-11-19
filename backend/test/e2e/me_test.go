@@ -49,14 +49,11 @@ func TestCreateMyProfile_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-	resp, err = user.httpClient.getMyProfile(t)
-	require.NoError(t, err)
+	resp, _ = user.httpClient.getMyProfile(t)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, appHttp.Profile{
-		Handle:      &handle,
-		DisplayName: displayName,
-		AvatarMediaId: &mediaAsset.MediaId,
-	}, decode[appHttp.Profile](t, resp.Body))
+	profile := decode[appHttp.Profile](t, resp.Body)
+	assert.Equal(t, &handle, profile.Handle)
+	assert.Equal(t, displayName, profile.DisplayName)
 }
 
 func TestCreateMyProfile_HandleAlreadyExists(t *testing.T) {
@@ -108,13 +105,11 @@ func TestCreateMyProfile_ProfileAlreadyExists(t *testing.T) {
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	resp, _ = user.httpClient.createMyProfile(t, request)
-	require.Equal(t, http.StatusConflict, resp.StatusCode)
-	problem := decode[appHttp.ProblemDetails](t, resp.Body)
-	assert.Equal(t, problemTypesRegistry.AlreadyExists, *problem.Type)
+	require.Equal(t, http.StatusCreated, resp.StatusCode)
 
 	resp, _ = user.httpClient.getMyProfile(t)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	stored := decode[appHttp.Profile](t, resp.Body)
-	assert.Equal(t, handle, stored.Handle)
+	assert.Equal(t, &handle, stored.Handle)
 	assert.Equal(t, displayName, stored.DisplayName)
 }

@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"encoding/json/v2"
-	"uuid"
 
 	webBffQry "messenger/messenger/internal/bff/web/app/query"
 	directoryCmd "messenger/messenger/internal/directory/app/command"
@@ -241,20 +240,20 @@ func (h *ApiHandler) GetMyProfile(ctx context.Context, request GetMyProfileReque
 		return nil, err
 	}
 
-	qry := directoryQry.GetUserProfiles{
-		UserIDs: []uuid.UUID{a.Principal.Subject.ID},
+	qry := webBffQry.GetUserProfile{
+		UserID: a.Principal.Subject.ID,
 	}
-	resp, err := h.queries.GetUserProfiles.Handle(ctx, qry)
+	resp, err := h.queries.GetUserProfile.Handle(ctx, qry)
 	if err != nil {
 		return nil, err
 	}
 
-	profile := resp[0]
-
 	return GetMyProfile200JSONResponse{
-		Handle:        profile.Handle,
-		DisplayName:   profile.DisplayName,
-		AvatarMediaId: profile.AvatarID,
+		Handle:      resp.Handle,
+		DisplayName: resp.DisplayName,
+		AvatarUrl:   resp.AvatarURL,
+		Bio:         resp.Bio,
+		Birthday:    resp.Birthday,
 	}, nil
 }
 

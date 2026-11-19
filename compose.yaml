@@ -7,9 +7,9 @@ services:
       - rabbitmq
       - seaweedfs
     build:
-      context: ./
-      dockerfile: ./docker/api/Dockerfile
-      target: build-release-prod
+      context: ./backend
+      dockerfile: ./build/package/api.Dockerfile
+      target: build-release-stage
     networks:
       - mynet
     ports:

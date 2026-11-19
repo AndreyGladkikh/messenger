@@ -2,6 +2,7 @@ package query_handler
 
 import (
 	webBffQry "messenger/messenger/internal/bff/web/app/query"
+	webBffView "messenger/messenger/internal/bff/web/app/view"
 	directoryQry "messenger/messenger/internal/directory/app/query"
 	directoryView "messenger/messenger/internal/directory/app/view"
 	identityQry "messenger/messenger/internal/identity/app/query"
@@ -14,6 +15,7 @@ import (
 type Registry struct {
 	GetHomePage appQry.Handler[webBffQry.GetHomePage, webBffQry.HomePage]
 	Search appQry.Handler[webBffQry.Search, webBffQry.SearchResponse]
+	GetUserProfile appQry.Handler[webBffQry.GetUserProfile, webBffView.UserProfile]
 
 	ListUserConversations appQry.Handler[conversationsQry.ListUserConversations, []conversationsQry.ConversationSummary]
 

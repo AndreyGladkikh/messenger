@@ -143,7 +143,7 @@ func (c *httpClient) startDirectConversation(t *testing.T, r appHttp.StartDirect
 }
 
 func (c *httpClient) getHomePage(t *testing.T) (*http.Response, error) {
-	return c.doRequest(t, http.MethodGet, "bff/web/home-page", nil)
+	return c.doRequest(t, http.MethodGet, "home-page", nil)
 }
 
 func (c *httpClient) initMediaUpload(t *testing.T, r appHttp.InitMediaUpload) (*http.Response, error) {

@@ -11,11 +11,11 @@ tags:
   - name: auth
     description: Everything about identity and access
   - name: me
-    description: Authenticated user actions
+    description: Current user actions
   - name: directory
     description: Searchable and viewable elemnts of messenger
-  - name: conversations
-    description: Conversations
+  - name: messaging
+    description: Messaging
   - name: bff
     description: Backend for frontend
   - name: media
@@ -175,11 +175,11 @@ paths:
       tags:
         - auth
         - me
-      summary: Get authenticated user info.
+      summary: Get current user info.
       operationId: getMe
       responses:
         '200':
-          description: Authenticated user info
+          description: Current user info
           content:
             application/json:
               schema:
@@ -250,7 +250,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Profile'
+              $ref: '#/components/schemas/SetProfile'
         required: true
       responses:
         '201':
@@ -391,7 +391,7 @@ paths:
   /conversations/direct:
     post:
       tags:
-        - conversations
+        - messaging
       summary: Start direct conversation.
       operationId: startDirectConversation
       requestBody:
@@ -428,7 +428,7 @@ paths:
   /conversations/{conversation_id}/messages:
     post:
       tags:
-        - conversations
+        - messaging
       summary: Send message.
       operationId: sendMessage
       parameters:
@@ -594,7 +594,7 @@ components:
             sentAt:
               type: string
 
-    Profile:
+    SetProfile:
       type: object
       required:
         - displayName
@@ -613,6 +613,24 @@ components:
           type: string
           format: uuid
           x-go-type: uuid.UUID
+
+    Profile:
+      type: object
+      required:
+        - displayName
+      properties:
+        handle:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: string
+        birthday:
+          type: string
+          format: date
+          x-go-type: time.Time
+        avatarUrl:
+          type: string
 
     InitMediaUpload:
       type: object
