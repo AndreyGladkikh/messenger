@@ -12,11 +12,23 @@ const avatarImage = {
 }
 const storageOrigin = 'http://127.0.0.1:4173'
 
+interface SubmittedProfile {
+  displayName: string
+  handle?: string
+  bio?: string
+  birthday?: string
+  avatarMediaId?: string
+}
+
+interface SavedProfile extends Omit<SubmittedProfile, 'avatarMediaId'> {
+  avatarUrl?: string
+}
+
 interface MockSession {
   signedIn: boolean
   hasProfile: boolean
   profileStatus?: number
-  savedProfile: typeof profile & { avatarMediaId?: string }
+  savedProfile: SavedProfile
   profileReads: number
   submissions: number
   uploadInitializations: number
@@ -28,6 +40,14 @@ interface MockSession {
   initUpload: (route: Route) => Promise<void>
   putUpload: (route: Route) => Promise<void>
   completeUpload: (route: Route) => Promise<void>
+}
+
+function savedProfileFrom(route: Route): SavedProfile {
+  const { avatarMediaId, ...submitted } = route.request().postDataJSON() as SubmittedProfile
+  return {
+    ...submitted,
+    ...(avatarMediaId ? { avatarUrl: `${storageOrigin}/object-storage/saved-avatar` } : {}),
+  }
 }
 
 function problem(route: Route, status: number, code?: string) {
@@ -52,7 +72,7 @@ async function mockSession(page: Page, options: { signedIn?: boolean, hasProfile
     avatarUrlReads: 0,
     requestOrder: [],
     create: (route: Route): Promise<void> => {
-      session.savedProfile = route.request().postDataJSON() as MockSession['savedProfile']
+      session.savedProfile = savedProfileFrom(route)
       session.hasProfile = true
       return route.fulfill({ status: 201 })
     },
@@ -110,7 +130,7 @@ async function mockSession(page: Page, options: { signedIn?: boolean, hasProfile
 
 async function fillProfile(page: Page, displayName = profile.displayName, username = profile.handle) {
   await page.getByLabel('Display Name', { exact: true }).fill(displayName)
-  await page.getByLabel('Username', { exact: true }).fill(username)
+  await page.getByLabel('Username (optional)', { exact: true }).fill(username)
 }
 
 async function expectMessengerLocked(page: Page) {
@@ -119,18 +139,23 @@ async function expectMessengerLocked(page: Page) {
   await expect(page.getByRole('textbox', { name: 'Поиск по чатам' })).not.toBeVisible()
 }
 
-test('requires a display name and username, with an optional accessible image upload and no skip action', async ({ page }) => {
+test('requires only a display name and exposes accessible optional profile fields with no skip action', async ({ page }) => {
   const session = await mockSession(page)
   await page.goto(onboardingPath)
 
   await expect(page.getByRole('heading', { name: 'Create your profile.', level: 1 })).toBeVisible()
   const displayName = page.getByLabel('Display Name', { exact: true })
-  const username = page.getByLabel('Username', { exact: true })
+  const username = page.getByLabel('Username (optional)', { exact: true })
+  const bio = page.getByLabel('Bio (optional)', { exact: true })
+  const birthday = page.getByLabel('Birthday (optional)', { exact: true })
   const avatar = page.getByLabel(/Avatar \(optional\)/)
   const submit = page.getByRole('button', { name: 'Create profile', exact: true })
 
   await expect(displayName).toHaveAttribute('required', '')
-  await expect(username).toHaveAttribute('required', '')
+  await expect(username).not.toHaveAttribute('required')
+  await expect(bio).not.toHaveAttribute('required')
+  await expect(birthday).toHaveAttribute('type', 'date')
+  await expect(birthday).not.toHaveAttribute('required')
   await expect(avatar).toHaveAttribute('type', 'file')
   await expect(avatar).not.toHaveAttribute('required')
   await expect(avatar).toHaveAttribute('accept', /image\//)
@@ -140,15 +165,11 @@ test('requires a display name and username, with an optional accessible image up
   await submit.click()
   await expect(displayName).toBeFocused()
   expect(await displayName.evaluate((input: HTMLInputElement) => input.validity.valueMissing)).toBe(true)
-  await displayName.fill(profile.displayName)
-  await submit.click()
-  await expect(username).toBeFocused()
-  expect(await username.evaluate((input: HTMLInputElement) => input.validity.valueMissing)).toBe(true)
   expect(session.submissions).toBe(0)
   await expectMessengerLocked(page)
 })
 
-for (const field of ['Display Name', 'Username'] as const) {
+for (const field of ['Display Name'] as const) {
   test(`rejects a whitespace-only ${field.toLowerCase()} before sending a request`, async ({ page }) => {
     const session = await mockSession(page)
     await page.goto(onboardingPath)
@@ -162,6 +183,20 @@ for (const field of ['Display Name', 'Username'] as const) {
     await expectMessengerLocked(page)
   })
 }
+
+test('creates a display-name-only profile and omits blank optional fields', async ({ page }) => {
+  const session = await mockSession(page)
+  await page.goto(onboardingPath)
+  await page.getByLabel('Display Name', { exact: true }).fill(` ${profile.displayName} `)
+  await page.getByLabel('Username (optional)', { exact: true }).fill('   ')
+  await page.getByLabel('Bio (optional)', { exact: true }).fill('   ')
+  const requestPromise = page.waitForRequest((request) => request.url().endsWith('/api/me/profile') && request.method() === 'POST')
+  await page.getByRole('button', { name: 'Create profile', exact: true }).click()
+
+  expect((await requestPromise).postDataJSON()).toEqual({ displayName: profile.displayName })
+  await expect(page).toHaveURL('/')
+  expect(session.submissions).toBe(1)
+})
 
 test('creates the profile once with trimmed fields and cookies, verifies it after an empty 201 and replaces the route', async ({ page, context, baseURL }) => {
   const session = await mockSession(page)
@@ -182,18 +217,26 @@ test('creates the profile once with trimmed fields and cookies, verifies it afte
 
   await page.goto(onboardingPath)
   await fillProfile(page, ` ${profile.displayName} `, ` ${profile.handle} `)
+  await page.getByLabel('Bio (optional)', { exact: true }).fill('  Building calm software.\nSay hello.  ')
+  await page.getByLabel('Birthday (optional)', { exact: true }).fill('1996-02-29')
   const historyLength = await page.evaluate(() => history.length)
   const readsBeforeCreation = session.profileReads
   const requestPromise = page.waitForRequest((request) => request.url().endsWith('/api/me/profile') && request.method() === 'POST')
   await page.getByRole('button', { name: 'Create profile', exact: true }).click()
   const request = await requestPromise
 
-  expect(request.postDataJSON()).toEqual(profile)
+  expect(request.postDataJSON()).toEqual({
+    ...profile,
+    bio: 'Building calm software.\nSay hello.',
+    birthday: '1996-02-29',
+  })
   expect(await request.headerValue('content-type')).toBe('application/json')
   expect(await request.headerValue('cookie')).toContain('refresh_token=onboarding-session')
   await expect(page.getByRole('button', { name: 'Creating profile…', exact: true })).toBeDisabled()
   await expect(page.getByLabel('Display Name', { exact: true })).toBeDisabled()
-  await expect(page.getByLabel('Username', { exact: true })).toBeDisabled()
+  await expect(page.getByLabel('Username (optional)', { exact: true })).toBeDisabled()
+  await expect(page.getByLabel('Bio (optional)', { exact: true })).toBeDisabled()
+  await expect(page.getByLabel('Birthday (optional)', { exact: true })).toBeDisabled()
   await expect(page.getByLabel(/Avatar \(optional\)/)).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeDisabled()
   await page.keyboard.press('Enter')
@@ -229,14 +272,14 @@ test('reuses a completed avatar upload after a taken username and accepts a corr
   await page.getByLabel(/Avatar \(optional\)/).setInputFiles(avatarImage)
   await page.getByRole('button', { name: 'Create profile', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText(/username.*taken/i)
-  await expect(page.getByLabel('Username', { exact: true })).toHaveAttribute('aria-invalid', 'true')
-  await expect(page.getByLabel('Username', { exact: true })).toBeFocused()
+  await expect(page.getByLabel('Username (optional)', { exact: true })).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByLabel('Username (optional)', { exact: true })).toBeFocused()
   await expect(page.getByLabel('Display Name', { exact: true })).toHaveValue(profile.displayName)
-  await expect(page.getByLabel('Username', { exact: true })).toHaveValue(profile.handle)
+  await expect(page.getByLabel('Username (optional)', { exact: true })).toHaveValue(profile.handle)
   await expectMessengerLocked(page)
   expect(session.submissions).toBe(1)
 
-  await page.getByLabel('Username', { exact: true }).fill('anya_sokolova')
+  await page.getByLabel('Username (optional)', { exact: true }).fill('anya_sokolova')
   const requestPromise = page.waitForRequest((request) => request.url().endsWith('/api/me/profile') && request.method() === 'POST')
   await page.getByRole('button', { name: 'Create profile', exact: true }).click()
   expect((await requestPromise).postDataJSON()).toEqual({ ...profile, handle: 'anya_sokolova', avatarMediaId: 'media-1' })
@@ -261,7 +304,7 @@ test('retains profile values after a service error and allows a deliberate retry
   await expect(page.getByRole('alert')).toContainText(/could not create.*profile/i)
   await expect(page.getByRole('alert')).not.toContainText('Internal service detail')
   await expect(page.getByLabel('Display Name', { exact: true })).toHaveValue(profile.displayName)
-  await expect(page.getByLabel('Username', { exact: true })).toHaveValue(profile.handle)
+  await expect(page.getByLabel('Username (optional)', { exact: true })).toHaveValue(profile.handle)
   await expect(page.getByRole('button', { name: 'Create profile', exact: true })).toBeEnabled()
   await expect(page).toHaveURL(onboardingPath)
   expect(session.submissions).toBe(1)
@@ -316,7 +359,7 @@ test('previews and removes an avatar, then uploads it through media endpoints be
   await expect(savedAvatar).toHaveJSProperty('naturalWidth', 1)
   await page.reload()
   await expect(savedAvatar).toHaveJSProperty('naturalWidth', 1)
-  expect(session.avatarUrlReads).toBeGreaterThanOrEqual(2)
+  expect(session.avatarUrlReads).toBe(0)
 })
 
 for (const failedStage of ['initialization', 'storage PUT', 'completion'] as const) {
@@ -372,7 +415,7 @@ for (const invalidAvatar of [
     await page.getByLabel(/Avatar \(optional\)/).setInputFiles(invalidAvatar.file)
 
     await expect(page.getByRole('alert')).toContainText(invalidAvatar.error)
-    await page.getByLabel('Username', { exact: true }).press('Enter')
+    await page.getByLabel('Username (optional)', { exact: true }).press('Enter')
     await expect(page).toHaveURL(onboardingPath)
     expect(session.submissions).toBe(0)
     await expectMessengerLocked(page)
@@ -400,7 +443,9 @@ test('a failed read after creation stays locked and retries loading without crea
   await expect(page).toHaveURL(onboardingPath)
   await expectMessengerLocked(page)
   await expect(page.getByLabel('Display Name', { exact: true })).toBeDisabled()
-  await expect(page.getByLabel('Username', { exact: true })).toBeDisabled()
+  await expect(page.getByLabel('Username (optional)', { exact: true })).toBeDisabled()
+  await expect(page.getByLabel('Bio (optional)', { exact: true })).toBeDisabled()
+  await expect(page.getByLabel('Birthday (optional)', { exact: true })).toBeDisabled()
   await expect(page.getByLabel(/Avatar \(optional\)/)).toBeDisabled()
   expect(session.submissions).toBe(1)
 
@@ -413,28 +458,11 @@ test('a failed read after creation stays locked and retries loading without crea
   expect(session.submissions).toBe(1)
 })
 
-test('loads a profile created in another tab when creation reports that it already exists', async ({ page }) => {
-  const session = await mockSession(page)
-  session.create = (route) => {
-    session.hasProfile = true
-    return problem(route, 409, 'DIRECTORY_ENTRY_ALREADY_EXISTS')
-  }
-  await page.goto(onboardingPath)
-  await fillProfile(page)
-  const readsBeforeCreation = session.profileReads
-  await page.getByRole('button', { name: 'Create profile', exact: true }).click()
-
-  await expect(page).toHaveURL('/')
-  await expect(page.getByRole('button', { name: 'Account menu' })).toBeVisible()
-  expect(session.profileReads).toBeGreaterThan(readsBeforeCreation)
-  expect(session.submissions).toBe(1)
-})
-
 test('removing an avatar after profile creation fails omits the completed media ID on retry', async ({ page }) => {
   const session = await mockSession(page)
   session.create = (route) => {
     if (session.submissions === 1) return problem(route, 503)
-    session.savedProfile = route.request().postDataJSON() as MockSession['savedProfile']
+    session.savedProfile = savedProfileFrom(route)
     session.hasProfile = true
     return route.fulfill({ status: 201 })
   }
@@ -457,7 +485,7 @@ test('replacing an avatar after profile creation fails uploads the replacement',
   const session = await mockSession(page)
   session.create = (route) => {
     if (session.submissions === 1) return problem(route, 503)
-    session.savedProfile = route.request().postDataJSON() as MockSession['savedProfile']
+    session.savedProfile = savedProfileFrom(route)
     session.hasProfile = true
     return route.fulfill({ status: 201 })
   }

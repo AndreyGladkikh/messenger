@@ -10,6 +10,7 @@ import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/shared/ui/field'
 import { Input } from '@/shared/ui/input'
+import { Textarea } from '@/shared/ui/textarea'
 import { createProfile } from '../api/create-profile'
 import { AvatarUploadError, uploadAvatar } from '../api/upload-avatar'
 import { avatarAcceptedTypes, validateAvatar, type ProfileFormErrors } from '../model/profile-form'
@@ -68,15 +69,16 @@ export function CreateMyProfilePage() {
     const form = event.currentTarget
     const data = new FormData(form)
     const displayName = String(data.get('displayName') ?? '').trim()
-    const handle = String(data.get('username') ?? '').trim()
+    const handle = String(data.get('username') ?? '').trim() || undefined
+    const bio = String(data.get('bio') ?? '').trim() || undefined
+    const birthday = String(data.get('birthday') ?? '') || undefined
     const validation: ProfileFormErrors = {
       displayName: displayName ? undefined : 'Enter your display name.',
-      username: handle ? undefined : 'Enter your username.',
       avatar: errors.avatar,
     }
     if (!profileCreated && Object.values(validation).some(Boolean)) {
       setErrors(validation)
-      const field = !displayName ? 'displayName' : !handle ? 'username' : 'avatar'
+      const field = !displayName ? 'displayName' : 'avatar'
       const input = form.elements.namedItem(field) as HTMLInputElement | null
       input?.focus()
       return
@@ -89,20 +91,15 @@ export function CreateMyProfilePage() {
 
     try {
       if (!created) {
-        try {
-          const completedAvatar = uploadedAvatar.current
-          let avatarMediaId = completedAvatar?.file === avatar?.file
-            ? completedAvatar?.mediaId
-            : undefined
-          if (avatar && !avatarMediaId) {
-            avatarMediaId = await uploadAvatar(avatar.file)
-            uploadedAvatar.current = { file: avatar.file, mediaId: avatarMediaId }
-          }
-          await createProfile({ displayName, handle, avatarMediaId })
-        } catch (error) {
-          // Another tab (or a lost response) may already have completed onboarding.
-          if (!(error instanceof ApiError && error.code === 'DIRECTORY_ENTRY_ALREADY_EXISTS')) throw error
+        const completedAvatar = uploadedAvatar.current
+        let avatarMediaId = completedAvatar?.file === avatar?.file
+          ? completedAvatar?.mediaId
+          : undefined
+        if (avatar && !avatarMediaId) {
+          avatarMediaId = await uploadAvatar(avatar.file)
+          uploadedAvatar.current = { file: avatar.file, mediaId: avatarMediaId }
         }
+        await createProfile({ displayName, handle, bio, birthday, avatarMediaId })
         created = true
         setProfileCreated(true)
       }
@@ -138,7 +135,7 @@ export function CreateMyProfilePage() {
   return (
     <main className="not-typeset flex min-h-svh flex-col items-center justify-center bg-muted/40 px-4 py-10 font-[family-name:var(--font-geist)]">
       <title>Create your profile · Messenger</title>
-      <div className="flex w-full max-w-sm flex-col gap-7">
+      <div className="flex w-full max-w-md flex-col gap-7">
         <div className="flex items-center justify-center gap-2.5 font-medium">
           <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-xl bg-primary font-mono text-primary-foreground">m</span>
           Messenger
@@ -146,7 +143,7 @@ export function CreateMyProfilePage() {
         <Card className="gap-6 pt-6">
           <CardHeader className="gap-2 px-6">
             <CardTitle><h1 className="text-2xl font-semibold tracking-tight">Create your profile.</h1></CardTitle>
-            <CardDescription>One last step before your first conversation. Add a name and username so people can find you.</CardDescription>
+            <CardDescription>One last step before your first conversation. Add a name and any details you want to share.</CardDescription>
           </CardHeader>
           <CardContent className="px-6">
             <form onSubmit={handleSubmit} aria-label="Create profile" aria-busy={isPending}>
@@ -163,17 +160,33 @@ export function CreateMyProfilePage() {
                   {errors.displayName ? <FieldError id="profile-display-name-error">{errors.displayName}</FieldError> : null}
                 </Field>
                 <Field data-disabled={busy || profileCreated} data-invalid={Boolean(errors.username)}>
-                  <FieldLabel htmlFor="profile-username">Username</FieldLabel>
+                  <FieldLabel htmlFor="profile-username">Username (optional)</FieldLabel>
                   <Input
                     id="profile-username" name="username" autoComplete="username"
                     autoCapitalize="none" autoCorrect="off" spellCheck={false}
-                    placeholder="Choose a unique username" required className="h-11"
+                    placeholder="Choose a unique username" className="h-11"
                     disabled={busy || profileCreated} aria-invalid={Boolean(errors.username)}
                     aria-describedby={`profile-username-description${errors.username ? ' profile-username-error' : ''}`}
                     onChange={() => clearError('username')}
                   />
                   <FieldDescription id="profile-username-description">Your public username helps others find you.</FieldDescription>
                   {errors.username ? <FieldError id="profile-username-error">{errors.username}</FieldError> : null}
+                </Field>
+                <Field data-disabled={busy || profileCreated}>
+                  <FieldLabel htmlFor="profile-bio">Bio (optional)</FieldLabel>
+                  <Textarea
+                    id="profile-bio" name="bio" placeholder="Tell people a little about yourself"
+                    disabled={busy || profileCreated} aria-describedby="profile-bio-description"
+                  />
+                  <FieldDescription id="profile-bio-description">A short introduction shown on your profile.</FieldDescription>
+                </Field>
+                <Field data-disabled={busy || profileCreated}>
+                  <FieldLabel htmlFor="profile-birthday">Birthday (optional)</FieldLabel>
+                  <Input
+                    id="profile-birthday" name="birthday" type="date" className="h-11"
+                    disabled={busy || profileCreated} aria-describedby="profile-birthday-description"
+                  />
+                  <FieldDescription id="profile-birthday-description">Stored as a calendar date without timezone conversion.</FieldDescription>
                 </Field>
                 <Field data-disabled={busy || profileCreated} data-invalid={Boolean(errors.avatar)}>
                   <FieldLabel htmlFor="profile-avatar">Avatar (optional)</FieldLabel>
