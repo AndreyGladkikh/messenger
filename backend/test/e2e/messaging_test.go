@@ -15,8 +15,8 @@ import (
 func TestSendMessage_Success(t *testing.T) {
 	server, _ := initApi(t)
 
-	alice := newUser(t, server, "alice", userWithProfile(t, "alice_handle", "Alice DN", false))
-	bob := newUser(t, server, "bob", userWithProfile(t, "bob_handle", "Bob DN", false))
+	alice := newUser(t, server, "alice", userWithProfile(t, nil))
+	bob := newUser(t, server, "bob", userWithProfile(t, nil))
 
 	msgBody := "Hi!"
 

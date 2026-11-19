@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 var _ StrictServerInterface = (*ApiHandler)(nil)
@@ -224,7 +225,7 @@ func (h *ApiHandler) CreateMyProfile(ctx context.Context, request CreateMyProfil
 		DisplayName: request.Body.DisplayName,
 		AvatarID:    request.Body.AvatarMediaId,
 		Bio:         request.Body.Bio,
-		Birthday:    request.Body.Birthday,
+		Birthday:    timeFromDate(request.Body.Birthday),
 	}
 	_, err = h.commands.SetUserProfile.Handle(ctx, cmd)
 	if err != nil {
@@ -253,8 +254,24 @@ func (h *ApiHandler) GetMyProfile(ctx context.Context, request GetMyProfileReque
 		DisplayName: resp.DisplayName,
 		AvatarUrl:   resp.AvatarURL,
 		Bio:         resp.Bio,
-		Birthday:    resp.Birthday,
+		Birthday:    dateFromTime(resp.Birthday),
 	}, nil
+}
+
+func timeFromDate(date *openapi_types.Date) *time.Time {
+	if date == nil {
+		return nil
+	}
+
+	return &date.Time
+}
+
+func dateFromTime(value *time.Time) *openapi_types.Date {
+	if value == nil {
+		return nil
+	}
+
+	return &openapi_types.Date{Time: *value}
 }
 
 func (h *ApiHandler) InitMediaUpload(ctx context.Context, request InitMediaUploadRequestObject) (InitMediaUploadResponseObject, error) {

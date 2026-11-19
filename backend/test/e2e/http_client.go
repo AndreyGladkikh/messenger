@@ -19,13 +19,13 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-type httpClient struct {
+type apiHTTPClient struct {
 	*http.Client
 	server *httptest.Server
 	JWT    *string
 }
 
-func newHttpClient(t *testing.T, server *httptest.Server) *httpClient {
+func newHttpClient(t *testing.T, server *httptest.Server) *apiHTTPClient {
 	t.Helper()
 
 	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
@@ -36,7 +36,7 @@ func newHttpClient(t *testing.T, server *httptest.Server) *httpClient {
 	client.Jar = jar
 	client.Timeout = 1 * time.Second
 
-	return &httpClient{
+	return &apiHTTPClient{
 		Client: &client,
 		server: server,
 	}
@@ -49,14 +49,11 @@ type httpRequestOpts struct {
 	Cookies     []*http.Cookie
 }
 
-func (c *httpClient) doRequest(t *testing.T, method, url string, opts *httpRequestOpts) (*http.Response, error) {
+func (c *apiHTTPClient) doRequest(t *testing.T, method, url string, opts *httpRequestOpts) (*http.Response, error) {
+	t.Helper()
+
 	if opts == nil {
 		opts = new(httpRequestOpts)
-	}
-
-	if opts.Timeout == 0 {
-		// todo remove multiplier
-		opts.Timeout = time.Second * 100000
 	}
 
 	if opts.ContentType == "" {
@@ -76,8 +73,13 @@ func (c *httpClient) doRequest(t *testing.T, method, url string, opts *httpReque
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
-	defer cancel()
+	ctx := context.Background()
+
+	if opts.Timeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), opts.Timeout)
+		defer cancel()
+	}
 
 	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("https://www.example.com/%s", url), body)
 	if err != nil {
@@ -104,56 +106,56 @@ func (c *httpClient) doRequest(t *testing.T, method, url string, opts *httpReque
 	return rsp, nil
 }
 
-func (c *httpClient) registerUser(t *testing.T, login, pass string) (*http.Response, error) {
+func (c *apiHTTPClient) registerUser(t *testing.T, login, pass string) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "auth/users", &httpRequestOpts{Body: appHttp.RegisterUserJSONRequestBody{
 		Login:    login,
 		Password: pass,
 	}})
 }
 
-func (c *httpClient) loginUser(t *testing.T, login, pass string) (*http.Response, error) {
+func (c *apiHTTPClient) loginUser(t *testing.T, login, pass string) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "auth/users/login", &httpRequestOpts{Body: appHttp.LoginUserJSONRequestBody{
 		Login:    login,
 		Password: pass,
 	}})
 }
 
-func (c *httpClient) logoutUser(t *testing.T) (*http.Response, error) {
+func (c *apiHTTPClient) logoutUser(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "auth/users/logout", nil)
 }
 
-func (c *httpClient) refreshUserTokens(t *testing.T) (*http.Response, error) {
+func (c *apiHTTPClient) refreshUserTokens(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "auth/users/refresh-tokens", nil)
 }
 
-func (c *httpClient) me(t *testing.T) (*http.Response, error) {
+func (c *apiHTTPClient) me(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodGet, "auth/me", nil)
 }
 
-func (c *httpClient) createMyProfile(t *testing.T, r appHttp.CreateMyProfileJSONRequestBody) (*http.Response, error) {
+func (c *apiHTTPClient) createMyProfile(t *testing.T, r appHttp.CreateMyProfileJSONRequestBody) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "me/profile", &httpRequestOpts{Body: r})
 }
 
-func (c *httpClient) getMyProfile(t *testing.T) (*http.Response, error) {
+func (c *apiHTTPClient) getMyProfile(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodGet, "me/profile", nil)
 }
 
-func (c *httpClient) startDirectConversation(t *testing.T, r appHttp.StartDirectConversationJSONRequestBody) (*http.Response, error) {
+func (c *apiHTTPClient) startDirectConversation(t *testing.T, r appHttp.StartDirectConversationJSONRequestBody) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "conversations/direct", &httpRequestOpts{Body: r})
 }
 
-func (c *httpClient) getHomePage(t *testing.T) (*http.Response, error) {
+func (c *apiHTTPClient) getHomePage(t *testing.T) (*http.Response, error) {
 	return c.doRequest(t, http.MethodGet, "home-page", nil)
 }
 
-func (c *httpClient) initMediaUpload(t *testing.T, r appHttp.InitMediaUpload) (*http.Response, error) {
+func (c *apiHTTPClient) initMediaUpload(t *testing.T, r appHttp.InitMediaUpload) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, "media/uploads", &httpRequestOpts{Body: r})
 }
 
-func (c *httpClient) completeMediaUpload(t *testing.T, r appHttp.CompleteMediaUploadRequestObject) (*http.Response, error) {
+func (c *apiHTTPClient) completeMediaUpload(t *testing.T, r appHttp.CompleteMediaUploadRequestObject) (*http.Response, error) {
 	return c.doRequest(t, http.MethodPost, fmt.Sprintf("media/uploads/%s/complete", r.UploadId.String()), nil)
 }
 
-func (c *httpClient) getMediaDownloadURL(t *testing.T, r appHttp.GetDownloadMediaUrlRequestObject) (*http.Response, error) {
+func (c *apiHTTPClient) getMediaDownloadURL(t *testing.T, r appHttp.GetDownloadMediaUrlRequestObject) (*http.Response, error) {
 	return c.doRequest(t, http.MethodGet, fmt.Sprintf("media/%s/url", r.MediaId), nil)
 }

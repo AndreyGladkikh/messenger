@@ -42,8 +42,8 @@ func TestCreateMyProfile_Success(t *testing.T) {
 	mediaAsset := decode[appHttp.Media](t, response.Body)
 
 	resp, err := user.httpClient.createMyProfile(t, appHttp.CreateMyProfileJSONRequestBody{
-		Handle:      &handle,
-		DisplayName: displayName,
+		Handle:        &handle,
+		DisplayName:   displayName,
 		AvatarMediaId: &mediaAsset.MediaId,
 	})
 	require.NoError(t, err)

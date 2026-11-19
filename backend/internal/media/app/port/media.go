@@ -38,6 +38,7 @@ type MediaStorage interface {
 type MediaLocationStore interface {
 	Save(ctx context.Context, mediaID uuid.UUID, ref MediaLocationRef) error
 	Get(ctx context.Context, mediaID uuid.UUID) (MediaLocationRef, error)
+	GetMany(ctx context.Context, mediaIDs []uuid.UUID) (map[uuid.UUID]MediaLocationRef, error)
 }
 
 type MediaReader interface {

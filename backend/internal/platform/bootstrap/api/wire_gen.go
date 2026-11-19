@@ -163,7 +163,7 @@ func Initialize(cfg config.Config) (*Api, func(), error) {
 	searchHandler := query4.NewSearchHandler(queryService3)
 	handler13 := bootstrap4.ProvideSearchHandler(searchHandler, query_middlewareRegistry)
 	directoryService := directory.NewService(handler12, handler13)
-	getPublicURLsHandler := query2.NewGetPublicURLsHandler(cfg)
+	getPublicURLsHandler := query2.NewGetPublicURLsHandler(cfg, mediaLocationStore)
 	handler14 := bootstrap3.ProvideGetPublicURLsHandler(getPublicURLsHandler, query_middlewareRegistry)
 	service2 := media2.NewService(handler14)
 	getHomePageHandler := query5.NewGetHomePageHandler(messagingService, directoryService, service2)

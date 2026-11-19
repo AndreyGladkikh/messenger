@@ -608,7 +608,6 @@ components:
         birthday:
           type: string
           format: date
-          x-go-type: time.Time
         avatarMediaId:
           type: string
           format: uuid
@@ -628,7 +627,6 @@ components:
         birthday:
           type: string
           format: date
-          x-go-type: time.Time
         avatarUrl:
           type: string
 

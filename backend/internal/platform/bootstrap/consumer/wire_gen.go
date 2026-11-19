@@ -12,6 +12,7 @@ import (
 	"messenger/messenger/internal/directory/infra/persistence"
 	query2 "messenger/messenger/internal/media/app/query"
 	bootstrap2 "messenger/messenger/internal/media/infra/bootstrap"
+	persistence2 "messenger/messenger/internal/media/infra/persistence"
 	"messenger/messenger/internal/platform/config"
 	"messenger/messenger/internal/platform/logger"
 	"messenger/messenger/internal/platform/postgres"
@@ -58,7 +59,8 @@ func Initialize(cfg config.Config) (*Consumer, func(), error) {
 		Validation: validation,
 	}
 	handler := bootstrap.ProvideGetUserProfilesHandler(getUserProfilesHandler, registry)
-	getPublicURLsHandler := query2.NewGetPublicURLsHandler(cfg)
+	mediaLocationStore := persistence2.NewMediaLocationStore(storeStore)
+	getPublicURLsHandler := query2.NewGetPublicURLsHandler(cfg, mediaLocationStore)
 	queryHandler := bootstrap2.ProvideGetPublicURLsHandler(getPublicURLsHandler, registry)
 	personalDeliveryHandler := realtime.NewPersonalDeliveryHandler(personalEventsPubSub, handler, queryHandler)
 	realtimePersonalDeliveryConsumer, cleanup5, err := consumers.NewRealtimePersonalDeliveryConsumer(loggerLogger, connection, personalDeliveryHandler)

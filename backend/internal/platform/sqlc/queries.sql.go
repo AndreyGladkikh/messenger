@@ -182,6 +182,41 @@ func (q *Queries) GetMediaAsset(ctx context.Context, id uuid.UUID) (MediaAsset, 
 	return i, err
 }
 
+const getMediaAssets = `-- name: GetMediaAssets :many
+SELECT
+    id, status, name, bucket, key
+FROM
+    media.assets
+WHERE
+    id = ANY ($1::UUID[])
+`
+
+func (q *Queries) GetMediaAssets(ctx context.Context, dollar_1 []uuid.UUID) ([]MediaAsset, error) {
+	rows, err := q.db.Query(ctx, getMediaAssets, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MediaAsset
+	for rows.Next() {
+		var i MediaAsset
+		if err := rows.Scan(
+			&i.ID,
+			&i.Status,
+			&i.Name,
+			&i.Bucket,
+			&i.Key,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMessage = `-- name: GetMessage :one
 SELECT id, sender_id, conversation_id, body, reply_to_message_id, created_at, updated_at, deleted_at FROM conversations.messages
 WHERE id = $1 LIMIT 1

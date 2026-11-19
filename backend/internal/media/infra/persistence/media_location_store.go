@@ -47,3 +47,20 @@ func (s *MediaLocationStore) Get(ctx context.Context, mediaID uuid.UUID) (port.M
 		Key:    m.Key,
 	}, nil
 }
+
+func (s *MediaLocationStore) GetMany(ctx context.Context, mediaIDs []uuid.UUID) (map[uuid.UUID]port.MediaLocationRef, error) {
+	rows, err := s.Queries(ctx).GetMediaAssets(ctx, mediaIDs)
+	if err != nil {
+		return map[uuid.UUID]port.MediaLocationRef{}, fmt.Errorf("get many media locations: %w", err)
+	}
+
+	locs := make(map[uuid.UUID]port.MediaLocationRef, len(rows))
+	for _, r := range rows {
+		locs[r.ID] = port.MediaLocationRef{
+			Bucket: r.Bucket,
+			Key: r.Key,
+		}
+	}
+
+	return locs, nil
+}

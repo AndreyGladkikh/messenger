@@ -19,7 +19,7 @@ type wsClient struct {
 	receive chan []byte
 }
 
-func newWSClient(t *testing.T, httpClient *httpClient) *wsClient {
+func newWSClient(t *testing.T, httpClient *apiHTTPClient) *wsClient {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -55,7 +55,7 @@ func newWSClient(t *testing.T, httpClient *httpClient) *wsClient {
 
 func decodeWSMsg[T any](t *testing.T, data []byte) T {
 	t.Helper()
-	
+
 	var msg appWS.WSMessage
 	err := json.Unmarshal(data, &msg)
 	require.NoError(t, err)
@@ -65,6 +65,6 @@ func decodeWSMsg[T any](t *testing.T, data []byte) T {
 	var payload T
 	err = json.Unmarshal(msg.Payload, &payload)
 	require.NoError(t, err)
-	
+
 	return payload
 }

@@ -48,7 +48,7 @@ func NewRouter(
 			apiHandler,
 			nil,
 			StrictHTTPServerOptions{
-				RequestErrorHandlerFunc:  errorHandler.Handle,
+				RequestErrorHandlerFunc:  errorHandler.HandleRequest,
 				ResponseErrorHandlerFunc: errorHandler.Handle,
 			},
 		), r)

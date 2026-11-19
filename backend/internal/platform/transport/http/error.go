@@ -82,6 +82,13 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, err error)
 	}
 }
 
+func (h *ErrorHandler) HandleRequest(w http.ResponseWriter, r *http.Request, err error) {
+	h.Handle(w, r, &openapi3filter.RequestError{
+		Reason: "Request body is invalid",
+		Err:    err,
+	})
+}
+
 func (h *ErrorHandler) DefaultProblemDetails() ProblemDetails {
 	statusInternalServerError := http.StatusInternalServerError
 

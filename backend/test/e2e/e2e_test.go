@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 	"uuid"
 
 	"messenger/messenger/internal/platform/bootstrap/api"
@@ -17,6 +18,8 @@ import (
 	"messenger/messenger/internal/platform/migrate"
 	"messenger/messenger/internal/platform/postgres"
 	appHttp "messenger/messenger/internal/platform/transport/http"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"messenger/messenger/test/testhelpers"
 
@@ -30,10 +33,10 @@ import (
 )
 
 var (
-	pgContainer          *testhelpers.PostgresContainer
-	redisContainer       *testhelpers.RedisContainer
-	rmqContainer         *testhelpers.RabbitMQContainer
-	seaweedFSContainer         *testhelpers.SeaweedFSContainer
+	pgContainer        *testhelpers.PostgresContainer
+	redisContainer     *testhelpers.RedisContainer
+	rmqContainer       *testhelpers.RabbitMQContainer
+	seaweedFSContainer *testhelpers.SeaweedFSContainer
 
 	pgAdmin              *pgxpool.Pool
 	problemTypesRegistry appHttp.ProblemTypesRegistry
@@ -109,7 +112,7 @@ func setup() (func(), error) {
 	}, nil
 }
 
-func initApi(t *testing.T) (*httptest.Server, *httpClient) {
+func initApi(t *testing.T) (*httptest.Server, *apiHTTPClient) {
 	t.Helper()
 
 	testDBName := fmt.Sprintf("test_%s", strings.ReplaceAll(uuid.New().String(), "-", ""))
@@ -132,9 +135,9 @@ func initApi(t *testing.T) (*httptest.Server, *httpClient) {
 				PublicKeyPath:  "../../keys/public.pem",
 			},
 		},
-		Database: config.Database{Dsn: pgConnString},
-		Cache:    config.Cache{Dsn: redisContainer.ConnectionString},
-		Mq:       config.Mq{Dsn: rmqContainer.ConnectionString},
+		Database:      config.Database{Dsn: pgConnString},
+		Cache:         config.Cache{Dsn: redisContainer.ConnectionString},
+		Mq:            config.Mq{Dsn: rmqContainer.ConnectionString},
 		ObjectStorage: config.ObjectStorage{Dsn: seaweedFSContainer.ConnectionString},
 		CDNHost:       testCDNHost,
 	}
@@ -211,4 +214,20 @@ func decode[T any](t *testing.T, data io.Reader) T {
 	err := json.UnmarshalRead(data, &decoded)
 	require.NoError(t, err)
 	return decoded
+}
+
+func timeFromDate(date *openapi_types.Date) *time.Time {
+	if date == nil {
+		return nil
+	}
+
+	return &date.Time
+}
+
+func dateFromTime(value *time.Time) *openapi_types.Date {
+	if value == nil {
+		return nil
+	}
+
+	return &openapi_types.Date{Time: *value}
 }
